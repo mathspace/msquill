@@ -83,18 +83,25 @@
 
 .latexlive-rendered-math .fraction {
   text-align: center;
-  vertical-align: middle;
+  position: relative;
+  height: 0;
+  vertical-align: .4em;
   padding: 0 .1em;
 }
-.latexlive-rendered-math .numerator, .latexlive-rendered-math .denominator {
+.latexlive-rendered-math .numerator, .latexlive-rendered-math .denominator, .latexlive-rendered-math .fraction-bar {
+  position: absolute;
   display: block;
   font-size: 90%;
 }
 .latexlive-rendered-math .numerator {
-  border-bottom: solid #222 1px; /* black is too black, contrasts with antialised text */
+  top: 0;
 }
 .latexlive-rendered-math .denominator {
-  border-top: solid #222 1px;
+  bottom: 0;
+}
+.latexlive-rendered-math .fraction-bar {
+  width: 100%;
+  border: solid #222 1px; /* black is too black, contrasts with antialised text */
 }
 
 .latexlive-rendered-math sup .fraction, .latexlive-rendered-math sub .fraction {

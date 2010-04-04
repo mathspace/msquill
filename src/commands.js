@@ -66,21 +66,26 @@ SupSub.prototype.respace = function()
 function Fraction()
 {
   MathCommand.call(this, '\\frac ');
-  var fractionJQ = this.jQ;
-  if($.browser.opera) //because fucking Gecko and Webkit look really shitty if this is in the stylesheet
-    fractionJQ.css('overflow', 'hidden').children().css({
-      paddingLeft: '.2em',
-      paddingRight: '.2em',
+  var fractionBar = $('<span class="fraction-bar"></span>').insertAfter(this.firstChild.jQ), fractionJQ = this.jQ;
+  this.firstChild.jQ.change(function()
+  {
+    var jQ = $(this), fontSize = +jQ.css('fontSize').slice(0,-2);
+    fractionJQ.css({
+      height: (jQ.height() + jQ.next().next().height())/fontSize+'em',
+      minWidth: Math.max(jQ.width(), jQ.next().next().width()),
     });
-  else //because fucking Opera's padding/margin/position is unfixably 1px off if this is in the stylesheet
-    fractionJQ.children().css({
-      float: 'left',
-      width: '100%',
-    });
+    jQ.next().next().css('minWidth', fractionJQ.width());
+  });
   this.lastChild.jQ.change(function()
   {
-    var denominatorJQ = $(this);
-    fractionJQ.css('verticalAlign', .2-.9*denominatorJQ.height()/+denominatorJQ.css('fontSize').slice(0,-2)+'em');
+    var jQ = $(this), fontSize = +jQ.css('fontSize').slice(0,-2), height = jQ.height()/fontSize;
+    fractionJQ.css({
+      height: (jQ.height() + jQ.prev().prev().height())/fontSize+'em',
+      minWidth: Math.max(jQ.width(), jQ.prev().prev().width()),
+      verticalAlign: .4-height+'em',
+    });
+    jQ.prev().prev().css('minWidth', fractionJQ.width());
+    fractionBar.css('bottom', height+'em');
   });
 }
 Fraction.prototype = new MathCommand;
