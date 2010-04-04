@@ -1,3 +1,5 @@
+BRANCH = master
+
 SOURCE_DIR = src
 
 FILES = \
@@ -10,7 +12,7 @@ ${SOURCE_DIR}/outro.js
 BUILD_DIR = ./build
 BUILD_FILE = ${BUILD_DIR}/latexlive.js
 
-all: ${FILES}
+all:
 	@@if test ! -d ${BUILD_DIR}; then mkdir ${BUILD_DIR}; fi
 	@@echo 'Building...'
 	@@echo ${FILES} | tr ' ' '\n'
@@ -18,7 +20,8 @@ all: ${FILES}
 	@@echo 'Done.'
 
 gsync:
-	${BRANCH=`git branch | grep \*.* | sed 's/\* *//'`}
+	${override BRANCH := `git branch | grep '\*' | sed 's/\* *//'`}
+	@@echo ${BRANCH}
 	@@git checkout master
 	@@git pull --all
 	@@git push --all
