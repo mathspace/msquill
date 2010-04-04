@@ -18,7 +18,7 @@ all: ${FILES}
 	@@echo 'Done.'
 
 gsync:
-	@@git pull origin master --all
+	@@git pull --all
 	@@git push --all
 
 lol:
