@@ -18,7 +18,7 @@ all:
 	@@echo 'Done.'
 
 gitsync:
-	echo ${shell ./gitsync.sh}
+	@@echo ${shell ./gitsync.sh}
 
 lol:
 	@@echo "LOL!"
