@@ -69,22 +69,22 @@ function Fraction()
   var fractionBar = $('<span class="fraction-bar"></span>').insertAfter(this.firstChild.jQ), fractionJQ = this.jQ;
   this.firstChild.jQ.change(function()
   {
-    var jQ = $(this), fontSize = +jQ.css('fontSize').slice(0,-2);
+    var jQ = $(this), fontSize = +jQ.css('fontSize').slice(0,-2)/.9;
     fractionJQ.css({
       height: (jQ.height() + jQ.next().next().height())/fontSize+'em',
-      minWidth: Math.max(jQ.width(), jQ.next().next().width()),
+      width: Math.max(jQ.width(), jQ.next().next().width()),
     });
-    jQ.next().next().css('minWidth', fractionJQ.width());
+    jQ.next().next().css('width', fractionJQ.width());
   });
   this.lastChild.jQ.change(function()
   {
-    var jQ = $(this), fontSize = +jQ.css('fontSize').slice(0,-2), height = jQ.height()/fontSize;
+    var jQ = $(this), fontSize = +jQ.css('fontSize').slice(0,-2)/.9, height = jQ.height()/fontSize;
     fractionJQ.css({
       height: (jQ.height() + jQ.prev().prev().height())/fontSize+'em',
-      minWidth: Math.max(jQ.width(), jQ.prev().prev().width()),
-      verticalAlign: .4-height+'em',
+      width: Math.max(jQ.width(), jQ.prev().prev().width()),
+      verticalAlign: .2-.9*height+'em',
     });
-    jQ.prev().prev().css('minWidth', fractionJQ.width());
+    jQ.prev().prev().css('width', fractionJQ.width());
     fractionBar.css('bottom', height+'em');
   });
 }
