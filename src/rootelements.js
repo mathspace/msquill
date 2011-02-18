@@ -141,6 +141,11 @@ _.keydown = function(e)
   this.skipKeypress = true;
   e.ctrlKey = e.ctrlKey || e.metaKey;
   switch ((e.originalEvent && e.originalEvent.keyIdentifier) || e.which) {
+  case 32: //space
+  case 'Space':
+  case 'U+0020':
+    // do nothing
+    return false;
   case 8: //backspace
   case 'Backspace':
   case 'U+0008':
