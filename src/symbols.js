@@ -163,7 +163,7 @@ LatexCmds.pm = LatexCmds.plusmn = LatexCmds.plusminus =
 LatexCmds.mp = LatexCmds.mnplus = LatexCmds.minusplus =
   bind(PlusMinus,'\\mp ','&#8723;');
 
-CharCmds['*'] = LatexCmds.sdot = LatexCmds.cdot =
+LatexCmds.sdot = LatexCmds.cdot =
   bind(BinaryOperator, '\\cdot ', '&middot;');
 //semantically should be &sdot;, but &middot; looks better
 
@@ -175,11 +175,11 @@ LatexCmds.notin =
 LatexCmds.sim =
 LatexCmds.cong =
 LatexCmds.equiv =
-LatexCmds.times =
 LatexCmds.oplus =
 LatexCmds.otimes = proto(BinaryOperator, function(replacedFragment, latex) {
   BinaryOperator.call(this,'\\'+latex+' ','&'+latex+';');
 });
+CharCmds['*'] = LatexCmds.times = bind(BinaryOperator, '\\times', '&times;');
 
 LatexCmds.div = LatexCmds.divide = LatexCmds.divides =
   bind(BinaryOperator,'\\div ','&divide;');
