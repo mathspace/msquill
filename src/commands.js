@@ -89,7 +89,7 @@ LatexCmds.subscript = LatexCmds._ = proto(SupSub, function(replacedFragment) {
 
 LatexCmds.superscript =
 LatexCmds.supscript =
-LatexCmds['^'] = proto(SupSub, function(replacedFragment) {
+LatexCmds['^'] = LatexCmds['`'] = proto(SupSub, function(replacedFragment) {
   SupSub.call(this, '^', '<sup></sup>', replacedFragment);
 });
 
