@@ -288,6 +288,7 @@
 .mathquill-rendered-math .paren {
   vertical-align: bottom;
   position: relative;
+  font-family: BellMTBold, "Times New Roman", serif;
 }
 
 .mathquill-rendered-math .array {
