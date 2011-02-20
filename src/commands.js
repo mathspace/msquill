@@ -176,7 +176,7 @@ _.redraw = function() {
   });
 };
 
-LatexCmds.sqrt = SquareRoot;
+LatexCmds.sqrt = LatexCmds['~'] = SquareRoot;
 
 // Round/Square/Curly/Angle Brackets (aka Parens/Brackets/Braces)
 function Bracket(open, close, cmd, end, replacedFragment) {
