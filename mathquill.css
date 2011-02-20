@@ -17,6 +17,24 @@
     url(font/Symbola.svg#webfont7MzkO3xs) format("svg");
 }
 
+@font-face {
+  font-family: BellMTBold;
+  src: url(font/Bell_MTBold/BellMTBold.eot);
+  src: local("Bell MT Bold"),
+    url(font/Bell_MTBold/BELLB.TTF) format("truetype"),
+    url(font/Bell_MTBold/bell.otf) format("opentype"),
+    url(font/Bell_MTBold/bell.svg) format("svg");
+}
+
+@font-face {
+  font-family: BellMT;
+  src: url(font/Bell_MT/bell-webfont.eot);
+  src: local('Bell MT Regular'), local('Bell MT'), 
+    url(font/Bell_MT/bell-webfont.ttf) format('truetype'), 
+    url(font/Bell_MT/bel.otf) format("opentype"), 
+    url(font/Bell_MT/bell-webfont.svg) format("svg");
+}
+
 .mathquill-editable, .mathquill-embedded-latex .mathquill-editable {
   display: -moz-inline-box;
   display: inline-block;
