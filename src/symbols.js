@@ -260,7 +260,7 @@ BigSymbol.prototype = new Symbol; //so instanceof will work
 LatexCmds.sum = LatexCmds.summation = bind(BigSymbol,'\\sum ','&sum;');
 LatexCmds.prod = LatexCmds.product = bind(BigSymbol,'\\prod ','&prod;');
 LatexCmds.coprod = LatexCmds.coproduct = bind(BigSymbol,'\\coprod ','&#8720;');
-LatexCmds.int = LatexCmds.integral = bind(BigSymbol,'\\int ','&int;');
+LatexCmds['int'] = LatexCmds.integral = bind(BigSymbol,'\\int ','&int;'); // "LatexCmds.int" is disliked by Closure Compiler
 
 
 
