@@ -21,7 +21,7 @@
   font-family: BellMTBold;
   src: url(font/Bell_MTBold/BellMTBold.eot);
   src: local("Bell MT Bold"),
-    url(font/Bell_MTBold/BELLB.TTF) format("truetype"),
+    url(font/Bell_MTBold/bellb.ttf) format("truetype"),
     url(font/Bell_MTBold/bell.otf) format("opentype"),
     url(font/Bell_MTBold/bell.svg) format("svg");
 }
