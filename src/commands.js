@@ -9,8 +9,8 @@ function proto(parent, child) { //shorthand for prototyping
   return child;
 }
 
-function SupSub(cmd, html, replacedFragment) {
-  MathCommand.call(this, cmd, [ html ], replacedFragment);
+function SupSub(cmd, html, text, replacedFragment) {
+  MathCommand.call(this, cmd, [ html ], [ text ], replacedFragment);
 }
 _ = SupSub.prototype = new MathCommand;
 _.latex = function() {
@@ -29,11 +29,9 @@ _.redraw = function() {
 };
 _.respace = function() {
   if (
-    this.prev && (
-      this.prev.cmd === '\\int ' || (
-        this.prev instanceof SupSub && this.prev.cmd != this.cmd &&
-        this.prev.prev && this.prev.prev.cmd === '\\int '
-      )
+    this.prev.cmd === '\\int ' || (
+      this.prev instanceof SupSub && this.prev.cmd != this.cmd &&
+      this.prev.prev && this.prev.prev.cmd === '\\int '
     )
   ) {
     if (!this.limit) {
@@ -47,6 +45,7 @@ _.respace = function() {
       this.jQ.removeClass('limit');
     }
   }
+
   if (this.respaced = this.prev instanceof SupSub && this.prev.cmd != this.cmd && !this.prev.respaced) {
     if (this.limit && this.cmd === '_') {
       this.jQ.css({
@@ -67,12 +66,6 @@ _.respace = function() {
       marginRight: ''
     });
   }
-  else if (this.cmd === '^' && this.next && this.next.cmd === '\\sqrt') {
-    this.jQ.css({
-      left: '',
-      marginRight: '-.7em'
-    }).addClass('limit');
-  }
   else {
     this.jQ.css({
       left: '',
@@ -84,17 +77,17 @@ _.respace = function() {
 };
 
 LatexCmds.subscript = LatexCmds._ = proto(SupSub, function(replacedFragment) {
-  SupSub.call(this, '_', '<sub></sub>', replacedFragment);
+  SupSub.call(this, '_', '<sub></sub>', '_', replacedFragment);
 });
 
 LatexCmds.superscript =
 LatexCmds.supscript =
 LatexCmds['^'] = LatexCmds['`'] = proto(SupSub, function(replacedFragment) {
-  SupSub.call(this, '^', '<sup></sup>', replacedFragment);
+  SupSub.call(this, '^', '<sup></sup>', '**', replacedFragment);
 });
 
 function Fraction(replacedFragment) {
-  MathCommand.call(this, '\\frac', undefined, replacedFragment);
+  MathCommand.call(this, '\\frac', undefined, undefined, replacedFragment);
   this.jQ.append('<span style="width:0">&nbsp;</span>');
   
   // Fixes display in IE7 - where each numerator/denominator pair aren't set to equal widths
@@ -121,6 +114,7 @@ _.html_template = [
   '<span class="numerator"></span>',
   '<span class="denominator"></span>'
 ];
+_.text_template = ['(', '/', ')'];
 
 LatexCmds.frac = LatexCmds.fraction = Fraction;
 
@@ -160,15 +154,16 @@ _.placeCursor = function(cursor) {
 CharCmds['/'] = LiveFraction;
 
 function SquareRoot(replacedFragment) {
-  MathCommand.call(this, '\\sqrt', undefined, replacedFragment);
+  MathCommand.call(this, '\\sqrt', undefined, undefined, replacedFragment);
 }
 _ = SquareRoot.prototype = new MathCommand;
 _.html_template = [
   '<span><span class="sqrt-prefix">&radic;</span></span>',
   '<span class="sqrt-stem"></span>'
 ];
+_.text_template = ['sqrt(', ')'];
 _.redraw = function() {
-  var block = this.firstChild.jQ, height = block.outerHeight(true);
+  var block = this.lastChild.jQ, height = block.outerHeight(true);
   block.css({
     borderTopWidth: height/28+1 // NOTE: Formula will need to change if our font isn't Symbola
   }).prev().css({
@@ -178,10 +173,28 @@ _.redraw = function() {
 
 LatexCmds.sqrt = LatexCmds['~'] = SquareRoot;
 
+function NthRoot(replacedFragment) {
+  SquareRoot.call(this, replacedFragment);
+  this.jQ = this.firstChild.jQ.detach().add(this.jQ);
+}
+_ = NthRoot.prototype = new SquareRoot;
+_.html_template = [
+  '<span><span class="sqrt-prefix">&radic;</span></span>',
+  '<sup class="nthroot"></sup>',
+  '<span class="sqrt-stem"></span>'
+];
+_.text_template = ['sqrt[', '](', ')'];
+_.latex = function() {
+  return '\\sqrt['+this.firstChild.latex()+']{'+this.lastChild.latex()+'}';
+};
+
+LatexCmds.nthroot = NthRoot;
+
 // Round/Square/Curly/Angle Brackets (aka Parens/Brackets/Braces)
 function Bracket(open, close, cmd, end, replacedFragment) {
   MathCommand.call(this, '\\left'+cmd,
     ['<span><span class="paren">'+open+'</span><span></span><span class="paren">'+close+'</span></span>'],
+    [open, close],
     replacedFragment);
   this.end = '\\right'+end;
 }
@@ -277,6 +290,7 @@ function TextBlock(replacedText) {
 }
 _ = TextBlock.prototype = new MathCommand;
 _.html_template = ['<span class="text"></span>'];
+_.text_template = ['"', '"'];
 _.initBlocks = function() {
   this.firstChild =
   this.lastChild =
@@ -309,9 +323,8 @@ _.keydown = function(e) {
   }
   return this.parent.keydown(e);
 };
-_.keypress = function(e) {
+_.textInput = function(ch) {
   this.cursor.deleteSelection();
-  var ch = String.fromCharCode(e.which);
   if (ch !== '$')
     this.write(ch);
   else if (this.isEmpty())
@@ -334,7 +347,6 @@ _.keypress = function(e) {
     this.cursor.insertBefore(next);
     delete next.firstChild.focus;
   }
-  return false;
 };
 function InnerTextBlock(){}
 _ = InnerTextBlock.prototype = new MathBlock;
@@ -410,6 +422,7 @@ function LatexCommandInput(replacedFragment) {
 }
 _ = LatexCommandInput.prototype = new MathCommand;
 _.html_template = ['<span class="latex-command-input"></span>'];
+_.text_template = ['\\'];
 _.placeCursor = function(cursor) {
   this.cursor = cursor.appendTo(this.firstChild);
   if (this.replacedFragment)
@@ -432,18 +445,17 @@ _.keydown = function(e) {
   }
   return this.parent.keydown(e);
 };
-_.keypress = function(e) {
-  var ch = String.fromCharCode(e.which);
+_.textInput = function(ch) {
   if (ch.match(/[a-z]/i)) {
     this.cursor.deleteSelection();
     this.cursor.insertNew(new VanillaSymbol(ch));
-    return false;
+    return;
   }
   this.renderCommand();
   if (ch === ' ' || (ch === '\\' && this.firstChild.isEmpty()))
-    return false;
+    return;
 
-  return this.cursor.parent.keypress(e);
+  this.cursor.parent.textInput(ch);
 };
 _.renderCommand = function() {
   this.jQ = this.jQ.last();
@@ -478,12 +490,13 @@ _.renderCommand = function() {
 CharCmds['\\'] = LatexCommandInput;
   
 function Binomial(replacedFragment) {
-  MathCommand.call(this, '\\binom', undefined, replacedFragment);
+  MathCommand.call(this, '\\binom', undefined, undefined, replacedFragment);
   this.jQ.wrapInner('<span class="array"></span>').prepend('<span class="paren">(</span>').append('<span class="paren">)</span>');
 }
 _ = Binomial.prototype = new MathCommand;
 _.html_template =
   ['<span></span>', '<span></span>', '<span></span>'];
+_.text_template = ['choose(',',',')'];
 _.redraw = function() {
   this.jQ.children(':first').add(this.jQ.children(':last'))
     .css('fontSize',
@@ -502,16 +515,22 @@ _.placeCursor = LiveFraction.prototype.placeCursor;
 LatexCmds.choose = Choose;
 
 function Vector(replacedFragment) {
-  MathCommand.call(this, '\\vector', undefined, replacedFragment);
+  MathCommand.call(this, '\\vector', undefined, undefined, replacedFragment);
 }
 _ = Vector.prototype = new MathCommand;
 _.html_template = ['<span class="array"></span>', '<span></span>'];
 _.latex = function() {
-  return '\\begin{matrix}' + this.foldChildren([], function (latex, child){
+  return '\\begin{matrix}' + this.foldChildren([], function(latex, child) {
     latex.push(child.latex());
     return latex;
   }).join('\\\\') + '\\end{matrix}';
 };
+_.text = function() {
+  return '[' + this.foldChildren([], function(latex, child) {
+    text.push(child.text());
+    return text;
+  }).join() + ']';
+}
 _.placeCursor = function(cursor) {
   this.cursor = cursor.appendTo(this.firstChild);
 };
@@ -603,4 +622,6 @@ LatexCmds.editable = proto(RootMathCommand, function() {
     this.cursor.appendTo(this);
     MathBlock.prototype.blur.call(this);
   };
+  this.text = function(){ return this.firstChild.text(); };
 });
+

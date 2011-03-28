@@ -8,7 +8,7 @@ $.fn.mathquill = function(cmd, latex) {
   switch (cmd) {
   case 'redraw':
     this.find(':not(:has(:first))')
-      .mathquill(jQueryDataKey).cmd.redraw();
+      .data(jQueryDataKey).cmd.redraw();
     return this;
   case 'revert':
     return this.each(function() {
@@ -27,6 +27,9 @@ $.fn.mathquill = function(cmd, latex) {
 
     var data = this.data(jQueryDataKey);
     return data && data.block && data.block.latex();
+  case 'text':
+    var data = this.data(jQueryDataKey);
+    return data && data.block && data.block.text();
   case 'html':
     return this.html().replace(/<span class="?cursor( blink)?"?><\/span>/i, '')
       .replace(/<span class="?textarea"?><textarea><\/textarea><\/span>/i, '');
@@ -38,7 +41,7 @@ $.fn.mathquill = function(cmd, latex) {
           cursor = block && block.cursor;
 
         if (cursor) {
-          cursor.show().writeLatex(latex);
+          cursor.writeLatex(latex);
           block.blur();
         }
       });
@@ -59,3 +62,4 @@ $(function() {
   $('.mathquill-textbox').mathquill('textbox');
   $('.mathquill-embedded-latex').mathquill();
 });
+

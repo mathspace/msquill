@@ -133,6 +133,7 @@
   line-height: 1;
   display: -moz-inline-box;
   display: inline-block;
+  -moz-user-select: none;
 }
 .mathquill-rendered-math { 
   min-width: 1.9em\0/ /* Fixes display of square root in IE8 */
@@ -196,10 +197,14 @@
 .mathquill-rendered-math sub {
   vertical-align: -.4em;
 }
-.mathquill-rendered-math sup.limit, .mathquill-rendered-math sub.limit {
+.mathquill-rendered-math sup.nthroot {
+  margin-right: -.7em;
+}
+.mathquill-rendered-math sup.limit, .mathquill-rendered-math sub.limit,
+.mathquill-rendered-math sup.nthroot {
   font-size: 80%;
 }
-.mathquill-rendered-math sup.limit {
+.mathquill-rendered-math sup.limit, .mathquill-rendered-math sup.nthroot {
   vertical-align: .8em;
 }
 .mathquill-rendered-math sub.limit {

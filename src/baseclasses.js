@@ -28,8 +28,8 @@ _.foldChildren = function(fold, fn) {
 _.keydown = function(e) {
   return this.parent.keydown(e);
 };
-_.keypress = function(e) {
-  return this.parent.keypress(e);
+_.textInput = function(ch) {
+  return this.parent.textInput(ch);
 };
 
 /**
@@ -37,12 +37,13 @@ _.keypress = function(e) {
  * Descendant commands are organized into blocks.
  * May be passed a MathFragment that's being replaced.
  */
-function MathCommand(cmd, html_template, replacedFragment) {
+function MathCommand(cmd, html_template, text_template, replacedFragment) {
   if (!arguments.length) return;
   var self = this; // minifier optimization
 
   self.cmd = cmd;
   if (html_template) self.html_template = html_template;
+  if (text_template) self.text_template = text_template;
 
   self.jQ = $(self.html_template[0]).data(jQueryDataKey, {cmd: self});
   self.initBlocks(replacedFragment);
@@ -96,6 +97,17 @@ _.latex = function() {
     return latex + '{' + (child.latex() || ' ') + '}';
   });
 };
+_.text = function() {
+  var i = 0;
+  return this.foldChildren(this.text_template[i], function(text, child) {
+    i += 1;
+    var child_text = child.text();
+    if (text && this.text_template[i] === '('
+        && child_text[0] === '(' && child_text.slice(-1) === ')')
+      return text + child_text.slice(1, -1) + this.text_template[i];
+    return text + child.text() + (this.text_template[i] || '');
+  });
+};
 _.remove = function() {
   var self = this,
       prev = self.prev,
@@ -132,12 +144,14 @@ _.isEmpty = function() {
 /**
  * Lightweight command without blocks or children.
  */
-function Symbol(cmd, html) {
-  MathCommand.call(this, cmd, [ html ]);
+function Symbol(cmd, html, text) {
+  MathCommand.call(this, cmd, [ html ],
+    [ text || (cmd && cmd.length > 1 ? cmd.slice(1) : cmd) ]);
 }
 _ = Symbol.prototype = new MathCommand;
 _.initBlocks = $.noop;
 _.latex = function(){ return this.cmd; };
+_.text = function(){ return this.text_template; };
 _.placeCursor = $.noop;
 _.isEmpty = function(){ return true; };
 
@@ -152,6 +166,13 @@ _.latex = function() {
   return this.foldChildren('', function(latex, child) {
     return latex + child.latex();
   });
+};
+_.text = function() {
+  return this.firstChild === this.lastChild ?
+    this.firstChild.text() :
+    this.foldChildren('(', function(text, child) {
+      return text + child.text();
+    }) + ')';
 };
 _.isEmpty = function() {
   return this.firstChild === 0 && this.lastChild === 0;
@@ -236,3 +257,4 @@ _.blockify = function() {
 
   return newBlock;
 };
+

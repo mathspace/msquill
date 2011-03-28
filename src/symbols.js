@@ -15,7 +15,17 @@ LatexCmds.f = bind(Symbol, 'f', '<var class="florin">&fnof;</var>');
 function Variable(ch, html) {
   Symbol.call(this, ch, '<var>'+(html || ch)+'</var>');
 }
-Variable.prototype = Symbol.prototype;
+_ = Variable.prototype = new Symbol;
+_.text = function() {
+  var text = this.cmd;
+  if (this.prev && !(this.prev instanceof Variable)
+      && !(this.prev instanceof BinaryOperator))
+    text = '*' + text;
+  if (this.next && !(this.next instanceof BinaryOperator)
+      && !(this.next.cmd === '^'))
+    text += '*';
+  return text;
+};
 
 function VanillaSymbol(ch, html) {
   Symbol.call(this, ch, '<span>'+(html || ch)+'</span>');
@@ -131,8 +141,8 @@ LatexCmds.forall = proto(Symbol, function(replacedFragment, latex) {
   VanillaSymbol.call(this,'\\'+latex+' ','&'+latex+';');
 });
 
-function BinaryOperator(cmd, html) {
-  Symbol.call(this, cmd, '<span class="binary-operator">'+html+'</span>');
+function BinaryOperator(cmd, html, text) {
+  Symbol.call(this, cmd, '<span class="binary-operator">'+html+'</span>', text);
 }
 BinaryOperator.prototype = new Symbol; //so instanceof will work
 
@@ -177,12 +187,16 @@ LatexCmds.cong =
 LatexCmds.equiv =
 LatexCmds.oplus =
 LatexCmds.otimes = proto(BinaryOperator, function(replacedFragment, latex) {
-  BinaryOperator.call(this,'\\'+latex+' ','&'+latex+';');
+  BinaryOperator.call(this, '\\'+latex+' ', '&'+latex+';');
+});
+
+LatexCmds.times = proto(BinaryOperator, function(replacedFragment, latex) {
+  BinaryOperator.call(this, '\\times ', '&times;', '[x]')
 });
 CharCmds['*'] = LatexCmds.times = bind(BinaryOperator, '\\times', '&times;');
 
 LatexCmds.div = LatexCmds.divide = LatexCmds.divides =
-  bind(BinaryOperator,'\\div ','&divide;');
+  bind(BinaryOperator,'\\div ','&divide;', '[/]');
 
 LatexCmds.ne = LatexCmds.neq = bind(BinaryOperator,'\\ne ','&ne;');
 
@@ -295,7 +309,7 @@ LatexCmds.H = LatexCmds.Hamiltonian = LatexCmds.quaternions = LatexCmds.Quaterni
 //spacing
 LatexCmds.quad = LatexCmds.emsp = bind(VanillaSymbol,'\\quad ','    ');
 LatexCmds.qquad = bind(VanillaSymbol,'\\qquad ','        ');
-/* spacing special characters, gonna have to implement this in LatexCommandInput.prototype.keypress somehow
+/* spacing special characters, gonna have to implement this in LatexCommandInput.prototype.textInput somehow
 case ',':
   return new VanillaSymbol('\\, ',' ');
 case ':':
@@ -402,8 +416,6 @@ LatexCmds.lfloor = bind(VanillaSymbol, '\\lfloor', '&#8970;');
 LatexCmds.rfloor = bind(VanillaSymbol, '\\rfloor', '&#8971;');
 LatexCmds.lceil = bind(VanillaSymbol, '\\lceil', '&#8968;');
 LatexCmds.rceil = bind(VanillaSymbol, '\\rceil', '&#8969;');
-LatexCmds.langle = bind(VanillaSymbol, '\\langle', '&#9001;');
-LatexCmds.rangle = bind(VanillaSymbol, '\\rangle', '&#9002;');
 LatexCmds.slash = bind(VanillaSymbol, '\\slash', '&#47;');
 LatexCmds.opencurlybrace = bind(VanillaSymbol, '\\opencurlybrace', '&#123;');
 LatexCmds.closecurlybrace = bind(VanillaSymbol, '\\closecurlybrace', '&#125;');
@@ -548,3 +560,4 @@ LatexCmds.lim = NonItalicizedFunction;
       NonItalicizedFunction;
   }
 }());
+

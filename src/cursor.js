@@ -190,26 +190,15 @@ _.seek = function(target, pageX, pageY) {
 };
 _.writeLatex = function(latex) {
   this.deleteSelection();
-  var latex = latex.match(/\\[a-z]*|[^\s]/ig) || 0;
+  latex = ( latex && latex.match(/\\text\{([^{]|\\\{)*\}|\\[a-z]*|[^\s]/ig) ) || 0;
   (function writeLatexBlock(cursor) {
     while (latex.length) {
       var token = latex.shift(); //pop first item
       if (!token || token === '}') return;
 
       var cmd;
-      if (token === '\\text') {
-        var text = latex.shift();
-        if (text === '{') {
-          text = token = latex.shift();
-          while (token !== '}') {
-            if (token === '\\') //skip tokens immediately following backslash
-              text += token = latex.shift();
-
-            text += token = latex.shift();
-          }
-          text = text.slice(0,-1); //cut trailing '}'
-        }
-        cmd = new TextBlock(text);
+      if (token.slice(0, 6) === '\\text{') {
+        cmd = new TextBlock(token.slice(7, -1));
         cursor.insertNew(cmd).insertAfter(cmd);
         continue; //skip recursing through children
       }
@@ -218,7 +207,7 @@ _.writeLatex = function(latex) {
         if (token === '\\')
           token = latex.shift();
 
-        cursor.write(token);
+        cursor.insertCh(token);
         cmd = cursor.prev || cursor.parent.parent;
 
         if (cursor.prev) //was a close-paren, so break recursion
@@ -255,7 +244,7 @@ _.writeLatex = function(latex) {
         if (token === '{')
           writeLatexBlock(cursor);
         else
-          cursor.write(token);
+          cursor.insertCh(token);
       });
       cursor.insertAfter(cmd);
     }
@@ -263,6 +252,9 @@ _.writeLatex = function(latex) {
   return this.hide();
 };
 _.write = function(ch) {
+  return this.show().insertCh(ch);
+};
+_.insertCh = function(ch) {
   if (this.selection) {
     //gotta do this before this.selection is mutated by 'new cmd(this.selection)'
     this.prev = this.selection.prev;
@@ -567,3 +559,4 @@ _.detach = function() {
   };
   return this;
 };
+
