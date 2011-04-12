@@ -171,7 +171,7 @@ _.redraw = function() {
   });
 };
 
-LatexCmds.sqrt = LatexCmds['~'] = SquareRoot;
+LatexCmds.sqrt = LatexCmds['√'] = LatexCmds['~'] = SquareRoot;
 
 function NthRoot(replacedFragment) {
   SquareRoot.call(this, replacedFragment);

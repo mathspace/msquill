@@ -30,7 +30,7 @@ _.show = function() {
       if (this.selection && this.selection.prev === this.prev)
         this.jQ.insertBefore(this.selection.jQ);
       else
-        this.jQ.insertBefore(this.next.jQ);
+        this.jQ.insertBefore(this.next.jQ.first());
     }
     else
       this.jQ.appendTo(this.parent.jQ);
@@ -198,7 +198,7 @@ _.writeLatex = function(latex) {
 
       var cmd;
       if (token.slice(0, 6) === '\\text{') {
-        cmd = new TextBlock(token.slice(7, -1));
+        cmd = new TextBlock(token.slice(6, -1));
         cursor.insertNew(cmd).insertAfter(cmd);
         continue; //skip recursing through children
       }
