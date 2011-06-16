@@ -408,7 +408,7 @@ function createRoot(jQ, root, textbox, editable) {
   }).bind('click.mathquill', focus); //stupid Mobile Safari
 
   //clipboard event handling
-  function deleteSelection(){ cursor.deleteSelection(); cursor.redraw(); });
+  function deleteSelection(){ cursor.deleteSelection(); cursor.redraw(); };
   jQ.bind('cut', function() {
     setTextareaSelection();
     if (cursor.selection)
