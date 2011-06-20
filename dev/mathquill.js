@@ -292,10 +292,16 @@ function createRoot(jQ, root, textbox, editable) {
   root.renderLatex(contents.text());
 
   //textarea stuff
-  root.textarea = $('<span class="textarea"><textarea></textarea></span>');
-  var textarea = root.textarea.children();
+  var textareaSpan = root.textarea = $('<span class="textarea"><textarea></textarea></span>'),
+    textarea = textareaSpan.children();
 
-  function updateTextarea() {
+  var textareaSelectionTimeout;
+  root.selectionChanged = function() {
+    if (textareaSelectionTimeout === undefined)
+      textareaSelectionTimeout = setTimeout(setTextareaSelection);
+  };
+  function setTextareaSelection() {
+    textareaSelectionTimeout = undefined;
     var latex = cursor.selection ? '$'+cursor.selection.latex()+'$' : '';
     textarea.val(latex);
     if (latex) {
@@ -311,7 +317,7 @@ function createRoot(jQ, root, textbox, editable) {
 
   //prevent native selection except textarea
   jQ.bind('selectstart.mathquill', function(e) {
-    if (e.target != textarea[0])
+    if (e.target !== textarea[0])
       e.preventDefault();
     e.stopPropagation();
   });
@@ -323,6 +329,9 @@ function createRoot(jQ, root, textbox, editable) {
     cursor.seek($(e.target), e.pageX, e.pageY);
 
     anticursor = new MathFragment(cursor.parent, cursor.prev, cursor.next);
+
+    if (!editable)
+      jQ.prepend(textareaSpan);
 
     jQ.mousemove(mousemove);
     $(document).mousemove(docmousemove).mouseup(mouseup);
@@ -345,36 +354,30 @@ function createRoot(jQ, root, textbox, editable) {
   function mouseup(e) {
     anticursor = undefined;
     cursor.blink = blink;
-    if (editable && !cursor.selection) cursor.show();
+    if (!cursor.selection) {
+      if (editable)
+        cursor.show();
+      else
+        textareaSpan.detach();
+    }
     jQ.unbind('mousemove', mousemove);
     $(document).unbind('mousemove', docmousemove).unbind('mouseup', mouseup);
   }
 
-  if (!editable) { //if static, only prepend textarea when there's selected text
-    var textareaSpan = root.textarea, textareaDetached = true;
-    root.selectionChanged = function() {
-      if (cursor.selection) {
-        if (textareaDetached) {
-          textareaSpan.prependTo(jQ);
-          textareaDetached = false;
-        }
-        updateTextarea();
-      }
-      else if (!textareaDetached) {
-        textareaSpan.detach();
-        textareaDetached = true;
-      }
-    };
+  if (!editable) {
+    jQ.bind('cut paste', false).bind('copy', setTextareaSelection)
+      .prepend('<span class="selectable">$'+root.latex()+'$</span>');
     textarea.blur(function() {
       cursor.clearSelection();
+      setTimeout(detach); //detaching during blur explodes in WebKit
     });
-    $('<span class="selectable"></span>').text('$'+root.latex()+'$')
-      .prependTo(jQ.bind('cut paste', false));
-    return; //and don't bother with key events
+    function detach() {
+      textareaSpan.detach();
+    }
+    return;
   }
 
-  root.selectionChanged = updateTextarea;
-  root.textarea.prependTo(jQ);
+  jQ.prepend(textareaSpan);
 
   //root CSS classes
   jQ.addClass('mathquill-editable');
@@ -388,7 +391,7 @@ function createRoot(jQ, root, textbox, editable) {
     cursor.parent.jQ.addClass('hasCursor');
     if (cursor.selection) {
       cursor.selection.jQ.removeClass('blur');
-      setTimeout(updateTextarea); //select textarea after focus
+      setTimeout(root.selectionChanged); //select textarea after focus
     }
     else
       cursor.show();
@@ -412,10 +415,12 @@ function createRoot(jQ, root, textbox, editable) {
 
   //clipboard event handling
   jQ.bind('cut', function(e) {
+    setTextareaSelection();
     if (cursor.selection)
       setTimeout(function(){ cursor.deleteSelection(); cursor.redraw(); });
     e.stopPropagation();
   }).bind('copy', function(e) {
+    setTextareaSelection();
     skipTextInput = true;
     e.stopPropagation();
   }).bind('paste', function(e) {
@@ -449,6 +454,12 @@ function createRoot(jQ, root, textbox, editable) {
     else
       cursor.parent.keydown(lastKeydn.evt);
 
+    if (textareaSelectionTimeout !== undefined)
+      clearTimeout(textareaSelectionTimeout);
+
+    if (cursor.selection || textareaSelectionTimeout !== undefined)
+      textarea.val('');
+
     //after keypress event, trigger virtual textInput event if text was
     //input to textarea
     skipTextInput = false;
@@ -458,13 +469,18 @@ function createRoot(jQ, root, textbox, editable) {
   function textInput() {
     if (skipTextInput) return;
     var text = textarea.val();
-    if (!text) return;
-    textarea.val('');
-    // textarea can contain more than one character
-    // when typing quickly on slower platforms;
-    // so process each character separately
-    for (var i=0; i<text.length; i++) {
-        cursor.parent.textInput(text[i]);
+    if (text) {
+      textarea.val('');
+      // textarea can contain more than one character
+      // when typing quickly on slower platforms;
+      // so process each character separately
+      for (var i=0; i<text.length; i++) {
+          cursor.parent.textInput(text[i]);
+      }
+    }
+    else {
+      if (cursor.selection || textareaSelectionTimeout !== undefined)
+        setTextareaSelection();
     }
   }
 }
@@ -1931,29 +1947,29 @@ _.redraw = function() {
     if (ancestor.redraw)
       ancestor.redraw();
 };
-_.insertAt = function(parent, next, prev) {
+_.insertAt = function(parent, prev, next) {
   var old_parent = this.parent;
 
   this.parent = parent;
-  this.next = next;
   this.prev = prev;
+  this.next = next;
 
   old_parent.blur(); //blur may need to know cursor's destination
 };
 _.insertBefore = function(el) {
-  this.insertAt(el.parent, el, el.prev)
+  this.insertAt(el.parent, el.prev, el)
   this.parent.jQ.addClass('hasCursor');
   this.jQ.insertBefore(el.jQ.first());
   return this;
 };
 _.insertAfter = function(el) {
-  this.insertAt(el.parent, el.next, el);
+  this.insertAt(el.parent, el, el.next);
   this.parent.jQ.addClass('hasCursor');
   this.jQ.insertAfter(el.jQ.last());
   return this;
 };
 _.prependTo = function(el) {
-  this.insertAt(el, el.firstChild, 0);
+  this.insertAt(el, 0, el.firstChild);
   if (el.textarea) //never insert before textarea
     this.jQ.insertAfter(el.textarea);
   else
@@ -1962,7 +1978,7 @@ _.prependTo = function(el) {
   return this;
 };
 _.appendTo = function(el) {
-  this.insertAt(el, 0, el.lastChild);
+  this.insertAt(el, el.lastChild, 0);
   this.jQ.appendTo(el.jQ);
   el.focus();
   return this;
