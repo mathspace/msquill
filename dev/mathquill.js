@@ -47,19 +47,18 @@ _.textInput = function(ch) {
  * Descendant commands are organized into blocks.
  * May be passed a MathFragment that's being replaced.
  */
-function MathCommand(cmd, html_template, text_template, replacedFragment) {
-  if (!arguments.length) return;
+function MathCommand(){}
+_ = MathCommand.prototype = new MathElement;
+_.init = function(cmd, html_template, text_template, replacedFragment) {
   var self = this; // minifier optimization
 
-  self.cmd = cmd;
+  if (cmd) self.cmd = cmd;
   if (html_template) self.html_template = html_template;
   if (text_template) self.text_template = text_template;
 
   self.jQ = $(self.html_template[0]).data(jQueryDataKey, {cmd: self});
   self.initBlocks(replacedFragment);
-}
-
-_ = MathCommand.prototype = new MathElement;
+};
 _.initBlocks = function(replacedFragment) {
   var self = this;
   //single-block commands
@@ -118,6 +117,50 @@ _.text = function() {
     return text + child.text() + (this.text_template[i] || '');
   });
 };
+_.insertAt = function(cursor) {
+  var cmd = this;
+
+  cmd.parent = cursor.parent;
+  cmd.next = cursor.next;
+  cmd.prev = cursor.prev;
+
+  if (cursor.prev)
+    cursor.prev.next = cmd;
+  else
+    cursor.parent.firstChild = cmd;
+
+  if (cursor.next)
+    cursor.next.prev = cmd;
+  else
+    cursor.parent.lastChild = cmd;
+
+  cmd.jQ.insertBefore(cursor.jQ);
+
+  //adjust context-sensitive spacing
+  cmd.respace();
+  if (cursor.next)
+    cursor.next.respace();
+  if (cursor.prev)
+    cursor.prev.respace();
+
+  cursor.prev = cmd;
+
+  cmd.placeCursor(cursor);
+
+  cursor.redraw();
+};
+_.respace = $.noop; //placeholder for context-sensitive spacing
+_.placeCursor = function(cursor) {
+  //append the cursor to the first empty child, or if none empty, the last one
+  cursor.appendTo(this.foldChildren(this.firstChild, function(prev, child) {
+    return prev.isEmpty() ? prev : child;
+  }));
+};
+_.isEmpty = function() {
+  return this.foldChildren(true, function(isEmpty, child) {
+    return isEmpty && child.isEmpty();
+  });
+};
 _.remove = function() {
   var self = this,
       prev = self.prev,
@@ -138,24 +181,12 @@ _.remove = function() {
 
   return self;
 };
-_.respace = $.noop; //placeholder for context-sensitive spacing
-_.placeCursor = function(cursor) {
-  //append the cursor to the first empty child, or if none empty, the last one
-  cursor.appendTo(this.foldChildren(this.firstChild, function(prev, child) {
-    return prev.isEmpty() ? prev : child;
-  }));
-};
-_.isEmpty = function() {
-  return this.foldChildren(true, function(isEmpty, child) {
-    return isEmpty && child.isEmpty();
-  });
-};
 
 /**
  * Lightweight command without blocks or children.
  */
 function Symbol(cmd, html, text) {
-  MathCommand.call(this, cmd, [ html ],
+  this.init(cmd, [ html ],
     [ text || (cmd && cmd.length > 1 ? cmd.slice(1) : cmd) ]);
 }
 _ = Symbol.prototype = new MathCommand;
@@ -649,7 +680,7 @@ _.textInput = function(ch) {
 };
 
 function RootMathCommand(cursor) {
-  MathCommand.call(this, '$');
+  this.init('$');
   this.firstChild.cursor = cursor;
   this.firstChild.textInput = function(ch) {
     if (this.skipTextInput) return;
@@ -734,7 +765,7 @@ function proto(parent, child) { //shorthand for prototyping
 }
 
 function SupSub(cmd, html, text, replacedFragment) {
-  MathCommand.call(this, cmd, [ html ], [ text ], replacedFragment);
+  this.init(cmd, [ html ], [ text ], replacedFragment);
 }
 _ = SupSub.prototype = new MathCommand;
 _.latex = function() {
@@ -811,7 +842,7 @@ LatexCmds['^'] = proto(SupSub, function(replacedFragment) {
 });
 
 function Fraction(replacedFragment) {
-  MathCommand.call(this, '\\frac', undefined, undefined, replacedFragment);
+  this.init('\\frac', undefined, undefined, replacedFragment);
   this.jQ.append('<span style="width:0">&nbsp;</span>');
 }
 _ = Fraction.prototype = new MathCommand;
@@ -822,7 +853,7 @@ _.html_template = [
 ];
 _.text_template = ['(', '/', ')'];
 
-LatexCmds.frac = LatexCmds.fraction = Fraction;
+LatexCmds.frac = LatexCmds.dfrac = LatexCmds.cfrac = LatexCmds.fraction = Fraction;
 
 function LiveFraction() {
   Fraction.apply(this, arguments);
@@ -860,7 +891,7 @@ _.placeCursor = function(cursor) { //TODO: better architecture so this can be do
 CharCmds['/'] = LiveFraction;
 
 function SquareRoot(replacedFragment) {
-  MathCommand.call(this, '\\sqrt', undefined, undefined, replacedFragment);
+  this.init('\\sqrt', undefined, undefined, replacedFragment);
 }
 _ = SquareRoot.prototype = new MathCommand;
 _.html_template = [
@@ -898,7 +929,7 @@ LatexCmds.nthroot = NthRoot;
 
 // Round/Square/Curly/Angle Brackets (aka Parens/Brackets/Braces)
 function Bracket(open, close, cmd, end, replacedFragment) {
-  MathCommand.call(this, '\\left'+cmd,
+  this.init('\\left'+cmd,
     ['<span><span class="paren">'+open+'</span><span></span><span class="paren">'+close+'</span></span>'],
     [open, close],
     replacedFragment);
@@ -992,9 +1023,10 @@ function TextBlock(replacedText) {
   else if (typeof replacedText === 'string')
     this.replacedText = replacedText;
 
-  MathCommand.call(this, '\\text');
+  this.init();
 }
 _ = TextBlock.prototype = new MathCommand;
+_.cmd = '\\text';
 _.html_template = ['<span class="text"></span>'];
 _.text_template = ['"', '"'];
 _.initBlocks = function() { //FIXME: another possible Law of Demeter violation, but this seems much cleaner, like it was supposed to be done this way
@@ -1078,7 +1110,7 @@ _.focus = function() {
   MathBlock.prototype.focus.call(this);
 
   var textblock = this.parent;
-  if (textblock.next instanceof TextBlock) { //TODO: seems like there should be a better way to move MathElements around
+  if (textblock.next.cmd === textblock.cmd) { //TODO: seems like there should be a better way to move MathElements around
     var innerblock = this,
       cursor = textblock.cursor,
       next = textblock.next.firstChild;
@@ -1105,7 +1137,7 @@ _.focus = function() {
 
     cursor.redraw();
   }
-  else if (textblock.prev instanceof TextBlock) {
+  else if (textblock.prev.cmd === textblock.cmd) {
     var cursor = textblock.cursor;
     if (cursor.prev)
       textblock.prev.firstChild.focus();
@@ -1115,11 +1147,39 @@ _.focus = function() {
   return this;
 };
 
-LatexCmds.text = CharCmds.$ = TextBlock;
+LatexCmds.text =
+LatexCmds.textnormal =
+LatexCmds.textrm =
+LatexCmds.textup =
+CharCmds.$ =
+  TextBlock;
+
+function makeTextBlock(latex, html) {
+  function SomeTextBlock() {
+    TextBlock.apply(this, arguments);
+  }
+  _ = SomeTextBlock.prototype = new TextBlock;
+  _.cmd = latex;
+  _.html_template = [ html ];
+
+  return SomeTextBlock;
+}
+
+LatexCmds.emph =
+LatexCmds.textsl =
+LatexCmds.textit =
+  makeTextBlock('\\textit', '<i class="text"></i>');
+
+LatexCmds.textbf = makeTextBlock('\\textbf', '<b class="text"></b>');
+LatexCmds.textsf = makeTextBlock('\\textsf', '<span style="font-family:sans-serif" class="text"></span>');
+LatexCmds.texttt = makeTextBlock('\\texttt', '<span style="font-family:monospace" class="text"></span>');
+LatexCmds.textsc = makeTextBlock('\\textsc', '<span style="font-variant:small-caps" class="text"></span>');
+LatexCmds.uppercase = makeTextBlock('\\uppercase', '<span style="text-transform:uppercase" class="text"></span>');
+LatexCmds.lowercase = makeTextBlock('\\lowercase', '<span style="text-transform:lowercase" class="text"></span>');
 
 // input box to type a variety of LaTeX commands beginning with a backslash
 function LatexCommandInput(replacedFragment) {
-  MathCommand.call(this, '\\');
+  this.init('\\');
   if (replacedFragment) {
     this.replacedFragment = replacedFragment.detach();
     this.isEmpty = function(){ return false; };
@@ -1195,7 +1255,7 @@ _.renderCommand = function() {
 CharCmds['\\'] = LatexCommandInput;
   
 function Binomial(replacedFragment) {
-  MathCommand.call(this, '\\binom', undefined, undefined, replacedFragment);
+  this.init('\\binom', undefined, undefined, replacedFragment);
   this.jQ.wrapInner('<span class="array"></span>').prepend('<span class="paren">(</span>').append('<span class="paren">)</span>');
 }
 _ = Binomial.prototype = new MathCommand;
@@ -1220,7 +1280,7 @@ _.placeCursor = LiveFraction.prototype.placeCursor;
 LatexCmds.choose = Choose;
 
 function Vector(replacedFragment) {
-  MathCommand.call(this, '\\vector', undefined, undefined, replacedFragment);
+  this.init('\\vector', undefined, undefined, replacedFragment);
 }
 _ = Vector.prototype = new MathCommand;
 _.html_template = ['<span class="array"></span>', '<span></span>'];
@@ -1317,7 +1377,7 @@ _.keydown = function(e) {
 LatexCmds.vector = Vector;
 
 LatexCmds.editable = proto(RootMathCommand, function() {
-  MathCommand.call(this, '\\editable');
+  this.init('\\editable');
   createRoot(this.jQ, this.firstChild, false, true);
   var cursor;
   this.placeCursor = function(c) { cursor = c.appendTo(this.firstChild); };
@@ -2171,35 +2231,7 @@ _.insertCh = function(ch) {
   return this.insertNew(cmd);
 };
 _.insertNew = function(cmd) {
-  cmd.parent = this.parent;
-  cmd.next = this.next;
-  cmd.prev = this.prev;
-
-  if (this.prev)
-    this.prev.next = cmd;
-  else
-    this.parent.firstChild = cmd;
-
-  if (this.next)
-    this.next.prev = cmd;
-  else
-    this.parent.lastChild = cmd;
-
-  cmd.jQ.insertBefore(this.jQ);
-
-  //adjust context-sensitive spacing
-  cmd.respace();
-  if (this.next)
-    this.next.respace();
-  if (this.prev)
-    this.prev.respace();
-
-  this.prev = cmd;
-
-  cmd.placeCursor(this);
-
-  this.redraw();
-
+  cmd.insertAt(this);
   return this;
 };
 _.unwrapGramp = function() {
