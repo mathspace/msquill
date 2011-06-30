@@ -1413,7 +1413,7 @@ _.insertAt = function(cursor) {
   MathCommand.prototype.insertAt.apply(this, arguments);
   var cmd = this.cmd;
   //want the longest possible autocommand, so assemble longest series of letters (Variables) first
-  for (var i = 0, prev = this.prev; i < 6 && prev && prev instanceof Variable; i += 1, prev = prev.prev)
+  for (var i = 0, prev = this.prev; i < 8 && prev && prev instanceof Variable; i += 1, prev = prev.prev)
     cmd = prev.cmd + cmd;
   //and check for autocommand before that, since autocommands may be prefixes of longer autocommands
   if (prev instanceof UnItalicized && AutoCmds.hasOwnProperty(prev.text() + cmd)) {
