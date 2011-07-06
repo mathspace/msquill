@@ -106,6 +106,7 @@ _.latex = function() {
     return latex + '{' + (child.latex() || ' ') + '}';
   });
 };
+_.text_template = [''];
 _.text = function() {
   var i = 0;
   return this.foldChildren(this.text_template[i], function(text, child) {
@@ -115,50 +116,6 @@ _.text = function() {
         && child_text[0] === '(' && child_text.slice(-1) === ')')
       return text + child_text.slice(1, -1) + this.text_template[i];
     return text + child.text() + (this.text_template[i] || '');
-  });
-};
-_.insertAt = function(cursor) {
-  var cmd = this;
-
-  cmd.parent = cursor.parent;
-  cmd.next = cursor.next;
-  cmd.prev = cursor.prev;
-
-  if (cursor.prev)
-    cursor.prev.next = cmd;
-  else
-    cursor.parent.firstChild = cmd;
-
-  if (cursor.next)
-    cursor.next.prev = cmd;
-  else
-    cursor.parent.lastChild = cmd;
-
-  cursor.prev = cmd;
-
-  cmd.jQ.insertBefore(cursor.jQ);
-
-  //adjust context-sensitive spacing
-  cmd.respace();
-  if (cmd.next)
-    cmd.next.respace();
-  if (cmd.prev)
-    cmd.prev.respace();
-
-  cmd.placeCursor(cursor);
-
-  cursor.redraw(); //this will soon be cmd.trigger('redraw')
-};
-_.respace = $.noop; //placeholder for context-sensitive spacing
-_.placeCursor = function(cursor) {
-  //append the cursor to the first empty child, or if none empty, the last one
-  cursor.appendTo(this.foldChildren(this.firstChild, function(prev, child) {
-    return prev.isEmpty() ? prev : child;
-  }));
-};
-_.isEmpty = function() {
-  return this.foldChildren(true, function(isEmpty, child) {
-    return isEmpty && child.isEmpty();
   });
 };
 _.remove = function() {
@@ -180,6 +137,18 @@ _.remove = function() {
   self.jQ.remove();
 
   return self;
+};
+_.respace = $.noop; //placeholder for context-sensitive spacing
+_.placeCursor = function(cursor) {
+  //append the cursor to the first empty child, or if none empty, the last one
+  cursor.appendTo(this.foldChildren(this.firstChild, function(prev, child) {
+    return prev.isEmpty() ? prev : child;
+  }));
+};
+_.isEmpty = function() {
+  return this.foldChildren(true, function(isEmpty, child) {
+    return isEmpty && child.isEmpty();
+  });
 };
 
 /**
@@ -764,6 +733,44 @@ function proto(parent, child) { //shorthand for prototyping
   return child;
 }
 
+function bind(cons) { //shorthand for binding arguments to constructor
+  var args = Array.prototype.slice.call(arguments, 1);
+
+  return proto(cons, function() {
+    cons.apply(this, Array.prototype.concat.apply(args, arguments));
+  });
+}
+
+function Style(cmd, html_template, replacedFragment) {
+  this.init(cmd, [ html_template ], undefined, replacedFragment);
+}
+proto(MathCommand, Style);
+//fonts
+LatexCmds.mathrm = bind(Style, '\\mathrm', '<span class="roman font"></span>');
+LatexCmds.mathit = bind(Style, '\\mathit', '<i class="font"></i>');
+LatexCmds.mathbf = bind(Style, '\\mathbf', '<b class="font"></b>');
+LatexCmds.mathsf = bind(Style, '\\mathsf', '<span class="sans-serif font"></span>');
+LatexCmds.mathtt = bind(Style, '\\mathtt', '<span class="monospace font"></span>');
+//text-decoration
+LatexCmds.underline = bind(Style, '\\underline', '<span class="underline"></span>');
+LatexCmds.overline = LatexCmds.bar = bind(Style, '\\overline', '<span class="overline"></span>');
+
+function PoorMansBold(replacedFragment) {
+  this.init('\\pmb', undefined, undefined, replacedFragment);
+}
+_ = PoorMansBold.prototype = new MathCommand;
+_.html_template = ['<span class="pmb"></span>', '<span class="pmb-main"></span>'];
+_.placeCursor = function(cursor) {
+  this.cursor = cursor.appendTo(this.firstChild);
+};
+_.redraw = function() {
+  this.cursor.hide();
+  this.firstChild.jQ.prevAll().remove();
+  this.firstChild.jQ.clone(true).removeClass().addClass('pmb-clone').prependTo(this.jQ);
+  this.cursor.show();
+};
+LatexCmds.pmb = PoorMansBold;
+
 function SupSub(cmd, html, text, replacedFragment) {
   this.init(cmd, [ html ], [ text ], replacedFragment);
 }
@@ -1147,11 +1154,12 @@ _.focus = function() {
   return this;
 };
 
+CharCmds.$ =
 LatexCmds.text =
 LatexCmds.textnormal =
 LatexCmds.textrm =
 LatexCmds.textup =
-CharCmds.$ =
+LatexCmds.textmd =
   TextBlock;
 
 function makeTextBlock(latex, html) {
@@ -1165,17 +1173,21 @@ function makeTextBlock(latex, html) {
   return SomeTextBlock;
 }
 
-LatexCmds.emph =
-LatexCmds.textsl =
-LatexCmds.textit =
+LatexCmds.em = LatexCmds.italic = LatexCmds.italics =
+LatexCmds.emph = LatexCmds.textit = LatexCmds.textsl =
   makeTextBlock('\\textit', '<i class="text"></i>');
-
-LatexCmds.textbf = makeTextBlock('\\textbf', '<b class="text"></b>');
-LatexCmds.textsf = makeTextBlock('\\textsf', '<span style="font-family:sans-serif" class="text"></span>');
-LatexCmds.texttt = makeTextBlock('\\texttt', '<span style="font-family:monospace" class="text"></span>');
-LatexCmds.textsc = makeTextBlock('\\textsc', '<span style="font-variant:small-caps" class="text"></span>');
-LatexCmds.uppercase = makeTextBlock('\\uppercase', '<span style="text-transform:uppercase" class="text"></span>');
-LatexCmds.lowercase = makeTextBlock('\\lowercase', '<span style="text-transform:lowercase" class="text"></span>');
+LatexCmds.strong = LatexCmds.bold = LatexCmds.textbf =
+  makeTextBlock('\\textbf', '<b class="text"></b>');
+LatexCmds.sf = LatexCmds.textsf =
+  makeTextBlock('\\textsf', '<span class="sans-serif text"></span>');
+LatexCmds.tt = LatexCmds.texttt =
+  makeTextBlock('\\texttt', '<span class="monospace text"></span>');
+LatexCmds.textsc =
+  makeTextBlock('\\textsc', '<span style="font-variant:small-caps" class="text"></span>');
+LatexCmds.uppercase =
+  makeTextBlock('\\uppercase', '<span style="text-transform:uppercase" class="text"></span>');
+LatexCmds.lowercase =
+  makeTextBlock('\\lowercase', '<span style="text-transform:lowercase" class="text"></span>');
 
 // input box to type a variety of LaTeX commands beginning with a backslash
 function LatexCommandInput(replacedFragment) {
@@ -1395,42 +1407,12 @@ LatexCmds.editable = proto(RootMathCommand, function() {
  * Symbols and Special Characters
  *********************************/
 
-function bind(cons) { //shorthand for binding arguments to constructor
-  var args = Array.prototype.slice.call(arguments, 1);
-
-  return proto(cons, function() {
-    cons.apply(this, args);
-  });
-}
-
 LatexCmds.f = bind(Symbol, 'f', '<var class="florin">&fnof;</var>');
 
 function Variable(ch, html) {
   Symbol.call(this, ch, '<var>'+(html || ch)+'</var>');
 }
 _ = Variable.prototype = new Symbol;
-_.insertAt = function(cursor) {
-  MathCommand.prototype.insertAt.apply(this, arguments);
-  var cmd = this.cmd;
-  //want the longest possible autocommand, so assemble longest series of letters (Variables) first
-  for (var i = 0, prev = this.prev; i < 8 && prev && prev instanceof Variable; i += 1, prev = prev.prev)
-    cmd = prev.cmd + cmd;
-  //and check for autocommand before that, since autocommands may be prefixes of longer autocommands
-  if (prev instanceof UnItalicized && AutoCmds.hasOwnProperty(prev.text() + cmd)) {
-    for (var i = 0; i < 1 + cmd.length; i += 1) cursor.backspace();
-    cursor.insertNew(new UnItalicized(undefined, prev.text() + cmd));
-  }
-  else { //and test if there's an autocommand here, starting with the longest possible and slicing
-    for (var i = 0; i < cmd.length; i += 1) {
-      if (AutoCmds.hasOwnProperty(cmd)) {
-        for (var i = 0; i < cmd.length; i += 1) cursor.backspace();
-        cursor.insertNew(new UnItalicized(undefined, cmd));
-        break;
-      }
-      cmd = cmd.slice(1);
-    }
-  }
-};
 _.text = function() {
   var text = this.cmd;
   if (this.prev && !(this.prev instanceof Variable)
@@ -1441,55 +1423,6 @@ _.text = function() {
     text += '*';
   return text;
 };
-
-function UnItalicized(replacedFragment, fn) {
-  Symbol.call(this, '\\'+fn+' ', '<span>'+fn+'</span>', fn);
-}
-_ = UnItalicized.prototype = new Symbol;
-_.respace = function()
-{
-  this.jQ[0].className =
-    (this.next instanceof SupSub || this.next instanceof Bracket) ?
-    '' : 'un-italicized';
-};
-//backslashless commands, words where adjacent letters (Variables)
-//that form them automatically are turned into commands
-var AutoCmds = {
-  ln: 1,
-  lg: 1,
-  log: 1,
-  span: 1,
-  proj: 1,
-  det: 1,
-  dim: 1,
-  min: 1,
-  max: 1,
-  mod: 1,
-  lcm: 1,
-  gcd: 1,
-  gcf: 1,
-  hcf: 1,
-  lim: 1
-};
-
-(function() {
-  var trigs = { sin: 1, cos: 1, tan: 1, sec: 1, cosec: 1, csc: 1, cotan: 1, cot: 1, ctg: 1 };
-  for (var trig in trigs) {
-    AutoCmds[trig] =
-    AutoCmds['arc'+trig] =
-      1;
-
-    LatexCmds[trig+'h'] =
-    LatexCmds['a'+trig] =
-    LatexCmds['a'+trig+'h'] =
-    LatexCmds['arc'+trig+'h'] =
-      UnItalicized;
-  }
-
-  for (var fn in AutoCmds)
-    LatexCmds[fn] = UnItalicized;
-}());
-
 
 function VanillaSymbol(ch, html) {
   Symbol.call(this, ch, '<span>'+(html || ch)+'</span>');
@@ -1985,6 +1918,45 @@ LatexCmds.deg = LatexCmds.degree = bind(VanillaSymbol,'^\\circ ','&deg;');
 
 LatexCmds.ang = LatexCmds.angle = bind(VanillaSymbol,'\\angle ','&ang;');
 
+
+function NonItalicizedFunction(replacedFragment, fn) {
+  Symbol.call(this, '\\'+fn+' ', '<span>'+fn+'</span>');
+}
+_ = NonItalicizedFunction.prototype = new Symbol;
+_.respace = function()
+{
+  this.jQ[0].className =
+    (this.next instanceof SupSub || this.next instanceof Bracket) ?
+    '' : 'non-italicized-function';
+};
+
+LatexCmds.ln =
+LatexCmds.lg =
+LatexCmds.log =
+LatexCmds.span =
+LatexCmds.proj =
+LatexCmds.det =
+LatexCmds.dim =
+LatexCmds.min =
+LatexCmds.max =
+LatexCmds.mod =
+LatexCmds.lcm =
+LatexCmds.gcd =
+LatexCmds.gcf =
+LatexCmds.hcf =
+LatexCmds.lim = NonItalicizedFunction;
+
+(function() {
+  var trig = ['sin', 'cos', 'tan', 'sec', 'cosec', 'csc', 'cotan', 'cot'];
+  for (var i in trig) {
+    LatexCmds[trig[i]] =
+    LatexCmds[trig[i]+'h'] =
+    LatexCmds['a'+trig[i]] = LatexCmds['arc'+trig[i]] =
+    LatexCmds['a'+trig[i]+'h'] = LatexCmds['arc'+trig[i]+'h'] =
+      NonItalicizedFunction;
+  }
+}());
+
 /********************************************
  * Cursor and Selection "singleton" classes
  *******************************************/
@@ -2263,7 +2235,35 @@ _.insertCh = function(ch) {
   return this.insertNew(cmd);
 };
 _.insertNew = function(cmd) {
-  cmd.insertAt(this);
+  cmd.parent = this.parent;
+  cmd.next = this.next;
+  cmd.prev = this.prev;
+
+  if (this.prev)
+    this.prev.next = cmd;
+  else
+    this.parent.firstChild = cmd;
+
+  if (this.next)
+    this.next.prev = cmd;
+  else
+    this.parent.lastChild = cmd;
+
+  cmd.jQ.insertBefore(this.jQ);
+
+  //adjust context-sensitive spacing
+  cmd.respace();
+  if (this.next)
+    this.next.respace();
+  if (this.prev)
+    this.prev.respace();
+
+  this.prev = cmd;
+
+  cmd.placeCursor(this);
+
+  this.redraw();
+
   return this;
 };
 _.unwrapGramp = function() {
