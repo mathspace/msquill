@@ -21,109 +21,58 @@ function createRoot(jQ, root, textbox, editable) {
 
   root.renderLatex(contents.text());
 
-  if (!editable) //if static, quit once we render the LaTeX
-    return;
+  //textarea stuff
+  var textareaSpan = root.textarea = $('<span class="textarea"><textarea></textarea></span>'),
+    textarea = textareaSpan.children();
 
-  root.textarea = $('<span class="textarea"><textarea></textarea></span>')
-    .prependTo(jQ.addClass('mathquill-editable'));
-  var textarea = root.textarea.children();
-  if (textbox)
-    jQ.addClass('mathquill-textbox');
+  var textareaSelectionTimeout;
+  root.selectionChanged = function() {
+    if (textareaSelectionTimeout === undefined)
+      textareaSelectionTimeout = setTimeout(setTextareaSelection);
+  };
+  function setTextareaSelection() {
+    textareaSelectionTimeout = undefined;
+    var latex = cursor.selection ? '$'+cursor.selection.latex()+'$' : '';
+    textarea.val(latex);
+    if (latex) {
+      if (textarea[0].select)
+        textarea[0].select();
+      else if (document.selection) {
+        var range = textarea[0].createTextRange();
+        range.expand('textedit');
+        range.select();
+      }
+    }
+  };
 
-  textarea.focus(function(e) {
-    if (!cursor.parent)
-      cursor.appendTo(root);
-    cursor.parent.jQ.addClass('hasCursor');
-    if (cursor.selection) {
-      cursor.selection.jQ.removeClass('blur');
-      setTimeout(function(){ cursor.selectLatex(); });
-    } else
-      cursor.show();
-    e.stopPropagation();
-  }).blur(function(e) {
-    cursor.hide().parent.blur();
-    if (cursor.selection)
-      cursor.selection.jQ.addClass('blur');
+  //prevent native selection except textarea
+  jQ.bind('selectstart.mathquill', function(e) {
+    if (e.target !== textarea[0])
+      e.preventDefault();
     e.stopPropagation();
   });
 
-  //trigger virtual textInput event (see Wiki page "Keyboard Events")
-  function textInput() {
-    var text = textarea.val();
-    if (!text) return;
-    textarea.val('');
-    // textarea can contain more than one character
-    // when typing quickly on slower platforms;
-    // so process each character separately
-    for (var i=0; i<text.length; i++) {
-        cursor.parent.textInput(text[i]);
-    }
-  }
+  //drag-to-select event handling
+  var anticursor, blink = cursor.blink;
+  jQ.bind('mousedown.mathquill', function(e) {
+    cursor.blink = $.noop;
+    cursor.seek($(e.target), e.pageX, e.pageY);
 
-  var lastKeydn = {}; //see Wiki page "Keyboard Events"
-  jQ.bind('focus.mathquill blur.mathquill', function(e) {
-    textarea.trigger(e);
-  }).bind('keydown.mathquill', function(e) { //see Wiki page "Keyboard Events"
-    lastKeydn.evt = e;
-    lastKeydn.happened = true;
-    lastKeydn.returnValue = cursor.parent.keydown(e);
-    if (lastKeydn.returnValue)
-      return true;
-    else {
-      e.stopImmediatePropagation();
-      return false;
-    }
-  }).bind('keypress.mathquill', function(e) {
-    //on auto-repeated key events, keypress may get triggered but not keydown
-    //  (see Wiki page "Keyboard Events")
-    if (lastKeydn.happened)
-      lastKeydn.happened = false;
-    else
-      lastKeydn.returnValue = cursor.parent.keydown(lastKeydn.evt);
+    anticursor = new MathFragment(cursor.parent, cursor.prev, cursor.next);
 
-    //prevent default and cancel keypress if keydown returned false,
-    //even in browsers where that doesn't automatically happen
-    //  (see Wiki page "Keyboard Events")
-    if (!lastKeydn.returnValue)
-      return false;
-
-    //after keypress event, trigger virtual textInput event if text was
-    //input to textarea
-    //  (see Wiki page "Keyboard Events")
-    setTimeout(textInput);
-  }).bind('mousedown.mathquill', function(e) {
-    cursor.seek($(e.target), e.pageX, e.pageY).blink = $.noop;
-
-    anticursor = new Cursor(root);
-    anticursor.jQ = anticursor._jQ = $();
-    if (cursor.next)
-      anticursor.insertBefore(cursor.next);
-    else
-      anticursor.appendTo(cursor.parent);
+    if (!editable)
+      jQ.prepend(textareaSpan);
 
     jQ.mousemove(mousemove);
     $(document).mousemove(docmousemove).mouseup(mouseup);
 
-    setTimeout(function(){textarea.focus();});
-  }).bind('cut', function() {
-    if (cursor.selection)
-      cursor.deleteSelection();
-  }).bind('paste', function() {
-    setTimeout(function() {
-      cursor.writeLatex(textarea.val()).clearSelection();
-    });
-  }).bind('selectstart.mathquill', function(e) {
-    if (e.target != textarea[0])
-      e.preventDefault();
     e.stopPropagation();
-  }).blur();
-
+  });
   function mousemove(e) {
     cursor.seek($(e.target), e.pageX, e.pageY);
 
-    if (cursor.prev === anticursor.prev && cursor.parent === anticursor.parent)
-      cursor.clearSelection();
-    else
+    if (cursor.prev !== anticursor.prev
+        || cursor.parent !== anticursor.parent)
       cursor.selectFrom(anticursor);
 
     return false;
@@ -135,12 +84,135 @@ function createRoot(jQ, root, textbox, editable) {
   function mouseup(e) {
     anticursor = undefined;
     cursor.blink = blink;
-    if (!cursor.selection) cursor.show();
+    if (!cursor.selection) {
+      if (editable)
+        cursor.show();
+      else
+        textareaSpan.detach();
+    }
     jQ.unbind('mousemove', mousemove);
     $(document).unbind('mousemove', docmousemove).unbind('mouseup', mouseup);
   }
 
-  var anticursor, blink = cursor.blink;
+  if (!editable) {
+    jQ.bind('cut paste', false).bind('copy', setTextareaSelection)
+      .prepend('<span class="selectable">$'+root.latex()+'$</span>');
+    textarea.blur(function() {
+      cursor.clearSelection();
+      setTimeout(detach); //detaching during blur explodes in WebKit
+    });
+    function detach() {
+      textareaSpan.detach();
+    }
+    return;
+  }
+
+  jQ.prepend(textareaSpan);
+
+  //root CSS classes
+  jQ.addClass('mathquill-editable');
+  if (textbox)
+    jQ.addClass('mathquill-textbox');
+
+  //focus and blur handling
+  textarea.focus(function(e) {
+    if (!cursor.parent)
+      cursor.appendTo(root);
+    cursor.parent.jQ.addClass('hasCursor');
+    if (cursor.selection) {
+      cursor.selection.jQ.removeClass('blur');
+      setTimeout(root.selectionChanged); //select textarea after focus
+    }
+    else
+      cursor.show();
+    e.stopPropagation();
+  }).blur(function(e) {
+    cursor.hide().parent.blur();
+    if (cursor.selection)
+      cursor.selection.jQ.addClass('blur');
+    e.stopPropagation();
+  });
+
+  jQ.bind('focus.mathquill blur.mathquill', function(e) {
+    textarea.trigger(e);
+  }).bind('mousedown.mathquill', function() {
+    setTimeout(focus);
+  }).bind('click.mathquill', focus) //stupid Mobile Safari
+  .blur();
+  function focus() {
+    textarea.focus();
+  }
+
+  //clipboard event handling
+  jQ.bind('cut', function(e) {
+    setTextareaSelection();
+    if (cursor.selection)
+      setTimeout(function(){ cursor.deleteSelection(); cursor.redraw(); });
+    e.stopPropagation();
+  }).bind('copy', function(e) {
+    setTextareaSelection();
+    skipTextInput = true;
+    e.stopPropagation();
+  }).bind('paste', function(e) {
+    skipTextInput = true;
+    setTimeout(paste);
+    e.stopPropagation();
+  });
+  function paste() {
+    //FIXME HACK the parser in RootTextBlock needs to be moved to
+    //Cursor::writeLatex or something so this'll work with MathQuill textboxes
+    var latex = textarea.val();
+    if (latex.slice(0,1) === '$' && latex.slice(-1) === '$')
+      latex = latex.slice(1, -1);
+    else
+      latex = '\\text{' + latex + '}';
+    cursor.writeLatex(latex).show();
+    textarea.val('');
+  }
+
+  //keyboard events and text input, see Wiki page "Keyboard Events"
+  var lastKeydn = {}, skipTextInput = false;
+  jQ.bind('keydown.mathquill', function(e) {
+    lastKeydn.evt = e;
+    lastKeydn.happened = true;
+    if (cursor.parent.keydown(e) === false)
+      e.preventDefault();
+  }).bind('keypress.mathquill', function(e) {
+    //on auto-repeated key events, keypress may get triggered but not keydown
+    if (lastKeydn.happened)
+      lastKeydn.happened = false;
+    else
+      cursor.parent.keydown(lastKeydn.evt);
+
+    if (textareaSelectionTimeout !== undefined)
+      clearTimeout(textareaSelectionTimeout);
+
+    if (cursor.selection || textareaSelectionTimeout !== undefined)
+      textarea.val('');
+
+    //after keypress event, trigger virtual textInput event if text was
+    //input to textarea
+    skipTextInput = false;
+    setTimeout(textInput);
+  });
+
+  function textInput() {
+    if (skipTextInput) return;
+    var text = textarea.val();
+    if (text) {
+      textarea.val('');
+      // textarea can contain more than one character
+      // when typing quickly on slower platforms;
+      // so process each character separately
+      for (var i=0; i<text.length; i++) {
+          cursor.parent.textInput(text[i]);
+      }
+    }
+    else {
+      if (cursor.selection || textareaSelectionTimeout !== undefined)
+        setTextareaSelection();
+    }
+  }
 }
 
 function RootMathBlock(){}
@@ -161,7 +233,6 @@ _.renderLatex = function(latex) {
 };
 _.keydown = function(e)
 {
-  this.skipTextInput = true;
   e.ctrlKey = e.ctrlKey || e.metaKey;
   switch ((e.originalEvent && e.originalEvent.keyIdentifier) || e.which) {
   case 32: //space
@@ -189,7 +260,7 @@ _.keydown = function(e)
     var parent = this.cursor.parent;
     if (e.shiftKey) { //shift+Tab = go one block left if it exists, else escape left.
       if (parent === this) //cursor is in root editable, continue default
-        break;
+        return this.skipTextInput = true;
       else if (parent.prev) //go one block left
         this.cursor.appendTo(parent.prev);
       else //get out of the block
@@ -208,8 +279,7 @@ _.keydown = function(e)
     break;
   case 13: //enter
   case 'Enter':
-    e.preventDefault();
-    return true;
+    break;
   case 35: //end
   case 'End':
     if (e.shiftKey)
@@ -299,16 +369,13 @@ _.keydown = function(e)
       this.cursor.clearSelection().appendTo(this);
       while (this.cursor.prev)
         this.cursor.selectLeft();
-      e.preventDefault();
-      return false;
+      break;
     }
-    else
-      this.skipTextInput = false;
-    return true;
   default:
     this.skipTextInput = false;
     return true;
   }
+  this.skipTextInput = true;
   return false;
 };
 _.textInput = function(ch) {
@@ -317,7 +384,7 @@ _.textInput = function(ch) {
 };
 
 function RootMathCommand(cursor) {
-  MathCommand.call(this, '$');
+  this.init('$');
   this.firstChild.cursor = cursor;
   this.firstChild.textInput = function(ch) {
     if (this.skipTextInput) return;

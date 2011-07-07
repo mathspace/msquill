@@ -52,29 +52,29 @@ _.redraw = function() {
     if (ancestor.redraw)
       ancestor.redraw();
 };
-_.insertAt = function(parent, next, prev) {
+_.insertAt = function(parent, prev, next) {
   var old_parent = this.parent;
 
   this.parent = parent;
-  this.next = next;
   this.prev = prev;
+  this.next = next;
 
   old_parent.blur(); //blur may need to know cursor's destination
 };
 _.insertBefore = function(el) {
-  this.insertAt(el.parent, el, el.prev)
+  this.insertAt(el.parent, el.prev, el)
   this.parent.jQ.addClass('hasCursor');
   this.jQ.insertBefore(el.jQ.first());
   return this;
 };
 _.insertAfter = function(el) {
-  this.insertAt(el.parent, el.next, el);
+  this.insertAt(el.parent, el, el.next);
   this.parent.jQ.addClass('hasCursor');
   this.jQ.insertAfter(el.jQ.last());
   return this;
 };
 _.prependTo = function(el) {
-  this.insertAt(el, el.firstChild, 0);
+  this.insertAt(el, 0, el.firstChild);
   if (el.textarea) //never insert before textarea
     this.jQ.insertAfter(el.textarea);
   else
@@ -83,7 +83,7 @@ _.prependTo = function(el) {
   return this;
 };
 _.appendTo = function(el) {
-  this.insertAt(el, 0, el.lastChild);
+  this.insertAt(el, el.lastChild, 0);
   this.jQ.appendTo(el.jQ);
   el.focus();
   return this;
@@ -141,9 +141,9 @@ _.moveRight = function() {
   return this.show();
 };
 _.seek = function(target, pageX, pageY) {
-  var cursor = this;
+  var cursor = this.clearSelection();
   if (target.hasClass('empty')) {
-    cursor.clearSelection().prependTo(target.data(jQueryDataKey).block);
+    cursor.prependTo(target.data(jQueryDataKey).block);
     return cursor;
   }
 
@@ -151,7 +151,6 @@ _.seek = function(target, pageX, pageY) {
   if (data) {
     //if clicked a symbol, insert at whichever side is closer
     if (data.cmd && !data.block) {
-      cursor.clearSelection();
       if (target.outerWidth() > 2*(pageX - target.offset().left))
         cursor.insertBefore(data.cmd);
       else
@@ -168,7 +167,6 @@ _.seek = function(target, pageX, pageY) {
       data = {block: cursor.root};
   }
 
-  cursor.clearSelection();
   if (data.cmd)
     cursor.insertAfter(data.cmd);
   else
@@ -190,7 +188,7 @@ _.seek = function(target, pageX, pageY) {
 };
 _.writeLatex = function(latex) {
   this.deleteSelection();
-  latex = ( latex && latex.match(/\\text\{([^{]|\\\{)*\}|\\[a-z]*|[^\s]/ig) ) || 0;
+  latex = ( latex && latex.match(/\\text\{([^}]|\\\})*\}|\\[a-z]*|[^\s]/ig) ) || 0;
   (function writeLatexBlock(cursor) {
     while (latex.length) {
       var token = latex.shift(); //pop first item
@@ -202,7 +200,7 @@ _.writeLatex = function(latex) {
         cursor.insertNew(cmd).insertAfter(cmd);
         continue; //skip recursing through children
       }
-      else if (token === '\\left' || token === '\\right') { //REMOVEME HACK for parens
+      else if (token === '\\left' || token === '\\right') { //FIXME HACK: implement real \left and \right LaTeX commands, rather than special casing them here
         token = latex.shift();
         if (token === '\\')
           token = latex.shift();
@@ -278,35 +276,7 @@ _.insertCh = function(ch) {
   return this.insertNew(cmd);
 };
 _.insertNew = function(cmd) {
-  cmd.parent = this.parent;
-  cmd.next = this.next;
-  cmd.prev = this.prev;
-
-  if (this.prev)
-    this.prev.next = cmd;
-  else
-    this.parent.firstChild = cmd;
-
-  if (this.next)
-    this.next.prev = cmd;
-  else
-    this.parent.lastChild = cmd;
-
-  cmd.jQ.insertBefore(this.jQ);
-
-  //adjust context-sensitive spacing
-  cmd.respace();
-  if (this.next)
-    this.next.respace();
-  if (this.prev)
-    this.prev.respace();
-
-  this.prev = cmd;
-
-  cmd.placeCursor(this);
-
-  this.redraw();
-
+  cmd.insertAt(this);
   return this;
 };
 _.unwrapGramp = function() {
@@ -454,7 +424,7 @@ _.selectFrom = function(anticursor) {
     right.next
   );
   this.insertAfter(right.next.prev || right.parent.lastChild);
-  this.selectLatex();
+  this.root.selectionChanged();
 };
 _.selectLeft = function() {
   if (this.selection) {
@@ -469,8 +439,10 @@ _.selectLeft = function() {
     else { //else cursor is at right edge of selection, retract left
       this.prev.jQ.insertAfter(this.selection.jQ);
       this.hopLeft().selection.next = this.next;
-      if (this.selection.prev === this.prev)
+      if (this.selection.prev === this.prev) {
         this.deleteSelection();
+        return;
+      }
     }
   }
   else {
@@ -482,7 +454,7 @@ _.selectLeft = function() {
 
     this.hide().selection = new Selection(this.parent, this.prev, this.next.next);
   }
-  this.selectLatex();
+  this.root.selectionChanged();
 };
 _.selectRight = function() {
   if (this.selection) {
@@ -497,8 +469,10 @@ _.selectRight = function() {
     else { //else cursor is at left edge of selection, retract right
       this.next.jQ.insertBefore(this.selection.jQ);
       this.hopRight().selection.prev = this.prev;
-      if (this.selection.next === this.next)
+      if (this.selection.next === this.next) {
         this.deleteSelection();
+        return;
+      }
     }
   }
   else {
@@ -510,29 +484,13 @@ _.selectRight = function() {
 
     this.hide().selection = new Selection(this.parent, this.prev.prev, this.next);
   }
-  this.selectLatex();
-};
-_.selectLatex = function() {
-  var textarea = this.root.textarea.children();
-  var latex = this.selection ? this.selection.latex() : '';
-  textarea.val(latex);
-  if (typeof textarea[0].selectionStart == 'number') {
-    textarea[0].selectionStart = 0;
-    textarea[0].selectionEnd = latex.length;
-  }
-  else if (document.selection) {
-    var range = textarea[0].createTextRange();
-    range.collapse(true);
-    range.moveStart("character", 0);
-    range.moveEnd("character", latex.length);
-    range.select();
-  }
+  this.root.selectionChanged();
 };
 _.clearSelection = function() {
-  this.root.textarea.children().val('');
   if (this.show().selection) {
     this.selection.clear();
     delete this.selection;
+    this.root.selectionChanged();
   }
   return this;
 };
@@ -543,6 +501,7 @@ _.deleteSelection = function() {
   this.next = this.selection.next;
   this.selection.remove();
   delete this.selection;
+  this.root.selectionChanged();
   return true;
 };
 

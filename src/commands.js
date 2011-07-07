@@ -9,8 +9,30 @@ function proto(parent, child) { //shorthand for prototyping
   return child;
 }
 
+function bind(cons) { //shorthand for binding arguments to constructor
+  var args = Array.prototype.slice.call(arguments, 1);
+
+  return proto(cons, function() {
+    cons.apply(this, Array.prototype.concat.apply(args, arguments));
+  });
+}
+
+function Style(cmd, html_template, replacedFragment) {
+  this.init(cmd, [ html_template ], undefined, replacedFragment);
+}
+proto(MathCommand, Style);
+//fonts
+LatexCmds.mathrm = bind(Style, '\\mathrm', '<span class="roman font"></span>');
+LatexCmds.mathit = bind(Style, '\\mathit', '<i class="font"></i>');
+LatexCmds.mathbf = bind(Style, '\\mathbf', '<b class="font"></b>');
+LatexCmds.mathsf = bind(Style, '\\mathsf', '<span class="sans-serif font"></span>');
+LatexCmds.mathtt = bind(Style, '\\mathtt', '<span class="monospace font"></span>');
+//text-decoration
+LatexCmds.underline = bind(Style, '\\underline', '<span class="underline"></span>');
+LatexCmds.overline = LatexCmds.bar = bind(Style, '\\overline', '<span class="overline"></span>');
+
 function SupSub(cmd, html, text, replacedFragment) {
-  MathCommand.call(this, cmd, [ html ], [ text ], replacedFragment);
+  this.init(cmd, [ html ], [ text ], replacedFragment);
 }
 _ = SupSub.prototype = new MathCommand;
 _.latex = function() {
@@ -87,7 +109,7 @@ LatexCmds['^'] = LatexCmds['`'] = proto(SupSub, function(replacedFragment) {
 });
 
 function Fraction(replacedFragment) {
-  MathCommand.call(this, '\\frac', undefined, undefined, replacedFragment);
+  this.init('\\frac', undefined, undefined, replacedFragment);
   this.jQ.append('<span style="width:0">&nbsp;</span>');
   
   // Fixes display in IE7 - where each numerator/denominator pair aren't set to equal widths
@@ -116,13 +138,13 @@ _.html_template = [
 ];
 _.text_template = ['(', '/', ')'];
 
-LatexCmds.frac = LatexCmds.fraction = Fraction;
+LatexCmds.frac = LatexCmds.dfrac = LatexCmds.cfrac = LatexCmds.fraction = Fraction;
 
 function LiveFraction() {
   Fraction.apply(this, arguments);
 }
 _ = LiveFraction.prototype = new Fraction;
-_.placeCursor = function(cursor) {
+_.placeCursor = function(cursor) { //TODO: better architecture so this can be done more cleanly, highjacking MathCommand::placeCursor doesn't seem like the right place to do this
   if (this.firstChild.isEmpty()) {
     var prev = this.prev;
     while (prev &&
@@ -140,7 +162,7 @@ _.placeCursor = function(cursor) {
         prev = prev.next;
     }
 
-    if (prev !== this.prev) {
+    if (prev !== this.prev) { //FIXME: major Law of Demeter violation, shouldn't know here that MathCommand::initBlocks does some initialization that MathFragment::blockify doesn't
       var newBlock = new MathFragment(this.parent, prev, this).blockify();
       newBlock.jQ = this.firstChild.jQ.empty().removeClass('empty').append(newBlock.jQ).data(jQueryDataKey, { block: newBlock });
       newBlock.next = this.lastChild;
@@ -154,7 +176,7 @@ _.placeCursor = function(cursor) {
 CharCmds['/'] = LiveFraction;
 
 function SquareRoot(replacedFragment) {
-  MathCommand.call(this, '\\sqrt', undefined, undefined, replacedFragment);
+  this.init('\\sqrt', undefined, undefined, replacedFragment);
 }
 _ = SquareRoot.prototype = new MathCommand;
 _.html_template = [
@@ -192,14 +214,14 @@ LatexCmds.nthroot = NthRoot;
 
 // Round/Square/Curly/Angle Brackets (aka Parens/Brackets/Braces)
 function Bracket(open, close, cmd, end, replacedFragment) {
-  MathCommand.call(this, '\\left'+cmd,
+  this.init('\\left'+cmd,
     ['<span><span class="paren">'+open+'</span><span></span><span class="paren">'+close+'</span></span>'],
     [open, close],
     replacedFragment);
   this.end = '\\right'+end;
 }
 _ = Bracket.prototype = new MathCommand;
-_.initBlocks = function(replacedFragment) {
+_.initBlocks = function(replacedFragment) { //FIXME: possible Law of Demeter violation, hardcore MathCommand::initBlocks knowledge needed here
   this.firstChild = this.lastChild =
     (replacedFragment && replacedFragment.blockify()) || new MathBlock;
   this.firstChild.parent = this;
@@ -286,12 +308,13 @@ function TextBlock(replacedText) {
   else if (typeof replacedText === 'string')
     this.replacedText = replacedText;
 
-  MathCommand.call(this, '\\text');
+  this.init();
 }
 _ = TextBlock.prototype = new MathCommand;
+_.cmd = '\\text';
 _.html_template = ['<span class="text"></span>'];
 _.text_template = ['"', '"'];
-_.initBlocks = function() {
+_.initBlocks = function() { //FIXME: another possible Law of Demeter violation, but this seems much cleaner, like it was supposed to be done this way
   this.firstChild =
   this.lastChild =
   this.jQ.data(jQueryDataKey).block = new InnerTextBlock;
@@ -299,7 +322,7 @@ _.initBlocks = function() {
   this.firstChild.parent = this;
   this.firstChild.jQ = this.jQ.append(this.firstChild.jQ);
 };
-_.placeCursor = function(cursor) {
+_.placeCursor = function(cursor) { //TODO: this should be done in the constructor that's passed replacedFragment, but you need the cursor to create new characters and insert them
   (this.cursor = cursor).appendTo(this.firstChild);
 
   if (this.replacedText)
@@ -335,8 +358,7 @@ _.textInput = function(ch) {
     this.cursor.insertBefore(this);
   else { //split apart
     var next = new TextBlock(new MathFragment(this.firstChild, this.cursor.prev));
-    next.placeCursor = function(cursor) // ********** REMOVEME HACK **********
-    {
+    next.placeCursor = function(cursor) { //FIXME HACK: pretend no prev so they don't get merged
       this.prev = 0;
       delete this.placeCursor;
       this.placeCursor(cursor);
@@ -373,7 +395,7 @@ _.focus = function() {
   MathBlock.prototype.focus.call(this);
 
   var textblock = this.parent;
-  if (textblock.next instanceof TextBlock) {
+  if (textblock.next.cmd === textblock.cmd) { //TODO: seems like there should be a better way to move MathElements around
     var innerblock = this,
       cursor = textblock.cursor,
       next = textblock.next.firstChild;
@@ -400,7 +422,7 @@ _.focus = function() {
 
     cursor.redraw();
   }
-  else if (textblock.prev instanceof TextBlock) {
+  else if (textblock.prev.cmd === textblock.cmd) {
     var cursor = textblock.cursor;
     if (cursor.prev)
       textblock.prev.firstChild.focus();
@@ -410,11 +432,44 @@ _.focus = function() {
   return this;
 };
 
-LatexCmds.text = CharCmds.$ = TextBlock;
+CharCmds.$ =
+LatexCmds.text =
+LatexCmds.textnormal =
+LatexCmds.textrm =
+LatexCmds.textup =
+LatexCmds.textmd =
+  TextBlock;
+
+function makeTextBlock(latex, html) {
+  function SomeTextBlock() {
+    TextBlock.apply(this, arguments);
+  }
+  _ = SomeTextBlock.prototype = new TextBlock;
+  _.cmd = latex;
+  _.html_template = [ html ];
+
+  return SomeTextBlock;
+}
+
+LatexCmds.em = LatexCmds.italic = LatexCmds.italics =
+LatexCmds.emph = LatexCmds.textit = LatexCmds.textsl =
+  makeTextBlock('\\textit', '<i class="text"></i>');
+LatexCmds.strong = LatexCmds.bold = LatexCmds.textbf =
+  makeTextBlock('\\textbf', '<b class="text"></b>');
+LatexCmds.sf = LatexCmds.textsf =
+  makeTextBlock('\\textsf', '<span class="sans-serif text"></span>');
+LatexCmds.tt = LatexCmds.texttt =
+  makeTextBlock('\\texttt', '<span class="monospace text"></span>');
+LatexCmds.textsc =
+  makeTextBlock('\\textsc', '<span style="font-variant:small-caps" class="text"></span>');
+LatexCmds.uppercase =
+  makeTextBlock('\\uppercase', '<span style="text-transform:uppercase" class="text"></span>');
+LatexCmds.lowercase =
+  makeTextBlock('\\lowercase', '<span style="text-transform:lowercase" class="text"></span>');
 
 // input box to type a variety of LaTeX commands beginning with a backslash
 function LatexCommandInput(replacedFragment) {
-  MathCommand.call(this, '\\');
+  this.init('\\');
   if (replacedFragment) {
     this.replacedFragment = replacedFragment.detach();
     this.isEmpty = function(){ return false; };
@@ -423,12 +478,12 @@ function LatexCommandInput(replacedFragment) {
 _ = LatexCommandInput.prototype = new MathCommand;
 _.html_template = ['<span class="latex-command-input"></span>'];
 _.text_template = ['\\'];
-_.placeCursor = function(cursor) {
+_.placeCursor = function(cursor) { //TODO: better architecture, better place for this to be done, and more cleanly
   this.cursor = cursor.appendTo(this.firstChild);
   if (this.replacedFragment)
     this.jQ =
       this.jQ.add(this.replacedFragment.jQ.addClass('blur').bind(
-        'mousedown mousemove',
+        'mousedown mousemove', //FIXME: is monkey-patching the mousedown and mousemove handlers the right way to do this?
         function(e) {
           $(e.target = this.nextSibling).trigger(e);
           return false;
@@ -490,7 +545,7 @@ _.renderCommand = function() {
 CharCmds['\\'] = LatexCommandInput;
   
 function Binomial(replacedFragment) {
-  MathCommand.call(this, '\\binom', undefined, undefined, replacedFragment);
+  this.init('\\binom', undefined, undefined, replacedFragment);
   this.jQ.wrapInner('<span class="array"></span>').prepend('<span class="paren">(</span>').append('<span class="paren">)</span>');
 }
 _ = Binomial.prototype = new MathCommand;
@@ -515,7 +570,7 @@ _.placeCursor = LiveFraction.prototype.placeCursor;
 LatexCmds.choose = Choose;
 
 function Vector(replacedFragment) {
-  MathCommand.call(this, '\\vector', undefined, undefined, replacedFragment);
+  this.init('\\vector', undefined, undefined, replacedFragment);
 }
 _ = Vector.prototype = new MathCommand;
 _.html_template = ['<span class="array"></span>', '<span></span>'];
@@ -526,7 +581,7 @@ _.latex = function() {
   }).join('\\\\') + '\\end{matrix}';
 };
 _.text = function() {
-  return '[' + this.foldChildren([], function(latex, child) {
+  return '[' + this.foldChildren([], function(text, child) {
     text.push(child.text());
     return text;
   }).join() + ']';
@@ -612,7 +667,7 @@ _.keydown = function(e) {
 LatexCmds.vector = Vector;
 
 LatexCmds.editable = proto(RootMathCommand, function() {
-  MathCommand.call(this, '\\editable');
+  this.init('\\editable');
   createRoot(this.jQ, this.firstChild, false, true);
   var cursor;
   this.placeCursor = function(c) { cursor = c.appendTo(this.firstChild); };
@@ -622,6 +677,7 @@ LatexCmds.editable = proto(RootMathCommand, function() {
     this.cursor.appendTo(this);
     MathBlock.prototype.blur.call(this);
   };
+  this.latex = function(){ return this.firstChild.latex(); };
   this.text = function(){ return this.firstChild.text(); };
 });
 

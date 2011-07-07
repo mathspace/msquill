@@ -39,18 +39,15 @@
   overflow-x: auto;
   overflow-y: hidden; /*so IE8 won't show a vertical scrollbar*/
 }
-.mathquill-editable.empty, .mathquill-editable * {
-  cursor: text;
-}
-*:first-child+html .mathquill-editable.empty { /* IE7 only */
-  width: 0.5em; /* Sets a min-width for IE7 when empty */
-}
 
-.mathquill-editable .textarea {
+.mathquill-editable .textarea, .mathquill-rendered-math .textarea {
   position: relative;
   display: inline; /*so Firefox 3.6 (Gecko 1.9.2) won't wrap the box to 2 lines*/
+  user-select: text;
+  -moz-user-select: text;
+  -webkit-user-select: text;
 }
-.mathquill-editable .textarea textarea {
+.mathquill-editable .textarea textarea, .mathquill-rendered-math .textarea textarea, .mathquill-rendered-math .selectable {
   position: absolute;
   z-index: -1;
   height: 1px;
@@ -58,6 +55,10 @@
   opacity: 0;
   border: none;
   outline: none;
+  overflow: hidden;
+  user-select: text;
+  -moz-user-select: text;
+  -webkit-user-select: text;
 }
 *:first-child+html .mathquill-editable .textarea textarea { /* IE7 only */
   display: none; /* Prevents text cursor from showing in mathquill box in IE7 */ 
@@ -83,36 +84,51 @@
   visibility: hidden;
   content: 'c';
 }
+*:first-child+html .mathquill-editable.empty { /* IE7 only */
+  width: 0.5em; /* Sets a min-width for IE7 when empty */
+}
 
 .mathquill-editable .selection,
+.mathquill-rendered-math .selection,
 .mathquill-editable .selection .mathquill-rendered-math,
-.mathquill-editable .selection sup, .mathquill-editable .selection sub {
+.mathquill-rendered-math .selection .mathquill-rendered-math,
+.mathquill-editable .selection sup, .mathquill-editable .selection sub,
+.mathquill-rendered-math .selection sup, .mathquill-rendered-math .selection sub {
   background: #B4D5FE;
   background: Highlight;
   color: HighlightText;
   border-color: HighlightText;
 }
 .mathquill-editable .selection.blur,
+.mathquill-rendered-math .selection.blur,
 .mathquill-editable .selection.blur .mathquill-rendered-math,
-.mathquill-editable .selection.blur sup,.mathquill-editable .selection.blur sub {
-  background: #CCC;
-  background: rgba(0, 0, 0, .2);
+.mathquill-rendered-math .selection.blur .mathquill-rendered-math,
+.mathquill-editable .selection.blur sup, .mathquill-editable .selection.blur sub,
+.mathquill-rendered-math .selection.blur sup,.mathquill-rendered-math .selection.blur sub {
+  background: #D4D4D4;
   color: black;
   border-color: black;
 }
 .mathquill-editable .selection .selection.blur,
+.mathquill-rendered-math .selection .selection.blur,
 .mathquill-editable .selection .selection.blur sup,
-.mathquill-editable .selection .selection.blur sub {
+.mathquill-rendered-math .selection .selection.blur sup,
+.mathquill-editable .selection .selection.blur sub,
+.mathquill-rendered-math .selection .selection.blur sub {
   background: #ABF;
 }
 .mathquill-editable .selection.blur .selection.blur,
+.mathquill-rendered-math .selection.blur .selection.blur,
 .mathquill-editable .selection.blur .selection.blur sup,
-.mathquill-editable .selection.blur .selection.blur sub {
+.mathquill-rendered-math .selection.blur .selection.blur sup,
+.mathquill-editable .selection.blur .selection.blur sub,
+.mathquill-rendered-math .selection.blur .selection.blur sub {
   background: #AAA;
-  background: rgba(0, 0, 0, .2);
+  background: rgba(0, 0, 0, .15);
 }
 
-.mathquill-textbox, .mathquill-rendered-math {
+.mathquill-editable, .mathquill-rendered-math {
+  cursor: text;
   white-space: pre-wrap;
   font-family: Symbola, "Times New Roman", serif;
 }
@@ -124,13 +140,12 @@
   line-height: 1;
   display: -moz-inline-box;
   display: inline-block;
-  -moz-user-select: none;
 }
 .mathquill-rendered-math { 
   min-width: 1.0em\0/ /* Fixes display of square root in IE8 */
 }
-.mathquill-rendered-math var, .mathquill-rendered-math .nonSymbola {
-  font-family: "Times New Roman", serif;
+.mathquill-rendered-math var, .mathquill-rendered-math .text, .mathquill-rendered-math .nonSymbola {
+  font-family: "Times New Roman", Symbola, serif;
 }
 .mathquill-rendered-math * {
   font-size: inherit;
@@ -140,6 +155,9 @@
   margin: 0;
   padding: 0;
   border-color: black;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
 }
 .mathquill-editable.hasCursor,
 .mathquill-rendered-math .latex-command-input.hasCursor {
@@ -163,9 +181,31 @@
   font-size: 87%;
 }
 
-.mathquill-rendered-math var { /* variables, in case the user does something weird to their <var>'s */
+.mathquill-rendered-math .overline {
+  border-top: 1px solid black;
+  margin-top: 1px;
+}
+.mathquill-rendered-math .underline {
+  border-bottom: 1px solid black;
+  margin-bottom: 1px;
+}
+
+.mathquill-rendered-math .font {
+  font: 1em "Times New Roman", Symbola, serif;
+}
+.mathquill-rendered-math .font * {
+  font-family: inherit;
+  font-style: inherit;
+}
+
+.mathquill-rendered-math b,
+.mathquill-rendered-math b.font {
+  font-weight: bolder;
+}
+.mathquill-rendered-math var,
+.mathquill-rendered-math i,
+.mathquill-rendered-math i.font {
   font-style: italic;
-  font-weight: normal;
 }
 .mathquill-rendered-math var.florin { /* florin looks so much better than italic f */
   margin: 0 -.1em;
@@ -173,6 +213,18 @@
 
 .mathquill-rendered-math big {
   font-size: 125%;
+}
+
+.mathquill-rendered-math .roman {
+  font-style: normal;
+}
+
+.mathquill-rendered-math .sans-serif {
+  font-family: sans-serif, Symbola, serif;
+}
+
+.mathquill-rendered-math .monospace {
+  font-family: monospace, Symbola, serif;
 }
 
 .mathquill-rendered-math sup, .mathquill-rendered-math sub {

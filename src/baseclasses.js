@@ -37,19 +37,18 @@ _.textInput = function(ch) {
  * Descendant commands are organized into blocks.
  * May be passed a MathFragment that's being replaced.
  */
-function MathCommand(cmd, html_template, text_template, replacedFragment) {
-  if (!arguments.length) return;
+function MathCommand(){}
+_ = MathCommand.prototype = new MathElement;
+_.init = function(cmd, html_template, text_template, replacedFragment) {
   var self = this; // minifier optimization
 
-  self.cmd = cmd;
+  if (cmd) self.cmd = cmd;
   if (html_template) self.html_template = html_template;
   if (text_template) self.text_template = text_template;
 
   self.jQ = $(self.html_template[0]).data(jQueryDataKey, {cmd: self});
   self.initBlocks(replacedFragment);
-}
-
-_ = MathCommand.prototype = new MathElement;
+};
 _.initBlocks = function(replacedFragment) {
   var self = this;
   //single-block commands
@@ -97,6 +96,7 @@ _.latex = function() {
     return latex + '{' + (child.latex() || ' ') + '}';
   });
 };
+_.text_template = [''];
 _.text = function() {
   var i = 0;
   return this.foldChildren(this.text_template[i], function(text, child) {
@@ -106,6 +106,50 @@ _.text = function() {
         && child_text[0] === '(' && child_text.slice(-1) === ')')
       return text + child_text.slice(1, -1) + this.text_template[i];
     return text + child.text() + (this.text_template[i] || '');
+  });
+};
+_.insertAt = function(cursor) {
+  var cmd = this;
+
+  cmd.parent = cursor.parent;
+  cmd.next = cursor.next;
+  cmd.prev = cursor.prev;
+
+  if (cursor.prev)
+    cursor.prev.next = cmd;
+  else
+    cursor.parent.firstChild = cmd;
+
+  if (cursor.next)
+    cursor.next.prev = cmd;
+  else
+    cursor.parent.lastChild = cmd;
+
+  cursor.prev = cmd;
+
+  cmd.jQ.insertBefore(cursor.jQ);
+
+  //adjust context-sensitive spacing
+  cmd.respace();
+  if (cmd.next)
+    cmd.next.respace();
+  if (cmd.prev)
+    cmd.prev.respace();
+
+  cmd.placeCursor(cursor);
+
+  cursor.redraw(); //this will soon be cmd.trigger('redraw')
+};
+_.respace = $.noop; //placeholder for context-sensitive spacing
+_.placeCursor = function(cursor) {
+  //append the cursor to the first empty child, or if none empty, the last one
+  cursor.appendTo(this.foldChildren(this.firstChild, function(prev, child) {
+    return prev.isEmpty() ? prev : child;
+  }));
+};
+_.isEmpty = function() {
+  return this.foldChildren(true, function(isEmpty, child) {
+    return isEmpty && child.isEmpty();
   });
 };
 _.remove = function() {
@@ -128,24 +172,12 @@ _.remove = function() {
 
   return self;
 };
-_.respace = $.noop; //placeholder for context-sensitive spacing
-_.placeCursor = function(cursor) {
-  //append the cursor to the first empty child, or if none empty, the last one
-  cursor.appendTo(this.foldChildren(this.firstChild, function(prev, child) {
-    return prev.isEmpty() ? prev : child;
-  }));
-};
-_.isEmpty = function() {
-  return this.foldChildren(true, function(isEmpty, child) {
-    return isEmpty && child.isEmpty();
-  });
-};
 
 /**
  * Lightweight command without blocks or children.
  */
 function Symbol(cmd, html, text) {
-  MathCommand.call(this, cmd, [ html ],
+  this.init(cmd, [ html ],
     [ text || (cmd && cmd.length > 1 ? cmd.slice(1) : cmd) ]);
 }
 _ = Symbol.prototype = new MathCommand;

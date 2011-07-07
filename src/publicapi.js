@@ -7,8 +7,10 @@
 $.fn.mathquill = function(cmd, latex) {
   switch (cmd) {
   case 'redraw':
-    this.find(':not(:has(:first))')
-      .data(jQueryDataKey).cmd.redraw();
+    this.find(':not(:has(:first))').each(function() {
+      var data = $(this).data(jQueryDataKey);
+      if (data && data.cmd) Cursor.prototype.redraw.call(data.cmd);
+    });
     return this;
   case 'revert':
     return this.each(function() {
@@ -58,8 +60,8 @@ $.fn.mathquill = function(cmd, latex) {
 //on document ready, mathquill-ify all `<tag class="mathquill-*">latex</tag>`
 //elements according to their CSS class.
 $(function() {
-  $('.mathquill-editable').mathquill('editable');
-  $('.mathquill-textbox').mathquill('textbox');
+  $('.mathquill-editable:not(.mathquill-rendered-math)').mathquill('editable');
+  $('.mathquill-textbox:not(.mathquill-rendered-math)').mathquill('textbox');
   $('.mathquill-embedded-latex').mathquill();
 });
 
