@@ -26,9 +26,23 @@
     url(font/Bell_MT/bell-webfont.svg) format("svg");
 }
 
-.mathquill-editable, .mathquill-embedded-latex .mathquill-editable {
+.mathquill-editable,
+.mathquill-editable .selection,
+.mathquill-rendered-math,
+.mathquill-rendered-math .selection,
+.mathquill-rendered-math .underline,
+.mathquill-rendered-math .overline,
+.mathquill-rendered-math .font,
+.mathquill-rendered-math sup,
+.mathquill-rendered-math sub,
+.mathquill-rendered-math .fraction,
+.mathquill-rendered-math .sqrt-stem,
+.mathquill-rendered-math .array,
+.mathquill-rendered-math .cmd {
   display: -moz-inline-box;
   display: inline-block;
+}
+.mathquill-editable, .mathquill-embedded-latex .mathquill-editable {
   border: 1px solid gray;
   padding: 2px;
 }
@@ -42,7 +56,6 @@
 
 .mathquill-editable .textarea, .mathquill-rendered-math .textarea {
   position: relative;
-  display: inline; /*so Firefox 3.6 (Gecko 1.9.2) won't wrap the box to 2 lines*/
   user-select: text;
   -moz-user-select: text;
   -webkit-user-select: text;
@@ -67,7 +80,6 @@
 .mathquill-editable .cursor {
   border-left: 1px solid black;
   margin-right: -1px;
-  display: inline;
   position: relative;
   z-index: 1;
 }
@@ -138,8 +150,6 @@
   font-style: normal;
   font-size: 115%;
   line-height: 1;
-  display: -moz-inline-box;
-  display: inline-block;
 }
 .mathquill-rendered-math { 
   min-width: 1.0em\0/ /* Fixes display of square root in IE8 */
@@ -150,8 +160,6 @@
 .mathquill-rendered-math * {
   font-size: inherit;
   line-height: inherit;
-  display: -moz-inline-box;
-  display: inline-block;
   margin: 0;
   padding: 0;
   border-color: black;
@@ -177,7 +185,6 @@
 }
 
 .mathquill-rendered-math .text {
-  display: inline;
   font-size: 87%;
 }
 
