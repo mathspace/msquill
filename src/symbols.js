@@ -9,26 +9,27 @@ function Variable(ch, html) {
 }
 _ = Variable.prototype = new Symbol;
 _.insertAt = function(cursor) {
-  MathCommand.prototype.insertAt.apply(this, arguments);
   var cmd = this.cmd;
   //want the longest possible autocommand, so assemble longest series of letters (Variables) first
-  for (var i = 0, prev = this.prev; i < 8 && prev && prev instanceof Variable; i += 1, prev = prev.prev)
+  for (var i = 0, prev = cursor.prev; i < 8 && prev && prev instanceof Variable; i += 1, prev = prev.prev)
     cmd = prev.cmd + cmd;
   //and check for autocommand before that, since autocommands may be prefixes of longer autocommands
   if (prev instanceof UnItalicized && AutoCmds.hasOwnProperty(prev.text() + cmd)) {
-    for (var i = 0; i < 1 + cmd.length; i += 1) cursor.backspace();
+    for (var i = 0; i < cmd.length; i += 1) cursor.backspace();
     cursor.insertNew(new UnItalicized(undefined, prev.text() + cmd));
+    return;
   }
   else { //and test if there's an autocommand here, starting with the longest possible and slicing
     for (var i = 0; i < cmd.length; i += 1) {
       if (AutoCmds.hasOwnProperty(cmd)) {
-        for (var i = 0; i < cmd.length; i += 1) cursor.backspace();
+        for (var i = 1; i < cmd.length; i += 1) cursor.backspace();
         cursor.insertNew(new UnItalicized(undefined, cmd));
-        break;
+        return;
       }
       cmd = cmd.slice(1);
     }
   }
+  MathCommand.prototype.insertAt.apply(this, arguments);
 };
 _.text = function() {
   var text = this.cmd;
