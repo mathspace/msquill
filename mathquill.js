@@ -9,7 +9,7 @@
 
 var $ = jQuery,
   undefined,
-  _, //temp variable of prototypes
+  _, //temp variable for multiple property assignment
   jQueryDataKey = '[[mathquill internal data]]';
 
 /*************************************************
@@ -105,6 +105,7 @@ _.initBlocks = function(replacedFragment) {
   }
   self.lastChild = newBlock;
 };
+_.optionalBlock = $.noop;
 _.latex = function() {
   return this.foldChildren(this.cmd, function(latex, child) {
     return latex + '{' + (child.latex() || ' ') + '}';
@@ -764,6 +765,49 @@ _.textInput = function(ch) {
 
 var CharCmds = {}, LatexCmds = {}; //single character commands, LaTeX commands
 
+var stretch, // = function(jQ, scaleY) { ... }
+//will use the CSS 2D transform scaleY to stretch the jQuery-wrapped HTML elements,
+//or the filter matrix transform fallback for IE 5.5-8, or gracefully degrade to
+//increasing the fontSize.
+
+//ideas from http://github.com/louisremi/jquery.transform.js
+//see also http://msdn.microsoft.com/en-us/library/ms533014(v=vs.85).aspx
+  div = document.createElement('div'),
+  div_style = div.style,
+  styleTransformPropNames = {
+    WebkitTransform:1,
+    MozTransform:1,
+    msTransform:1,
+    OTransform:1,
+    transform:1
+  },
+  transformPropName;
+
+for (var prop in styleTransformPropNames) {
+  if (prop in div_style) {
+    transformPropName = prop;
+    break;
+  }
+}
+
+if (transformPropName) {
+  stretch = function(jQ, scaleY) {
+    jQ.css(transformPropName, 'scaleY(' + scaleY + ')');
+  };
+}
+else if ('filter' in div_style) {
+  stretch = function(jQ, scaleY) {
+    jQ.css('filter', 'progid:DXImageTransform.Microsoft'
+      + '.Matrix(M22=' + scaleY + ',SizingMethod=\'auto expand\')'
+    );
+  };
+}
+else {
+  stretch = function(jQ, scaleY) {
+    jQ.css('fontSize', scaleY + 'em');
+  };
+}
+
 function proto(parent, child) { //shorthand for prototyping
   child.prototype = parent.prototype;
   return child;
@@ -829,18 +873,14 @@ _.respace = function() {
   }
 
   if (this.respaced = this.prev instanceof SupSub && this.prev.cmd != this.cmd && !this.prev.respaced) {
-    if (this.limit && this.cmd === '_') {
-      this.jQ.css({
-        left: -.25-this.prev.jQ.outerWidth()/+this.jQ.css('fontSize').slice(0,-2)+'em',
-        marginRight: .1-Math.min(this.jQ.outerWidth(), this.prev.jQ.outerWidth())/+this.jQ.css('fontSize').slice(0,-2)+'em' //1px adjustment very important!
-      });
-    }
-    else {
-      this.jQ.css({
-        left: -this.prev.jQ.outerWidth()/+this.jQ.css('fontSize').slice(0,-2)+'em',
-        marginRight: .1-Math.min(this.jQ.outerWidth(), this.prev.jQ.outerWidth())/+this.jQ.css('fontSize').slice(0,-2)+'em' //1px adjustment very important!
-      });
-    }
+    var fontSize = +this.jQ.css('fontSize').slice(0,-2),
+      prevWidth = this.prev.jQ.outerWidth()
+      thisWidth = this.jQ.outerWidth();
+    this.jQ.css({
+      left: (this.limit && this.cmd === '_' ? -.25 : 0) - prevWidth/fontSize + 'em',
+      marginRight: .1 - Math.min(thisWidth, prevWidth)/fontSize + 'em'
+        //1px extra so it doesn't wrap in retarded browsers (Firefox 2, I think)
+    });
   }
   else if (this.limit && this.cmd === '_') {
     this.jQ.css({
@@ -922,17 +962,15 @@ function SquareRoot(replacedFragment) {
 }
 _ = SquareRoot.prototype = new MathCommand;
 _.html_template = [
-  '<span class="cmd"><span class="sqrt-prefix">&radic;</span></span>',
+  '<span class="block"><span class="sqrt-prefix">&radic;</span></span>',
   '<span class="sqrt-stem"></span>'
 ];
 _.text_template = ['sqrt(', ')'];
+_.optionalBlock = function(latex) {
+};
 _.redraw = function() {
-  var block = this.lastChild.jQ, height = block.outerHeight(true);
-  block.css({
-    borderTopWidth: height/28+1 // NOTE: Formula will need to change if our font isn't Symbola
-  }).prev().css({
-    fontSize: .9*height/+block.css('fontSize').slice(0,-2)+'em'
-  });
+  var block = this.lastChild.jQ;
+  stretch(block.prev(), block.innerHeight()/+block.css('fontSize').slice(0,-2) - .1);
 };
 
 LatexCmds.sqrt = LatexCmds['√'] = SquareRoot;
@@ -943,7 +981,7 @@ function NthRoot(replacedFragment) {
 }
 _ = NthRoot.prototype = new SquareRoot;
 _.html_template = [
-  '<span class="cmd"><span class="sqrt-prefix">&radic;</span></span>',
+  '<span class="block"><span class="sqrt-prefix">&radic;</span></span>',
   '<sup class="nthroot"></sup>',
   '<span class="sqrt-stem"></span>'
 ];
@@ -957,7 +995,7 @@ LatexCmds.nthroot = NthRoot;
 // Round/Square/Curly/Angle Brackets (aka Parens/Brackets/Braces)
 function Bracket(open, close, cmd, end, replacedFragment) {
   this.init('\\left'+cmd,
-    ['<span class="cmd"><span class="paren">'+open+'</span><span class="cmd"></span><span class="paren">'+close+'</span></span>'],
+    ['<span class="block"><span class="paren">'+open+'</span><span class="block"></span><span class="paren">'+close+'</span></span>'],
     [open, close],
     replacedFragment);
   this.end = '\\right'+end;
@@ -976,7 +1014,10 @@ _.latex = function() {
 };
 _.redraw = function() {
   var block = this.firstChild.jQ;
-  block.prev().add(block.next()).css('fontSize', block.outerHeight()/(+block.css('fontSize').slice(0,-2)*1.02)+'em');
+  //the paren is initially at the initial font size of 1em, so just scale by the height in em.
+  stretch(block.prev().add(block.next()),
+    1.05*block.outerHeight()/+block.css('fontSize').slice(0,-2)
+  );
 };
 
 LatexCmds.lbrace = CharCmds['{'] = proto(Bracket, function(replacedFragment) {
@@ -1292,13 +1333,12 @@ function Binomial(replacedFragment) {
 }
 _ = Binomial.prototype = new MathCommand;
 _.html_template =
-  ['<span class="cmd"></span>', '<span></span>', '<span></span>'];
+  ['<span class="block"></span>', '<span></span>', '<span></span>'];
 _.text_template = ['choose(',',',')'];
 _.redraw = function() {
-  this.jQ.children(':first').add(this.jQ.children(':last'))
-    .css('fontSize',
-      this.jQ.outerHeight()/(+this.jQ.css('fontSize').slice(0,-2)*.9+2)+'em'
-    );
+  stretch(this.jQ.children(':first').add(this.jQ.children(':last')),
+    this.jQ.outerHeight()/+this.jQ.css('fontSize').slice(0,-2)
+  );
 };
 
 LatexCmds.binom = LatexCmds.binomial = Binomial;
@@ -2170,7 +2210,7 @@ _.seek = function(target, pageX, pageY) {
 };
 _.writeLatex = function(latex) {
   this.deleteSelection();
-  latex = ( latex && latex.match(/\\text\{([^}]|\\\})*\}|\\[a-z]*|[^\s]/ig) ) || 0;
+  latex = ( latex && latex.match(/\\text\{([^}]|\\\})*\}|\\[a-z]*|\[[^\s\]]\]|[^\s]/ig) ) || 0;
   (function writeLatexBlock(cursor) {
     while (latex.length) {
       var token = latex.shift(); //pop first item
@@ -2198,8 +2238,12 @@ _.writeLatex = function(latex) {
       else if (/^\\[a-z]+$/i.test(token)) {
         token = token.slice(1);
         var cmd = LatexCmds[token];
-        if (cmd)
-          cursor.insertNew(cmd = new cmd(undefined, token));
+        if (cmd) {
+          cmd = new cmd(undefined, token);
+          if (latex[0].charAt(0) === '[')
+            cmd.optionalBlock(latex.shift().slice(1, -1));
+          cmd.insertAt(cursor);
+        }
         else {
           cmd = new TextBlock(token);
           cursor.insertNew(cmd).insertAfter(cmd);
