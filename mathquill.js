@@ -9,7 +9,7 @@
 
 var $ = jQuery,
   undefined,
-  _, //temp variable for multiple property assignment
+  _, //temp variable of prototypes
   jQueryDataKey = '[[mathquill internal data]]';
 
 /*************************************************
@@ -105,7 +105,6 @@ _.initBlocks = function(replacedFragment) {
   }
   self.lastChild = newBlock;
 };
-_.optionalBlock = $.noop;
 _.latex = function() {
   return this.foldChildren(this.cmd, function(latex, child) {
     return latex + '{' + (child.latex() || ' ') + '}';
@@ -967,8 +966,6 @@ _.html_template = [
   '<span class="sqrt-stem"></span>'
 ];
 _.text_template = ['sqrt(', ')'];
-_.optionalBlock = function(latex) {
-};
 _.redraw = function() {
   var block = this.lastChild.jQ;
   scale(block.prev(), 1, block.innerHeight()/+block.css('fontSize').slice(0,-2) - .1);
@@ -2210,7 +2207,7 @@ _.seek = function(target, pageX, pageY) {
 };
 _.writeLatex = function(latex) {
   this.deleteSelection();
-  latex = ( latex && latex.match(/\\text\{([^}]|\\\})*\}|\\[a-z]*|\[[^\s\]]\]|[^\s]/ig) ) || 0;
+  latex = ( latex && latex.match(/\\text\{([^}]|\\\})*\}|\\[a-z]*|[^\s]/ig) ) || 0;
   (function writeLatexBlock(cursor) {
     while (latex.length) {
       var token = latex.shift(); //pop first item
@@ -2238,12 +2235,8 @@ _.writeLatex = function(latex) {
       else if (/^\\[a-z]+$/i.test(token)) {
         token = token.slice(1);
         var cmd = LatexCmds[token];
-        if (cmd) {
-          cmd = new cmd(undefined, token);
-          if (latex[0].charAt(0) === '[')
-            cmd.optionalBlock(latex.shift().slice(1, -1));
-          cmd.insertAt(cursor);
-        }
+        if (cmd)
+          cursor.insertNew(cmd = new cmd(undefined, token));
         else {
           cmd = new TextBlock(token);
           cursor.insertNew(cmd).insertAfter(cmd);
