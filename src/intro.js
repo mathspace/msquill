@@ -12,5 +12,7 @@ var $ = jQuery,
   _, //temp variable of prototypes
   isIE7 = $.browser.msie && (parseInt($.browser.version) == 7), // Browser sniffing
   isIE8 = $.browser.msie && (parseInt($.browser.version) == 8),
-  jQueryDataKey = '[[mathquill internal data]]';
+  jQueryDataKey = '[[mathquill internal data]]',
+  min = Math.min,
+  max = Math.max;
 

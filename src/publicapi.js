@@ -8,8 +8,9 @@ $.fn.mathquill = function(cmd, latex) {
   switch (cmd) {
   case 'redraw':
     this.find(':not(:has(:first))').each(function() {
-      var data = $(this).data(jQueryDataKey);
-      if (data && data.cmd) Cursor.prototype.redraw.call(data.cmd);
+      var data = $(this).data(jQueryDataKey),
+        mathEl = data && (data.block || data.cmd);
+      if (mathEl) mathEl.bubble('redraw');
     });
     return this;
   case 'revert':
@@ -34,7 +35,7 @@ $.fn.mathquill = function(cmd, latex) {
     return data && data.block && data.block.text();
   case 'html':
     return this.html().replace(/ ?hasCursor|hasCursor /, '')
-      .replace(/ class=(""|(?=\W))/, '')
+      .replace(/ class=(""|(?= |>))/g, '')
       .replace(/<span class="?cursor( blink)?"?><\/span>/i, '')
       .replace(/<span class="?textarea"?><textarea><\/textarea><\/span>/i, '');
   case 'write':

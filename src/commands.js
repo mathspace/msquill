@@ -4,6 +4,50 @@
 
 var CharCmds = {}, LatexCmds = {}; //single character commands, LaTeX commands
 
+var scale, // = function(jQ, x, y) { ... }
+//will use a CSS 2D transform to scale the jQuery-wrapped HTML elements,
+//or the filter matrix transform fallback for IE 5.5-8, or gracefully degrade to
+//increasing the fontSize to match the vertical Y scaling factor.
+
+//ideas from http://github.com/louisremi/jquery.transform.js
+//see also http://msdn.microsoft.com/en-us/library/ms533014(v=vs.85).aspx
+
+  div = document.createElement('div'),
+  div_style = div.style,
+  transformPropNames = {
+    transform:1,
+    WebkitTransform:1,
+    MozTransform:1,
+    OTransform:1,
+    msTransform:1
+  },
+  transformPropName;
+
+for (var prop in transformPropNames) {
+  if (prop in div_style) {
+    transformPropName = prop;
+    break;
+  }
+}
+
+if (transformPropName) {
+  scale = function(jQ, x, y) {
+    jQ.css(transformPropName, 'scale('+x+','+y+')');
+  };
+}
+else if ('filter' in div_style) {
+  scale = function(jQ, x, y) {
+    jQ.css('filter', 'progid:DXImageTransform.Microsoft'
+      + '.Matrix(M11='+x+',M22='+y+',SizingMethod=\'auto expand\')'
+    );
+  };
+}
+else {
+  scale = function(jQ, x, y) {
+    jQ.css('fontSize', y + 'em');
+  };
+}
+
 function proto(parent, child) { //shorthand for prototyping
   child.prototype = parent.prototype;
   return child;
@@ -69,18 +113,14 @@ _.respace = function() {
   }
 
   if (this.respaced = this.prev instanceof SupSub && this.prev.cmd != this.cmd && !this.prev.respaced) {
-    if (this.limit && this.cmd === '_') {
-      this.jQ.css({
-        left: -.25-this.prev.jQ.outerWidth()/+this.jQ.css('fontSize').slice(0,-2)+'em',
-        marginRight: .1-Math.min(this.jQ.outerWidth(), this.prev.jQ.outerWidth())/+this.jQ.css('fontSize').slice(0,-2)+'em' //1px adjustment very important!
-      });
-    }
-    else {
-      this.jQ.css({
-        left: -this.prev.jQ.outerWidth()/+this.jQ.css('fontSize').slice(0,-2)+'em',
-        marginRight: .1-Math.min(this.jQ.outerWidth(), this.prev.jQ.outerWidth())/+this.jQ.css('fontSize').slice(0,-2)+'em' //1px adjustment very important!
-      });
-    }
+    var fontSize = +this.jQ.css('fontSize').slice(0,-2),
+      prevWidth = this.prev.jQ.outerWidth()
+      thisWidth = this.jQ.outerWidth();
+    this.jQ.css({
+      left: (this.limit && this.cmd === '_' ? -.25 : 0) - prevWidth/fontSize + 'em',
+      marginRight: .1 - min(thisWidth, prevWidth)/fontSize + 'em'
+        //1px extra so it doesn't wrap in retarded browsers (Firefox 2, I think)
+    });
   }
   else if (this.limit && this.cmd === '_') {
     this.jQ.css({
@@ -173,24 +213,20 @@ _.placeCursor = function(cursor) { //TODO: better architecture so this can be do
   cursor.appendTo(this.lastChild);
 };
 
-CharCmds['/'] = LiveFraction;
+LatexCmds.over = CharCmds['/'] = LiveFraction;
 
 function SquareRoot(replacedFragment) {
   this.init('\\sqrt', undefined, undefined, replacedFragment);
 }
 _ = SquareRoot.prototype = new MathCommand;
 _.html_template = [
-  '<span class="cmd"><span class="sqrt-prefix">&radic;</span></span>',
+  '<span class="block"><span class="sqrt-prefix">&radic;</span></span>',
   '<span class="sqrt-stem"></span>'
 ];
 _.text_template = ['sqrt(', ')'];
 _.redraw = function() {
-  var block = this.lastChild.jQ, height = block.outerHeight(true);
-  block.css({
-    borderTopWidth: height/28+1 // NOTE: Formula will need to change if our font isn't Symbola
-  }).prev().css({
-    fontSize: .9*height/+block.css('fontSize').slice(0,-2)+'em'
-  });
+  var block = this.lastChild.jQ;
+  scale(block.prev(), 1, block.innerHeight()/+block.css('fontSize').slice(0,-2) - .1);
 };
 
 LatexCmds.sqrt = LatexCmds['√'] = LatexCmds['~'] = SquareRoot;
@@ -201,7 +237,7 @@ function NthRoot(replacedFragment) {
 }
 _ = NthRoot.prototype = new SquareRoot;
 _.html_template = [
-  '<span class="cmd"><span class="sqrt-prefix">&radic;</span></span>',
+  '<span class="block"><span class="sqrt-prefix">&radic;</span></span>',
   '<sup class="nthroot"></sup>',
   '<span class="sqrt-stem"></span>'
 ];
@@ -215,7 +251,7 @@ LatexCmds.nthroot = NthRoot;
 // Round/Square/Curly/Angle Brackets (aka Parens/Brackets/Braces)
 function Bracket(open, close, cmd, end, replacedFragment) {
   this.init('\\left'+cmd,
-    ['<span class="cmd"><span class="paren">'+open+'</span><span class="cmd"></span><span class="paren">'+close+'</span></span>'],
+    ['<span class="block"><span class="paren">'+open+'</span><span class="block"></span><span class="paren">'+close+'</span></span>'],
     [open, close],
     replacedFragment);
   this.end = '\\right'+end;
@@ -228,13 +264,16 @@ _.initBlocks = function(replacedFragment) { //FIXME: possible Law of Demeter vio
   this.firstChild.jQ = this.jQ.children(':eq(1)')
     .data(jQueryDataKey, {block: this.firstChild})
     .append(this.firstChild.jQ);
+
+  var block = this.blockjQ = this.firstChild.jQ;
+  this.bracketjQs = block.prev().add(block.next());
 };
 _.latex = function() {
   return this.cmd + this.firstChild.latex() + this.end;
 };
 _.redraw = function() {
-  var block = this.firstChild.jQ;
-  block.prev().add(block.next()).css('fontSize', block.outerHeight()/(+block.css('fontSize').slice(0,-2)*1.02)+'em');
+  var height = this.blockjQ.outerHeight()/+this.blockjQ.css('fontSize').slice(0,-2);
+  scale(this.bracketjQs, min(1 + .2*(height - 1), 1.2), 1.05*height);
 };
 
 LatexCmds.lbrace = CharCmds['{'] = proto(Bracket, function(replacedFragment) {
@@ -342,9 +381,9 @@ _.keydown = function(e) {
   ) {
     if (this.isEmpty())
       this.cursor.insertAfter(this);
+    e.preventDefault();
     return false;
   }
-  return this.parent.keydown(e);
 };
 _.textInput = function(ch) {
   this.cursor.deleteSelection();
@@ -369,6 +408,7 @@ _.textInput = function(ch) {
     this.cursor.insertBefore(next);
     delete next.firstChild.focus;
   }
+  return false;
 };
 function InnerTextBlock(){}
 _ = InnerTextBlock.prototype = new MathBlock;
@@ -386,7 +426,7 @@ _.blur = function() {
       else if (cursor.prev === textblock)
         cursor.prev = textblock.prev;
 
-      cursor.show().redraw();
+      cursor.show().parent.bubble('redraw');
     }
   }
   return this;
@@ -420,7 +460,7 @@ _.focus = function() {
     else
       cursor.prependTo(this);
 
-    cursor.redraw();
+    cursor.parent.bubble('redraw');
   }
   else if (textblock.prev.cmd === textblock.cmd) {
     var cursor = textblock.cursor;
@@ -496,21 +536,19 @@ _.latex = function() {
 _.keydown = function(e) {
   if (e.which === 9 || e.which === 13) { //tab or enter
     this.renderCommand();
+    e.preventDefault();
     return false;
   }
-  return this.parent.keydown(e);
 };
 _.textInput = function(ch) {
   if (ch.match(/[a-z]/i)) {
     this.cursor.deleteSelection();
     this.cursor.insertNew(new VanillaSymbol(ch));
-    return;
+    return false;
   }
   this.renderCommand();
   if (ch === ' ' || (ch === '\\' && this.firstChild.isEmpty()))
-    return;
-
-  this.cursor.parent.textInput(ch);
+    return false;
 };
 _.renderCommand = function() {
   this.jQ = this.jQ.last();
@@ -546,19 +584,17 @@ CharCmds['\\'] = LatexCommandInput;
   
 function Binomial(replacedFragment) {
   this.init('\\binom', undefined, undefined, replacedFragment);
-  this.jQ.wrapInner('<span class="array"></span>').prepend('<span class="paren">(</span>').append('<span class="paren">)</span>');
+  this.jQ.wrapInner('<span class="array"></span>');
+  this.blockjQ = this.jQ.children();
+  this.bracketjQs =
+    $('<span class="paren">(</span>').prependTo(this.jQ)
+    .add( $('<span class="paren">)</span>').appendTo(this.jQ) );
 }
 _ = Binomial.prototype = new MathCommand;
 _.html_template =
-  ['<span class="cmd"></span>', '<span></span>', '<span></span>'];
+  ['<span class="block"></span>', '<span></span>', '<span></span>'];
 _.text_template = ['choose(',',',')'];
-_.redraw = function() {
-  this.jQ.children(':first').add(this.jQ.children(':last'))
-    .css('fontSize',
-      this.jQ.outerHeight()/(+this.jQ.css('fontSize').slice(0,-2)*.9+2)+'em'
-    );
-};
-
+_.redraw = Bracket.prototype.redraw;
 LatexCmds.binom = LatexCmds.binomial = Binomial;
 
 function Choose() {
@@ -607,7 +643,9 @@ _.keydown = function(e) {
       newBlock.next = currentBlock.next;
       currentBlock.next = newBlock;
       newBlock.prev = currentBlock;
-      this.cursor.appendTo(newBlock).redraw();
+      this.bubble('redraw').cursor.appendTo(newBlock);
+
+      e.preventDefault();
       return false;
     }
     else if (e.which === 9 && !e.shiftKey && !currentBlock.next) { //tab
@@ -617,11 +655,13 @@ _.keydown = function(e) {
           delete currentBlock.prev.next;
           this.lastChild = currentBlock.prev;
           currentBlock.jQ.remove();
-          this.cursor.redraw();
+          this.bubble('redraw');
+
+          e.preventDefault();
           return false;
         }
         else
-          return this.parent.keydown(e);
+          return;
       }
 
       var newBlock = new MathBlock;
@@ -630,7 +670,9 @@ _.keydown = function(e) {
       this.lastChild = newBlock;
       currentBlock.next = newBlock;
       newBlock.prev = currentBlock;
-      this.cursor.appendTo(newBlock).redraw();
+      this.bubble('redraw').cursor.appendTo(newBlock);
+
+      e.preventDefault();
       return false;
     }
     else if (e.which === 8) { //backspace
@@ -653,15 +695,17 @@ _.keydown = function(e) {
         if (this.isEmpty())
           this.cursor.deleteForward();
         else
-          this.cursor.redraw();
+          this.bubble('redraw');
 
+        e.preventDefault();
         return false;
       }
-      else if (!this.cursor.prev)
+      else if (!this.cursor.prev) {
+        e.preventDefault();
         return false;
+      }
     }
   }
-  return this.parent.keydown(e);
 };
 
 LatexCmds.vector = Vector;

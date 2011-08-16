@@ -47,11 +47,6 @@ _.hide = function() {
   this.jQ = $();
   return this;
 };
-_.redraw = function() {
-  for (var ancestor = this.parent; ancestor; ancestor = ancestor.parent)
-    if (ancestor.redraw)
-      ancestor.redraw();
-};
 _.insertAt = function(parent, prev, next) {
   var old_parent = this.parent;
 
@@ -353,7 +348,7 @@ _.backspace = function() {
     this.prev.respace();
   if (this.next)
     this.next.respace();
-  this.redraw();
+  this.parent.bubble('redraw');
 
   return this;
 };
@@ -376,7 +371,7 @@ _.deleteForward = function() {
     this.prev.respace();
   if (this.next)
     this.next.respace();
-  this.redraw();
+  this.parent.bubble('redraw');
 
   return this;
 };
@@ -451,6 +446,8 @@ _.selectLeft = function() {
     else //end of a block
       if (this.parent !== this.root)
         this.insertBefore(this.parent.parent);
+      else
+        return;
 
     this.hide().selection = new Selection(this.parent, this.prev, this.next.next);
   }
@@ -481,6 +478,8 @@ _.selectRight = function() {
     else //end of a block
       if (this.parent !== this.root)
         this.insertAfter(this.parent.parent);
+      else
+        return;
 
     this.hide().selection = new Selection(this.parent, this.prev.prev, this.next);
   }
@@ -509,7 +508,7 @@ function Selection(parent, prev, next) {
   MathFragment.apply(this, arguments);
 }
 _ = Selection.prototype = new MathFragment;
-_.jQinit= function(children) {
+_.jQinit = function(children) {
   this.jQ = children.wrapAll('<span class="selection"></span>').parent();
     //can't do wrapAll(this.jQ = $(...)) because wrapAll will clone it
 };
