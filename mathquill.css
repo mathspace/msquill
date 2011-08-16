@@ -342,7 +342,7 @@
 }
 
 .mathquill-rendered-math .paren {
-  padding: 0 .1em;
+  padding: 0 .1em .1em;
   vertical-align: bottom;
   font-family: BellMTBold, "Times New Roman", serif;
   -webkit-transform-origin: bottom left;
