@@ -187,7 +187,7 @@ _.writeLatex = function(latex) {
   (function writeLatexBlock(cursor) {
     while (latex.length) {
       var token = latex.shift(); //pop first item
-      if (!token || token === '}') return;
+      if (!token || token === '}' || token === ']') return;
 
       var cmd;
       if (token.slice(0, 6) === '\\text{') {
@@ -211,6 +211,8 @@ _.writeLatex = function(latex) {
       else if (/^\\[a-z]+$/i.test(token)) {
         token = token.slice(1);
         var cmd = LatexCmds[token];
+        if (latex[0] === '[' && cmd.with_optional_block)
+          cmd = cmd.with_optional_block;
         if (cmd)
           cursor.insertNew(cmd = new cmd(undefined, token));
         else {
@@ -234,7 +236,7 @@ _.writeLatex = function(latex) {
         var token = latex.shift();
         if (!token) return false;
 
-        if (token === '{')
+        if (token === '{' || token === '[')
           writeLatexBlock(cursor);
         else
           cursor.insertCh(token);

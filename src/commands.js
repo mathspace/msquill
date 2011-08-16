@@ -231,6 +231,7 @@ _.redraw = function() {
 
 LatexCmds.sqrt = LatexCmds['√'] = LatexCmds['~'] = SquareRoot;
 
+SquareRoot.with_optional_block = NthRoot;
 function NthRoot(replacedFragment) {
   SquareRoot.call(this, replacedFragment);
   this.jQ = this.firstChild.jQ.detach().add(this.jQ);
