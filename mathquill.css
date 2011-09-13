@@ -76,6 +76,12 @@
   display: none; /* Prevents text cursor from showing in mathquill box in IE7 */ 
 }
 
+/* Lighten up nested mathquill-editable */
+.mathquill-rendered-math .mathquill-editable {
+	border-color: #cccccc;
+	padding: 1px 1px 0;
+}
+
 .mathquill-editable .cursor {
   border-left: 1px solid black;
   margin-right: -1px;
