@@ -182,7 +182,7 @@ function Symbol(cmd, html, text) {
 }
 _ = Symbol.prototype = new MathCommand;
 _.initBlocks = $.noop;
-_.latex = function(){ return this.cmd; };
+_.latex = function(){ return (this.cmd.slice(0,1)=='\\') ? this.cmd + " " : this.cmd; /* space helps mathquill eat its own latex, e.g. with \times */ };
 _.text = function(){ return this.text_template; };
 _.placeCursor = $.noop;
 _.isEmpty = function(){ return true; };
