@@ -254,6 +254,7 @@
 
 .mathquill-rendered-math .binary-operator {
   padding: 0 .2em;
+  display: inline-block; /* Allows word-wrap to occur around operators */
 }
 .mathquill-rendered-math .unary-operator {
   padding-left: .2em;
