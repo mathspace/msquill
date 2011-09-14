@@ -195,6 +195,7 @@ _.redraw = function() {
 
 LatexCmds.sqrt = LatexCmds['√'] = LatexCmds['~'] = SquareRoot;
 
+SquareRoot.with_optional_block = NthRoot;
 function NthRoot(replacedFragment) {
   SquareRoot.call(this, replacedFragment);
   this.jQ = this.firstChild.jQ.detach().add(this.jQ);
@@ -677,7 +678,9 @@ LatexCmds.editable = proto(RootMathCommand, function() {
     this.cursor.appendTo(this);
     MathBlock.prototype.blur.call(this);
   };
-  this.latex = function(){ return this.firstChild.latex(); };
+  // Need the \editable{} latex output or we won't be able to
+  // re-display it e.g. when it's an incorrect answer
+  this.latex = function(){ return '\\editable{'+this.firstChild.latex()+'}'; };
   this.text = function(){ return this.firstChild.text(); };
 });
 
