@@ -8,24 +8,6 @@
     url(font/Symbola.svg#Symbola) format("svg");
 }
 
-@font-face {
-  font-family: BellMTBold;
-  src: url(font/Bell_MTBold/BellMTBold.eot);
-  src: local("Bell MT Bold"),
-    url(font/Bell_MTBold/bellb.ttf) format("truetype"),
-    url(font/Bell_MTBold/bell.otf) format("opentype"),
-    url(font/Bell_MTBold/bell.svg) format("svg");
-}
-
-@font-face {
-  font-family: BellMT;
-  src: url(font/Bell_MT/bell-webfont.eot);
-  src: local('Bell MT Regular'), local('Bell MT'), 
-    url(font/Bell_MT/bell-webfont.ttf) format('truetype'), 
-    url(font/Bell_MT/bel.otf) format("opentype"), 
-    url(font/Bell_MT/bell-webfont.svg) format("svg");
-}
-
 .mathquill-editable,
 .mathquill-rendered-math,
 .mathquill-rendered-math .underline,
@@ -348,9 +330,9 @@
 }
 
 .mathquill-rendered-math .paren {
-  padding: 0 .1em .1em;
+  padding: 0 .1em;
   vertical-align: bottom;
-  font-family: BellMTBold, "Times New Roman", serif;
+  font-family: "Times New Roman", serif;
   -webkit-transform-origin: bottom left;
   -moz-transform-origin: bottom left;
   -ms-transform-origin: bottom left;
