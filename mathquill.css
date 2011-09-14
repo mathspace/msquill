@@ -158,7 +158,7 @@
 }
 .mathquill-editable.hasCursor,
 .mathquill-rendered-math .latex-command-input.hasCursor {
-  border-color: ActiveBorder;
+  border-color: #68B44DF; /* Mathspace active colour */
 }
 .mathquill-editable.hasCursor, .mathquill-editable .hasCursor {
   -webkit-box-shadow: #68B4DF 0 0 3px 2px;
