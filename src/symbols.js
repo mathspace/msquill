@@ -253,6 +253,14 @@ LatexCmds['='] = bind(BinaryOperator, '=', '=');
 LatexCmds['<'] = bind(BinaryOperator, '<', '&lt;');
 LatexCmds['>'] = bind(BinaryOperator, '>', '&gt;');
 
+// We subclass instead of use BinaryOperator, as we want to control the CSS class
+// to fix wrapping and tighten up display of lists
+function Comma(cmd, html, text) {
+  Symbol.call(this, cmd, '<span class="comma">'+html+'</span>', text);
+}
+Comma.prototype = new Symbol; //so instanceof will work
+LatexCmds[','] = bind(Comma, ',', ',');
+
 LatexCmds.notin =
 LatexCmds.sim =
 LatexCmds.cong =
