@@ -602,7 +602,7 @@ LatexCmds.cup = LatexCmds.union = bind(VanillaSymbol,'\\cup ','&cup;');
 LatexCmds.cap = LatexCmds.intersect = LatexCmds.intersection =
   bind(VanillaSymbol,'\\cap ','&cap;');
 
-LatexCmds.deg = LatexCmds.degree = bind(VanillaSymbol,'^\\circ ','&deg;');
+LatexCmds.deg = LatexCmds.degree = bind(VanillaSymbol,'\\deg ','&deg;');
 
 LatexCmds.ang = LatexCmds.angle = bind(VanillaSymbol,'\\angle ','&ang;');
 
