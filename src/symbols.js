@@ -210,10 +210,13 @@ function BinaryOperator(cmd, html, text) {
 _ = BinaryOperator.prototype = new Symbol; //so instanceof will work
 _.insertAt = function(cursor) {
   var cmd = cursor.prev.cmd + this.cmd;
+  // DRY; would prefer to use LatexCmds.cong, LatexCmds.le, etc.
   if (cmd === '<=')
     cursor.backspace().insertNew(new BinaryOperator('\\le ', '&le;'));
   else if (cmd === '>=')
     cursor.backspace().insertNew(new BinaryOperator('\\ge ', '&ge;'));
+  else if (cmd === '==')
+    cursor.backspace().insertNew(new BinaryOperator('\\cong ','&equiv;'));
   else
     MathCommand.prototype.insertAt.apply(this, arguments);
 };
@@ -263,12 +266,12 @@ LatexCmds[','] = bind(Comma, ',', ',');
 
 LatexCmds.notin =
 LatexCmds.sim =
-LatexCmds.cong =
-LatexCmds.equiv =
 LatexCmds.oplus =
 LatexCmds.otimes = proto(BinaryOperator, function(replacedFragment, latex) {
   BinaryOperator.call(this, '\\'+latex+' ', '&'+latex+';');
 });
+
+LatexCmds.cong = bind(BinaryOperator,'\\cong ','&equiv;');
 
 LatexCmds.times = proto(BinaryOperator, function(replacedFragment, latex) {
   BinaryOperator.call(this, '\\times ', '&times;', '[x]')
@@ -423,7 +426,7 @@ LatexCmds.prec = bind(VanillaSymbol, '\\prec ', '&#8826;');
 LatexCmds.succ = bind(VanillaSymbol, '\\succ ', '&#8827;');
 LatexCmds.preceq = bind(VanillaSymbol, '\\preceq ', '&#8828;');
 LatexCmds.succeq = bind(VanillaSymbol, '\\succeq ', '&#8829;');
-LatexCmds.simeq = bind(VanillaSymbol, '\\simeq ', '&#8771;');
+LatexCmds.simeq = bind(VanillaSymbol, '\\simeq ', '&#11003;');
 LatexCmds.mid = bind(VanillaSymbol, '\\mid ', '&#8739;');
 LatexCmds.ll = bind(VanillaSymbol, '\\ll ', '&#8810;');
 LatexCmds.gg = bind(VanillaSymbol, '\\gg ', '&#8811;');
