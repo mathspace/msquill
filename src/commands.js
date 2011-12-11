@@ -35,13 +35,6 @@ if (transformPropName) {
     jQ.css(transformPropName, 'scale('+x+','+y+')');
   };
 }
-else if ('filter' in div_style) {
-  scale = function(jQ, x, y) {
-    jQ.css('filter', 'progid:DXImageTransform.Microsoft'
-      + '.Matrix(M11='+x+',M22='+y+',SizingMethod=\'auto expand\')'
-    );
-  };
-}
 else {
   scale = function(jQ, x, y) {
     jQ.css('fontSize', y + 'em');
