@@ -274,7 +274,7 @@ LatexCmds.otimes = proto(BinaryOperator, function(replacedFragment, latex) {
   BinaryOperator.call(this, '\\'+latex+' ', '&'+latex+';');
 });
 
-CharCmds['*'] = LatexCmds.times = bind(BinaryOperator, '\\times', '&times;', '[x]');
+CharCmds['*'] = LatexCmds.times = bind(BinaryOperator, '\\times ', '&times;', '[x]');
 
 LatexCmds.div = LatexCmds.divide = LatexCmds.divides =
   bind(BinaryOperator,'\\div ','&divide;', '[/]');
