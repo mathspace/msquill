@@ -46,6 +46,7 @@ _.respace = function() {
   outer: for (var i = 0, first = prev.next || this.parent.firstChild; i < cmd.length; i += 1, first = first.next) {
     for (var len = min(MAX_UNITALICIZED_LEN, cmd.length - i); len > 0; len -= 1) {
       if (UnItalicizedCmds.hasOwnProperty(cmd.slice(i, i + len))) {
+        first.isFirstLetter = true;
         for (var j = 0, letter = first; j < len; j += 1, letter = letter.next) {
           letter.jQ.addClass('un-italicized');
           var last = letter;
