@@ -14,52 +14,16 @@ var $ = jQuery,
   min = Math.min,
   max = Math.max;
 
-/**
- * simple sugar for idiomatic JS classes
- * Usage:
- *  var Cat = _class(new Animal, function(furriness) {
- *    this.furriness = furriness;
- *    this.adorableness = furriness/10;
- *  });
- *  _.play = function(){ this.chase('mouse'); };
- */
-function _class(prototype, constructor) {
-  if (!constructor) constructor = function(){};
-  _ = constructor.prototype = prototype;
-  return constructor;
-}
-
-/**
- * more sugar, for classes without a pre-supplied prototype
- * Usage:
- *  var Animal = _baseclass();
- *  _.chase = function(prey) ...
- */
-function _baseclass(constructor) {
-  return _class({}, constructor);
-}
-
-/**
- * sugar specifically for copying the constructor
- * Usage:
- *  var HouseCat = _subclass(Cat);
- *  _.play = function(){ this.chase('yarn'); };
- */
-function _subclass(superclass) {
-  return _class(new superclass, function(){
-    superclass.apply(this, arguments);
-  });
-}
-
 /*************************************************
  * Abstract base classes of blocks and commands.
  ************************************************/
 
 /**
  * MathElement is the core Math DOM tree node prototype.
- * Both MathBlock's and MathCmd's descend from it.
+ * Both MathBlock's and MathCommand's descend from it.
  */
-var MathElement = _baseclass();
+function MathElement(){}
+_ = MathElement.prototype;
 _.prev = 0;
 _.next = 0;
 _.parent = 0;
@@ -77,26 +41,127 @@ _.foldChildren = function(fold, fn) {
   });
   return fold;
 };
-_.bubble = function(event, arg) {
-  for (var ancestor = this; ancestor; ancestor = ancestor.parent)
-    if (ancestor[event] && ancestor[event](arg) === false) break;
-
-  return this;
+_.keydown = function(e) {
+  return this.parent.keydown(e);
+};
+_.textInput = function(ch) {
+  return this.parent.textInput(ch);
 };
 
 /**
  * Commands and operators, like subscripts, exponents, or fractions.
  * Descendant commands are organized into blocks.
+ * May be passed a MathFragment that's being replaced.
  */
-var MathCmd = _class(new MathElement, function(ctrlSeq, htmlTemplate, textTemplate) {
+function MathCommand(){}
+_ = MathCommand.prototype = new MathElement;
+_.init = function(cmd, html_template, text_template, replacedFragment) {
+  var self = this; // minifier optimization
+
+  if (cmd) self.cmd = cmd;
+  if (html_template) self.html_template = html_template;
+  if (text_template) self.text_template = text_template;
+
+  self.jQ = $(self.html_template[0]).data(jQueryDataKey, {cmd: self});
+  self.initBlocks(replacedFragment);
+};
+_.initBlocks = function(replacedFragment) {
+  var self = this;
+  //single-block commands
+  if (self.html_template.length === 1) {
+    self.firstChild =
+    self.lastChild =
+    self.jQ.data(jQueryDataKey).block =
+      (replacedFragment && replacedFragment.blockify()) || new MathBlock;
+
+    self.firstChild.parent = self;
+    self.firstChild.jQ = self.jQ.append(self.firstChild.jQ);
+
+    return;
+  }
+  //otherwise, the succeeding elements of html_template should be child blocks
+  var newBlock, prev, num_blocks = self.html_template.length;
+  this.firstChild = newBlock = prev =
+    (replacedFragment && replacedFragment.blockify()) || new MathBlock;
+
+  newBlock.parent = self;
+  newBlock.jQ = $(self.html_template[1])
+    .data(jQueryDataKey, {block: newBlock})
+    .append(newBlock.jQ)
+    .appendTo(self.jQ);
+
+  newBlock.blur();
+
+  for (var i = 2; i < num_blocks; i += 1) {
+    newBlock = new MathBlock;
+    newBlock.parent = self;
+    newBlock.prev = prev;
+    prev.next = newBlock;
+    prev = newBlock;
+
+    newBlock.jQ = $(self.html_template[i])
+      .data(jQueryDataKey, {block: newBlock})
+      .appendTo(self.jQ);
+
+    newBlock.blur();
+  }
+  self.lastChild = newBlock;
+};
+_.latex = function() {
+  return this.foldChildren(this.cmd, function(latex, child) {
+    return latex + '{' + (child.latex() || ' ') + '}';
+  });
+};
+_.text_template = [''];
+_.text = function() {
+  var i = 0;
+  return this.foldChildren(this.text_template[i], function(text, child) {
+    i += 1;
+    var child_text = child.text();
+    if (text && this.text_template[i] === '('
+        && child_text[0] === '(' && child_text.slice(-1) === ')')
+      return text + child_text.slice(1, -1) + this.text_template[i];
+    return text + child.text() + (this.text_template[i] || '');
+  });
+};
+_.insertAt = function(cursor) {
   var cmd = this;
 
-  if (ctrlSeq) cmd.ctrlSeq = ctrlSeq;
-  if (htmlTemplate) cmd.htmlTemplate = htmlTemplate;
-  if (textTemplate) cmd.textTemplate = textTemplate;
-});
-_.replaces = function(replacedFragment) {
-  this.replacedFragment = replacedFragment;
+  cmd.parent = cursor.parent;
+  cmd.next = cursor.next;
+  cmd.prev = cursor.prev;
+
+  if (cursor.prev)
+    cursor.prev.next = cmd;
+  else
+    cursor.parent.firstChild = cmd;
+
+  if (cursor.next)
+    cursor.next.prev = cmd;
+  else
+    cursor.parent.lastChild = cmd;
+
+  cursor.prev = cmd;
+
+  cmd.jQ.insertBefore(cursor.jQ);
+
+  //adjust context-sensitive spacing
+  cmd.respace();
+  if (cmd.next)
+    cmd.next.respace();
+  if (cmd.prev)
+    cmd.prev.respace();
+
+  cmd.placeCursor(cursor);
+
+  cursor.redraw(); //this will soon be cmd.trigger('redraw')
+};
+_.respace = $.noop; //placeholder for context-sensitive spacing
+_.placeCursor = function(cursor) {
+  //append the cursor to the first empty child, or if none empty, the last one
+  cursor.appendTo(this.foldChildren(this.firstChild, function(prev, child) {
+    return prev.isEmpty() ? prev : child;
+  }));
 };
 _.isEmpty = function() {
   return this.foldChildren(true, function(isEmpty, child) {
@@ -123,139 +188,31 @@ _.remove = function() {
 
   return self;
 };
-_.insertAt = function(parent, prev, next) {
-  var cmd = this;
-
-  cmd.parent = parent;
-  cmd.next = next;
-  cmd.prev = prev;
-
-  if (prev)
-    prev.next = cmd;
-  else
-    parent.firstChild = cmd;
-
-  if (next)
-    next.prev = cmd;
-  else
-    parent.lastChild = cmd;
-
-  return cmd;
-};
-_.createBefore = _._createBefore = function(cursor) {
-  var cmd = this;
-
-  cmd.jQ = $(cmd.htmlTemplate[0]).data(jQueryDataKey, {cmd: cmd});
-  cmd.createBlocks();
-  cursor.jQ.before(cmd.jQ);
-
-  cursor.prev = cmd.insertAt(cursor.parent, cursor.prev, cursor.next);
-
-  //adjust context-sensitive spacing
-  cmd.respace();
-  if (cmd.next)
-    cmd.next.respace();
-  if (cmd.prev)
-    cmd.prev.respace();
-
-  cmd.placeCursor(cursor);
-
-  cmd.bubble('redraw');
-};
-_.createBlocks = _._createBlocks = function() {
-  var cmd = this, replacedFragment = cmd.replacedFragment;
-  //single-block commands
-  if (cmd.htmlTemplate.length === 1) {
-    cmd.firstChild =
-    cmd.lastChild =
-    cmd.jQ.data(jQueryDataKey).block =
-      (replacedFragment && replacedFragment.blockify()) || new MathBlock;
-
-    cmd.firstChild.parent = cmd;
-    cmd.firstChild.jQ = cmd.jQ.append(cmd.firstChild.jQ);
-
-    return;
-  }
-  //otherwise, the succeeding elements of htmlTemplate should be child blocks
-  var newBlock, prev, num_blocks = cmd.htmlTemplate.length;
-  this.firstChild = newBlock = prev =
-    (replacedFragment && replacedFragment.blockify()) || new MathBlock;
-
-  newBlock.parent = cmd;
-  newBlock.jQ = $(cmd.htmlTemplate[1])
-    .data(jQueryDataKey, {block: newBlock})
-    .append(newBlock.jQ)
-    .appendTo(cmd.jQ);
-
-  newBlock.blur();
-
-  for (var i = 2; i < num_blocks; i += 1) {
-    newBlock = new MathBlock;
-    newBlock.parent = cmd;
-    newBlock.prev = prev;
-    prev.next = newBlock;
-    prev = newBlock;
-
-    newBlock.jQ = $(cmd.htmlTemplate[i])
-      .data(jQueryDataKey, {block: newBlock})
-      .appendTo(cmd.jQ);
-
-    newBlock.blur();
-  }
-  cmd.lastChild = newBlock;
-};
-_.respace = $.noop; //placeholder for context-sensitive spacing
-_.placeCursor = function(cursor) {
-  //append the cursor to the first empty child, or if none empty, the last one
-  cursor.appendTo(this.foldChildren(this.firstChild, function(prev, child) {
-    return prev.isEmpty() ? prev : child;
-  }));
-};
-_.latex = function() {
-  //return "%s{%s}{%s}..." % this.ctrlSeq, this.firstChild.latex(), ...
-  return this.foldChildren(this.ctrlSeq, function(latex, block) {
-    return latex + '{' + (block.latex() || ' ') + '}';
-  });
-};
-_.textTemplate = [''];
-_.text = function() {
-  var i = 0;
-  return this.foldChildren(this.textTemplate[i], function(text, child) {
-    i += 1;
-    var child_text = child.text();
-    if (text && this.textTemplate[i] === '('
-        && child_text[0] === '(' && child_text.slice(-1) === ')')
-      return text + child_text.slice(1, -1) + this.textTemplate[i];
-    return text + child.text() + (this.textTemplate[i] || '');
-  });
-};
 
 /**
  * Lightweight command without blocks or children.
  */
-var Symbol = _class(new MathCmd, function(ctrlSeq, html, text) {
-  MathCmd.call(this, ctrlSeq, [ html ],
-    text || (ctrlSeq && ctrlSeq.length > 1 ? ctrlSeq.slice(1) : ctrlSeq) );
-});
-_.replaces = function(replacedFragment) {
-  replacedFragment.remove();
-};
-_.createBlocks = $.noop;
-_.latex = function(){ return this.ctrlSeq; };
-_.text = function(){ return this.textTemplate; };
+function Symbol(cmd, html, text) {
+  this.init(cmd, [ html ],
+    [ text || (cmd && cmd.length > 1 ? cmd.slice(1) : cmd) ]);
+}
+_ = Symbol.prototype = new MathCommand;
+_.initBlocks = $.noop;
+_.latex = function(){ return this.cmd; };
+_.text = function(){ return this.text_template; };
 _.placeCursor = $.noop;
 _.isEmpty = function(){ return true; };
 
 /**
- * Children and parent of MathCmd's. Basically partitions all the
+ * Children and parent of MathCommand's. Basically partitions all the
  * symbols and operators that descend (in the Math DOM tree) from
  * ancestor operators.
  */
-var MathBlock = _class(new MathElement);
+function MathBlock(){}
+_ = MathBlock.prototype = new MathElement;
 _.latex = function() {
-  //return this.all().latex().join('')
-  return this.foldChildren('', function(latexSoFar, cmd) {
-    return latexSoFar + cmd.latex();
+  return this.foldChildren('', function(latex, child) {
+    return latex + child.latex();
   });
 };
 _.text = function() {
@@ -288,21 +245,24 @@ _.blur = function() {
  * a "view" of part of the tree, not an actual node/entity in the tree)
  * that delimit a list of symbols and operators.
  */
-var MathFragment = _baseclass(function(first, last) {
+function MathFragment(parent, prev, next) {
   if (!arguments.length) return;
 
   var self = this;
 
-  self.first = first;
-  self.last = last || first; //just select one thing if only one argument
+  self.parent = parent;
+  self.prev = prev || 0; //so you can do 'new MathFragment(block)' without
+  self.next = next || 0; //ending up with this.prev or this.next === undefined
 
   self.jQinit(self.fold($(), function(jQ, child){ return child.jQ.add(jQ); }));
-});
+}
+_ = MathFragment.prototype;
+_.remove = MathCommand.prototype.remove;
 _.jQinit = function(children) {
   this.jQ = children;
 };
 _.each = function(fn) {
-  for (var el = this.first; el !== this.last.next; el = el.next)
+  for (var el = this.prev.next || this.parent.firstChild; el !== this.next; el = el.next)
     if (fn.call(this, el) === false) break;
 
   return this;
@@ -316,15 +276,14 @@ _.fold = function(fold, fn) {
 _.latex = function() {
   return this.fold('', function(latex, el){ return latex + el.latex(); });
 };
-_.remove = function() {
-  this.jQ.remove();
-  return this.detach();
-};
-_.detach = function() {
+_.blockify = function() {
   var self = this,
-    prev = self.first.prev,
-    next = self.last.next,
-    parent = self.last.parent;
+      prev = self.prev,
+      next = self.next,
+      parent = self.parent,
+      newBlock = new MathBlock,
+      newFirstChild = newBlock.firstChild = prev.next || parent.firstChild,
+      newLastChild = newBlock.lastChild = next.prev || parent.lastChild;
 
   if (prev)
     prev.next = next;
@@ -336,20 +295,10 @@ _.detach = function() {
   else
     parent.lastChild = prev;
 
-  self.detach = chainableNoop;
+  newFirstChild.prev = self.prev = 0;
+  newLastChild.next = self.next = 0;
 
-  return self;
-};
-function chainableNoop(){ return this; };
-_.blockify = function() {
-  var self = this.detach();
-    newBlock = new MathBlock;
-    first = newBlock.firstChild = self.first,
-    last = newBlock.lastChild = self.last;
-
-  first.prev = 0;
-  last.next = 0;
-
+  self.parent = newBlock;
   self.each(function(el){ el.parent = newBlock; });
 
   newBlock.jQ = self.jQ;
@@ -417,7 +366,7 @@ function createRoot(jQ, root, textbox, editable) {
     cursor.blink = $.noop;
     cursor.seek($(e.target), e.pageX, e.pageY);
 
-    anticursor = {parent: cursor.parent, prev: cursor.prev, next: cursor.next};
+    anticursor = new MathFragment(cursor.parent, cursor.prev, cursor.next);
 
     if (!editable)
       jQ.prepend(textareaSpan);
@@ -506,7 +455,7 @@ function createRoot(jQ, root, textbox, editable) {
   jQ.bind('cut', function(e) {
     setTextareaSelection();
     if (cursor.selection)
-      setTimeout(function(){ cursor.deleteSelection(); cursor.parent.bubble('redraw'); });
+      setTimeout(function(){ cursor.deleteSelection(); cursor.redraw(); });
     e.stopPropagation();
   }).bind('copy', function(e) {
     setTextareaSelection();
@@ -530,17 +479,27 @@ function createRoot(jQ, root, textbox, editable) {
   }
 
   //keyboard events and text input, see Wiki page "Keyboard Events"
-  var lastKeydn = {}, skipTextInput = false;
+  var lastKeydn, lastKeydnHappened, lastKeypressWhich, skipTextInput = false;
   jQ.bind('keydown.mathquill', function(e) {
-    lastKeydn.evt = e;
-    lastKeydn.happened = true;
-    cursor.parent.bubble('keydown', e);
+    lastKeydn = e;
+    lastKeydnHappened = true;
+    if (cursor.parent.keydown(e) === false)
+      e.preventDefault();
   }).bind('keypress.mathquill', function(e) {
-    //on auto-repeated key events, keypress may get triggered but not keydown
-    if (lastKeydn.happened)
-      lastKeydn.happened = false;
-    else
-      cursor.parent.bubble('keydown', lastKeydn.evt);
+    if (lastKeydnHappened)
+      lastKeydnHappened = false;
+    else {
+      //there's two ways keypress might be triggered without a keydown happening first:
+      if (lastKeypressWhich !== e.which)
+        //all browsers do that if this textarea is given focus during the keydown of
+        //a different focusable element, i.e. by that element's keydown event handler.
+        //No way of knowing original keydown, so ignore this keypress
+        return;
+      else
+        //some browsers do that when auto-repeating key events, replay the keydown
+        cursor.parent.keydown(lastKeydn);
+    }
+    lastKeypressWhich = e.which;
 
     if (textareaSelectionTimeout !== undefined)
       clearTimeout(textareaSelectionTimeout);
@@ -560,7 +519,7 @@ function createRoot(jQ, root, textbox, editable) {
     if (text) {
       textarea.val('');
       for (var i = 0; i < text.length; i += 1) {
-        cursor.parent.bubble('textInput', text.charAt(i));
+        cursor.parent.textInput(text.charAt(i));
       }
     }
     else {
@@ -570,7 +529,8 @@ function createRoot(jQ, root, textbox, editable) {
   }
 }
 
-var RootMathBlock = _class(new MathBlock);
+function RootMathBlock(){}
+_ = RootMathBlock.prototype = new MathBlock;
 _.latex = function() {
   return MathBlock.prototype.latex.call(this).replace(/(\\[a-z]+) (?![a-z])/ig,'$1');
 };
@@ -713,7 +673,7 @@ _.keydown = function(e)
   case 'U+0041':
     if (e.ctrlKey && !e.shiftKey && !e.altKey) {
       if (this !== this.cursor.root) //so not stopPropagation'd at RootMathCommand
-        return;
+        return this.parent.keydown(e);
 
       this.cursor.clearSelection().appendTo(this);
       while (this.cursor.prev)
@@ -722,35 +682,21 @@ _.keydown = function(e)
     }
   default:
     this.skipTextInput = false;
-    return false;
+    return true;
   }
   this.skipTextInput = true;
-  e.preventDefault();
   return false;
 };
 _.textInput = function(ch) {
   if (!this.skipTextInput)
     this.cursor.write(ch);
-  return false;
 };
 
-var RootMathCommand = _class(new MathCmd, function(cursor) {
-  MathCmd.call(this, '$');
-  this.cursor = cursor;
-});
-_.htmlTemplate = ['<span class="mathquill-rendered-math"></span>'];
-_.createBlocks = function() {
-  this.firstChild =
-  this.lastChild =
-  this.jQ.data(jQueryDataKey).block =
-    new RootMathBlock;
-
-  this.firstChild.parent = this;
-  this.firstChild.jQ = this.jQ;
-
-  var cursor = this.firstChild.cursor = this.cursor;
+function RootMathCommand(cursor) {
+  this.init('$');
+  this.firstChild.cursor = cursor;
   this.firstChild.textInput = function(ch) {
-    if (this.skipTextInput) return false;
+    if (this.skipTextInput) return;
 
     if (ch !== '$' || cursor.parent !== this)
       cursor.write(ch);
@@ -764,15 +710,25 @@ _.createBlocks = function() {
       cursor.insertBefore(this.parent);
     else
       cursor.write(ch);
-
-    return false;
   };
+}
+_ = RootMathCommand.prototype = new MathCommand;
+_.html_template = ['<span class="mathquill-rendered-math"></span>'];
+_.initBlocks = function() {
+  this.firstChild =
+  this.lastChild =
+  this.jQ.data(jQueryDataKey).block =
+    new RootMathBlock;
+
+  this.firstChild.parent = this;
+  this.firstChild.jQ = this.jQ;
 };
 _.latex = function() {
   return '$' + this.firstChild.latex() + '$';
 };
 
-var RootTextBlock = _class(new MathBlock);
+function RootTextBlock(){}
+_ = RootTextBlock.prototype = new MathBlock;
 _.renderLatex = function(latex) {
   var self = this, cursor = self.cursor;
   self.jQ.children().slice(1).remove();
@@ -801,15 +757,13 @@ _.renderLatex = function(latex) {
 };
 _.keydown = RootMathBlock.prototype.keydown;
 _.textInput = function(ch) {
-  if (this.skipTextInput) return false;
+  if (this.skipTextInput) return;
 
   this.cursor.deleteSelection();
   if (ch === '$')
     this.cursor.insertNew(new RootMathCommand(this.cursor));
   else
     this.cursor.insertNew(new VanillaSymbol(ch));
-
-  return false;
 };
 
 /***************************
@@ -849,11 +803,13 @@ if (transformPropName) {
     jQ.css(transformPropName, 'scale('+x+','+y+')');
   };
 }
-else if ('filter' in div_style) {
-  scale = function(jQ, x, y) {
-    jQ.css('filter', 'progid:DXImageTransform.Microsoft'
-      + '.Matrix(M11='+x+',M22='+y+',SizingMethod=\'auto expand\')'
-    );
+else if ('filter' in div_style) { //IE 6 & 7 fallback
+  scale = function(jQ, x, y) { //NOTE: assumes y > x
+    jQ.addClass('matrixed').css({
+      fontSize: y + 'em',
+      filter: 'progid:DXImageTransform.Microsoft'
+        + '.Matrix(M11=' + (x/y) + ",SizingMethod='auto expand')"
+    });
   };
 }
 else {
@@ -875,10 +831,10 @@ function bind(cons) { //shorthand for binding arguments to constructor
   });
 }
 
-function Style(cmd, htmlTemplate) {
-  MathCmd.call(this, cmd, [ htmlTemplate ]);
+function Style(cmd, html_template, replacedFragment) {
+  this.init(cmd, [ html_template ], undefined, replacedFragment);
 }
-proto(MathCmd, Style);
+proto(MathCommand, Style);
 //fonts
 LatexCmds.mathrm = bind(Style, '\\mathrm', '<span class="roman font"></span>');
 LatexCmds.mathit = bind(Style, '\\mathit', '<i class="font"></i>');
@@ -889,28 +845,35 @@ LatexCmds.mathtt = bind(Style, '\\mathtt', '<span class="monospace font"></span>
 LatexCmds.underline = bind(Style, '\\underline', '<span class="underline"></span>');
 LatexCmds.overline = LatexCmds.bar = bind(Style, '\\overline', '<span class="overline"></span>');
 
-var SupSub = _class(new MathCmd, function(cmd, html, text) {
-  MathCmd.call(this, cmd, [ html ], [ text ]);
-});
+function SupSub(cmd, html, text, replacedFragment) {
+  this.init(cmd, [ html ], [ text ], replacedFragment);
+}
+_ = SupSub.prototype = new MathCommand;
 _.latex = function() {
   var latex = this.firstChild.latex();
   if (latex.length === 1)
-    return this.ctrlSeq + latex;
+    return this.cmd + latex;
   else
-    return this.ctrlSeq + '{' + (latex || ' ') + '}';
+    return this.cmd + '{' + (latex || ' ') + '}';
 };
 _.redraw = function() {
-  this.respace();
-  if (this.next)
-    this.next.respace();
   if (this.prev)
     this.prev.respace();
+  //SupSub::respace recursively calls respace on all the following SupSubs
+  //so if prev is a SupSub, no need to call respace on this or following nodes
+  if (!(this.prev instanceof SupSub)) {
+    this.respace();
+    //and if next is a SupSub, then this.respace() will have already called
+    //this.next.respace()
+    if (this.next && !(this.next instanceof SupSub))
+      this.next.respace();
+  }
 };
 _.respace = function() {
   if (
-    this.prev.ctrlSeq === '\\int ' || (
-      this.prev instanceof SupSub && this.prev.ctrlSeq != this.ctrlSeq &&
-      this.prev.prev && this.prev.prev.ctrlSeq === '\\int '
+    this.prev.cmd === '\\int ' || (
+      this.prev instanceof SupSub && this.prev.cmd != this.cmd
+      && this.prev.prev && this.prev.prev.cmd === '\\int '
     )
   ) {
     if (!this.limit) {
@@ -925,17 +888,18 @@ _.respace = function() {
     }
   }
 
-  if (this.respaced = this.prev instanceof SupSub && this.prev.ctrlSeq != this.ctrlSeq && !this.prev.respaced) {
+  this.respaced = this.prev instanceof SupSub && this.prev.cmd != this.cmd && !this.prev.respaced;
+  if (this.respaced) {
     var fontSize = +this.jQ.css('fontSize').slice(0,-2),
       prevWidth = this.prev.jQ.outerWidth()
       thisWidth = this.jQ.outerWidth();
     this.jQ.css({
-      left: (this.limit && this.ctrlSeq === '_' ? -.25 : 0) - prevWidth/fontSize + 'em',
+      left: (this.limit && this.cmd === '_' ? -.25 : 0) - prevWidth/fontSize + 'em',
       marginRight: .1 - min(thisWidth, prevWidth)/fontSize + 'em'
         //1px extra so it doesn't wrap in retarded browsers (Firefox 2, I think)
     });
   }
-  else if (this.limit && this.ctrlSeq === '_') {
+  else if (this.limit && this.cmd === '_') {
     this.jQ.css({
       left: '-.25em',
       marginRight: ''
@@ -948,38 +912,43 @@ _.respace = function() {
     });
   }
 
+  if (this.next instanceof SupSub)
+    this.next.respace();
+
   return this;
 };
 
-LatexCmds.subscript = LatexCmds._ = proto(SupSub, function() {
-  SupSub.call(this, '_', '<sub></sub>', '_');
+LatexCmds.subscript = LatexCmds._ = proto(SupSub, function(replacedFragment) {
+  SupSub.call(this, '_', '<sub></sub>', '_', replacedFragment);
 });
 
 LatexCmds.superscript =
 LatexCmds.supscript =
-LatexCmds['^'] = proto(SupSub, function() {
-  SupSub.call(this, '^', '<sup></sup>', '**');
+LatexCmds['^'] = proto(SupSub, function(replacedFragment) {
+  SupSub.call(this, '^', '<sup></sup>', '**', replacedFragment);
 });
 
-var Fraction = _class(new MathCmd);
-_.ctrlSeq = '\\frac';
-_.htmlTemplate = [
+function Fraction(replacedFragment) {
+  this.init('\\frac', undefined, undefined, replacedFragment);
+  this.jQ.append('<span style="display:inline-block;width:0">&nbsp;</span>');
+}
+_ = Fraction.prototype = new MathCommand;
+_.html_template = [
   '<span class="fraction"></span>',
   '<span class="numerator"></span>',
   '<span class="denominator"></span>'
 ];
-_.createBlocks = function() {
-  this._createBlocks();
-  this.jQ.append('<span style="display:inline-block;width:0">&nbsp;</span>');
-};
-_.textTemplate = ['(', '/', ')'];
+_.text_template = ['(', '/', ')'];
 
 LatexCmds.frac = LatexCmds.dfrac = LatexCmds.cfrac = LatexCmds.fraction = Fraction;
 
-var LiveFraction = _subclass(Fraction);
-_.createBefore = function(cursor) {
-  if (!this.replacedFragment) {
-    var prev = cursor.prev;
+function LiveFraction() {
+  Fraction.apply(this, arguments);
+}
+_ = LiveFraction.prototype = new Fraction;
+_.placeCursor = function(cursor) { //TODO: better architecture so this can be done more cleanly, highjacking MathCommand::placeCursor doesn't seem like the right place to do this
+  if (this.firstChild.isEmpty()) {
+    var prev = this.prev;
     while (prev &&
       !(
         prev instanceof BinaryOperator ||
@@ -991,27 +960,32 @@ _.createBefore = function(cursor) {
 
     if (prev instanceof BigSymbol && prev.next instanceof SupSub) {
       prev = prev.next;
-      if (prev.next instanceof SupSub && prev.next.ctrlSeq != prev.ctrlSeq)
+      if (prev.next instanceof SupSub && prev.next.cmd != prev.cmd)
         prev = prev.next;
     }
 
-    if (prev !== cursor.prev) {
-      this.replaces(new MathFragment(prev.next || cursor.parent.firstChild, cursor.prev).detach());
-      cursor.prev = prev;
+    if (prev !== this.prev) { //FIXME: major Law of Demeter violation, shouldn't know here that MathCommand::initBlocks does some initialization that MathFragment::blockify doesn't
+      var newBlock = new MathFragment(this.parent, prev, this).blockify();
+      newBlock.jQ = this.firstChild.jQ.empty().removeClass('empty').append(newBlock.jQ).data(jQueryDataKey, { block: newBlock });
+      newBlock.next = this.lastChild;
+      newBlock.parent = this;
+      this.firstChild = this.lastChild.prev = newBlock;
     }
   }
-  this._createBefore(cursor);
+  cursor.appendTo(this.lastChild);
 };
 
 LatexCmds.over = CharCmds['/'] = LiveFraction;
 
-var SquareRoot = _class(new MathCmd);
-_.ctrlSeq = '\\sqrt';
-_.htmlTemplate = [
+function SquareRoot(replacedFragment) {
+  this.init('\\sqrt', undefined, undefined, replacedFragment);
+}
+_ = SquareRoot.prototype = new MathCommand;
+_.html_template = [
   '<span class="block"><span class="sqrt-prefix">&radic;</span></span>',
   '<span class="sqrt-stem"></span>'
 ];
-_.textTemplate = ['sqrt(', ')'];
+_.text_template = ['sqrt(', ')'];
 _.redraw = function() {
   var block = this.lastChild.jQ;
   scale(block.prev(), 1, block.innerHeight()/+block.css('fontSize').slice(0,-2) - .1);
@@ -1021,18 +995,15 @@ LatexCmds.sqrt = LatexCmds['√'] = SquareRoot;
 
 function NthRoot(replacedFragment) {
   SquareRoot.call(this, replacedFragment);
+  this.jQ = this.firstChild.jQ.detach().add(this.jQ);
 }
 _ = NthRoot.prototype = new SquareRoot;
-_.createBlocks = function() {
-  MathCmd.prototype.createBlocks.call(this);
-  this.jQ = this.firstChild.jQ.detach().add(this.jQ);
-};
-_.htmlTemplate = [
+_.html_template = [
   '<span class="block"><span class="sqrt-prefix">&radic;</span></span>',
   '<sup class="nthroot"></sup>',
   '<span class="sqrt-stem"></span>'
 ];
-_.textTemplate = ['sqrt[', '](', ')'];
+_.text_template = ['sqrt[', '](', ')'];
 _.latex = function() {
   return '\\sqrt['+this.firstChild.latex()+']{'+this.lastChild.latex()+'}';
 };
@@ -1040,15 +1011,17 @@ _.latex = function() {
 LatexCmds.nthroot = NthRoot;
 
 // Round/Square/Curly/Angle Brackets (aka Parens/Brackets/Braces)
-var Bracket = _class(new MathCmd, function(open, close, cmd, end) {
-  MathCmd.call(this, '\\left'+cmd,
+function Bracket(open, close, cmd, end, replacedFragment) {
+  this.init('\\left'+cmd,
     ['<span class="block"><span class="paren">'+open+'</span><span class="block"></span><span class="paren">'+close+'</span></span>'],
-    [open, close]);
+    [open, close],
+    replacedFragment);
   this.end = '\\right'+end;
-});
-_.createBlocks = function() { //FIXME: possible Law of Demeter violation, hardcore MathCmd::createBlocks knowledge needed here
+}
+_ = Bracket.prototype = new MathCommand;
+_.initBlocks = function(replacedFragment) { //FIXME: possible Law of Demeter violation, hardcore MathCommand::initBlocks knowledge needed here
   this.firstChild = this.lastChild =
-    (this.replacedFragment && this.replacedFragment.blockify()) || new MathBlock;
+    (replacedFragment && replacedFragment.blockify()) || new MathBlock;
   this.firstChild.parent = this;
   this.firstChild.jQ = this.jQ.children(':eq(1)')
     .data(jQueryDataKey, {block: this.firstChild})
@@ -1058,82 +1031,93 @@ _.createBlocks = function() { //FIXME: possible Law of Demeter violation, hardco
   this.bracketjQs = block.prev().add(block.next());
 };
 _.latex = function() {
-  return this.ctrlSeq + this.firstChild.latex() + this.end;
+  return this.cmd + this.firstChild.latex() + this.end;
 };
 _.redraw = function() {
   var height = this.blockjQ.outerHeight()/+this.blockjQ.css('fontSize').slice(0,-2);
   scale(this.bracketjQs, min(1 + .2*(height - 1), 1.2), 1.05*height);
 };
 
-LatexCmds.lbrace = CharCmds['{'] = proto(Bracket, function() {
-  Bracket.call(this, '{', '}', '\\{', '\\}');
+LatexCmds.lbrace = CharCmds['{'] = proto(Bracket, function(replacedFragment) {
+  Bracket.call(this, '{', '}', '\\{', '\\}', replacedFragment);
 });
-LatexCmds.langle = LatexCmds.lang = proto(Bracket, function() {
-  Bracket.call(this,'&lang;','&rang;','\\langle ','\\rangle ');
+LatexCmds.langle = LatexCmds.lang = proto(Bracket, function(replacedFragment) {
+  Bracket.call(this,'&lang;','&rang;','\\langle ','\\rangle ',replacedFragment);
 });
 
 // Closing bracket matching opening bracket above
-var CloseBracket = _subclass(Bracket);
-_.createBefore = function(cursor) {
-  //if I'm at the end of my parent who is a matching open-paren, and I am not
-  //replacing a selection fragment, don't create me, just put cursor after my parent
-  if (!cursor.next && cursor.parent.parent && cursor.parent.parent.end === this.end && !this.replacedFragment)
-    cursor.insertAfter(cursor.parent.parent);
-  else
-    this._createBefore(cursor);
-};
+function CloseBracket(open, close, cmd, end, replacedFragment) {
+  Bracket.apply(this, arguments);
+}
+_ = CloseBracket.prototype = new Bracket;
 _.placeCursor = function(cursor) {
-  this.firstChild.blur();
-  cursor.insertAfter(this);
+  //if I'm at the end of my parent who is a matching open-paren, and I was not passed
+  //  a selection fragment, get rid of me and put cursor after my parent
+  if (!this.next && this.parent.parent && this.parent.parent.end === this.end && this.firstChild.isEmpty())
+    cursor.backspace().insertAfter(this.parent.parent);
+  else {
+    this.firstChild.blur();
+    this.redraw();
+  }
 };
 
-LatexCmds.rbrace = CharCmds['}'] = proto(CloseBracket, function() {
-  CloseBracket.call(this, '{','}','\\{','\\}');
+LatexCmds.rbrace = CharCmds['}'] = proto(CloseBracket, function(replacedFragment) {
+  CloseBracket.call(this, '{','}','\\{','\\}',replacedFragment);
 });
-LatexCmds.rangle = LatexCmds.rang = proto(CloseBracket, function() {
-  CloseBracket.call(this,'&lang;','&rang;','\\langle ','\\rangle ');
-});
-
-var Paren = proto(Bracket, function(open, close) {
-  Bracket.call(this, open, close, open, close);
+LatexCmds.rangle = LatexCmds.rang = proto(CloseBracket, function(replacedFragment) {
+  CloseBracket.call(this,'&lang;','&rang;','\\langle ','\\rangle ',replacedFragment);
 });
 
-LatexCmds.lparen = CharCmds['('] = proto(Paren, function() {
-  Paren.call(this, '(', ')');
+function Paren(open, close, replacedFragment) {
+  Bracket.call(this, open, close, open, close, replacedFragment);
+}
+Paren.prototype = Bracket.prototype;
+
+LatexCmds.lparen = CharCmds['('] = proto(Paren, function(replacedFragment) {
+  Paren.call(this, '(', ')', replacedFragment);
 });
-LatexCmds.lbrack = LatexCmds.lbracket = CharCmds['['] = proto(Paren, function() {
-  Paren.call(this, '[', ']');
+LatexCmds.lbrack = LatexCmds.lbracket = CharCmds['['] = proto(Paren, function(replacedFragment) {
+  Paren.call(this, '[', ']', replacedFragment);
 });
 
-var CloseParen = proto(CloseBracket, function(open, close) {
-  Bracket.call(this, open, close, open, close);
+function CloseParen(open, close, replacedFragment) {
+  CloseBracket.call(this, open, close, open, close, replacedFragment);
+}
+CloseParen.prototype = CloseBracket.prototype;
+
+LatexCmds.rparen = CharCmds[')'] = proto(CloseParen, function(replacedFragment) {
+  CloseParen.call(this, '(', ')', replacedFragment);
+});
+LatexCmds.rbrack = LatexCmds.rbracket = CharCmds[']'] = proto(CloseParen, function(replacedFragment) {
+  CloseParen.call(this, '[', ']', replacedFragment);
 });
 
-LatexCmds.rparen = CharCmds[')'] = proto(CloseParen, function() {
-  CloseParen.call(this, '(', ')');
-});
-LatexCmds.rbrack = LatexCmds.rbracket = CharCmds[']'] = proto(CloseParen, function() {
-  CloseParen.call(this, '[', ']');
-});
-
-var Pipes = _class(new Paren, function() {
-  Paren.call(this, '|', '|');
-});
-_.createBefore = CloseBracket.prototype.createBefore;
+function Pipes(replacedFragment) {
+  Paren.call(this, '|', '|', replacedFragment);
+}
+_ = Pipes.prototype = new Paren;
+_.placeCursor = function(cursor) {
+  if (!this.next && this.parent.parent && this.parent.parent.end === this.end && this.firstChild.isEmpty())
+    cursor.backspace().insertAfter(this.parent.parent);
+  else
+    cursor.appendTo(this.firstChild);
+};
 
 LatexCmds.lpipe = LatexCmds.rpipe = CharCmds['|'] = Pipes;
 
-var TextBlock = _class(new MathCmd);
-_.ctrlSeq = '\\text';
-_.htmlTemplate = ['<span class="text"></span>'];
-_.replaces = function(replacedText) {
+function TextBlock(replacedText) {
   if (replacedText instanceof MathFragment)
     this.replacedText = replacedText.remove().jQ.text();
   else if (typeof replacedText === 'string')
     this.replacedText = replacedText;
-};
-_.textTemplate = ['"', '"'];
-_.createBlocks = function() { //FIXME: another possible Law of Demeter violation, but this seems much cleaner, like it was supposed to be done this way
+
+  this.init();
+}
+_ = TextBlock.prototype = new MathCommand;
+_.cmd = '\\text';
+_.html_template = ['<span class="text"></span>'];
+_.text_template = ['"', '"'];
+_.initBlocks = function() { //FIXME: another possible Law of Demeter violation, but this seems much cleaner, like it was supposed to be done this way
   this.firstChild =
   this.lastChild =
   this.jQ.data(jQueryDataKey).block = new InnerTextBlock;
@@ -1141,8 +1125,8 @@ _.createBlocks = function() { //FIXME: another possible Law of Demeter violation
   this.firstChild.parent = this;
   this.firstChild.jQ = this.jQ.append(this.firstChild.jQ);
 };
-_.createBefore = function(cursor) {
-  this._createBefore(this.cursor = cursor);
+_.placeCursor = function(cursor) { //TODO: this should be done in the constructor that's passed replacedFragment, but you need the cursor to create new characters and insert them
+  (this.cursor = cursor).appendTo(this.firstChild);
 
   if (this.replacedText)
     for (var i = 0; i < this.replacedText.length; i += 1)
@@ -1161,9 +1145,9 @@ _.keydown = function(e) {
   ) {
     if (this.isEmpty())
       this.cursor.insertAfter(this);
-    e.preventDefault();
     return false;
   }
+  return this.parent.keydown(e);
 };
 _.textInput = function(ch) {
   this.cursor.deleteSelection();
@@ -1176,7 +1160,7 @@ _.textInput = function(ch) {
   else if (!this.cursor.prev)
     this.cursor.insertBefore(this);
   else { //split apart
-    var next = new TextBlock(new MathFragment(this.cursor.next, this.firstChild.lastChild));
+    var next = new TextBlock(new MathFragment(this.firstChild, this.cursor.prev));
     next.placeCursor = function(cursor) { //FIXME HACK: pretend no prev so they don't get merged
       this.prev = 0;
       delete this.placeCursor;
@@ -1188,9 +1172,9 @@ _.textInput = function(ch) {
     this.cursor.insertBefore(next);
     delete next.firstChild.focus;
   }
-  return false;
 };
-var InnerTextBlock = _class(new MathBlock);
+function InnerTextBlock(){}
+_ = InnerTextBlock.prototype = new MathBlock;
 _.blur = function() {
   this.jQ.removeClass('hasCursor');
   if (this.isEmpty()) {
@@ -1205,7 +1189,7 @@ _.blur = function() {
       else if (cursor.prev === textblock)
         cursor.prev = textblock.prev;
 
-      cursor.show().parent.bubble('redraw');
+      cursor.show().redraw();
     }
   }
   return this;
@@ -1214,7 +1198,7 @@ _.focus = function() {
   MathBlock.prototype.focus.call(this);
 
   var textblock = this.parent;
-  if (textblock.next.ctrlSeq === textblock.ctrlSeq) { //TODO: seems like there should be a better way to move MathElements around
+  if (textblock.next.cmd === textblock.cmd) { //TODO: seems like there should be a better way to move MathElements around
     var innerblock = this,
       cursor = textblock.cursor,
       next = textblock.next.firstChild;
@@ -1239,9 +1223,9 @@ _.focus = function() {
     else
       cursor.prependTo(this);
 
-    cursor.parent.bubble('redraw');
+    cursor.redraw();
   }
-  else if (textblock.prev.ctrlSeq === textblock.ctrlSeq) {
+  else if (textblock.prev.cmd === textblock.cmd) {
     var cursor = textblock.cursor;
     if (cursor.prev)
       textblock.prev.firstChild.focus();
@@ -1260,9 +1244,13 @@ LatexCmds.textmd =
   TextBlock;
 
 function makeTextBlock(latex, html) {
-  var SomeTextBlock = _subclass(TextBlock);
-  _.ctrlSeq = latex;
-  _.htmlTemplate = [ html ];
+  function SomeTextBlock() {
+    TextBlock.apply(this, arguments);
+  }
+  _ = SomeTextBlock.prototype = new TextBlock;
+  _.cmd = latex;
+  _.html_template = [ html ];
+
   return SomeTextBlock;
 }
 
@@ -1283,28 +1271,27 @@ LatexCmds.lowercase =
   makeTextBlock('\\lowercase', '<span style="text-transform:lowercase" class="text"></span>');
 
 // input box to type a variety of LaTeX commands beginning with a backslash
-var LatexCommandInput = _class(new MathCmd);
-_.ctrlSeq = '\\';
-_.replaces = function(replacedFragment) {
-  this._replacedFragment = replacedFragment.detach();
-  this.isEmpty = function(){ return false; };
-};
-_.htmlTemplate = ['<span class="latex-command-input">\\</span>'];
-_.textTemplate = ['\\'];
-_.createBefore = function(cursor) {
-  this._createBefore(cursor);
+function LatexCommandInput(replacedFragment) {
+  this.init('\\');
+  if (replacedFragment) {
+    this.replacedFragment = replacedFragment.detach();
+    this.isEmpty = function(){ return false; };
+  }
+}
+_ = LatexCommandInput.prototype = new MathCommand;
+_.html_template = ['<span class="latex-command-input">\\</span>'];
+_.text_template = ['\\'];
+_.placeCursor = function(cursor) { //TODO: better architecture, better place for this to be done, and more cleanly
   this.cursor = cursor.appendTo(this.firstChild);
-  if (this._replacedFragment) {
-    var el = this.jQ[0];
+  if (this.replacedFragment)
     this.jQ =
-      this._replacedFragment.jQ.addClass('blur').bind(
+      this.jQ.add(this.replacedFragment.jQ.addClass('blur').bind(
         'mousedown mousemove', //FIXME: is monkey-patching the mousedown and mousemove handlers the right way to do this?
         function(e) {
-          $(e.target = el).trigger(e);
+          $(e.target = this.nextSibling).trigger(e);
           return false;
         }
-      ).insertBefore(this.jQ).add(this.jQ);
-  }
+      ).insertBefore(this.jQ));
 };
 _.latex = function() {
   return '\\' + this.firstChild.latex() + ' ';
@@ -1312,19 +1299,21 @@ _.latex = function() {
 _.keydown = function(e) {
   if (e.which === 9 || e.which === 13) { //tab or enter
     this.renderCommand();
-    e.preventDefault();
     return false;
   }
+  return this.parent.keydown(e);
 };
 _.textInput = function(ch) {
   if (ch.match(/[a-z]/i)) {
     this.cursor.deleteSelection();
     this.cursor.insertNew(new VanillaSymbol(ch));
-    return false;
+    return;
   }
   this.renderCommand();
   if (ch === ' ' || (ch === '\\' && this.firstChild.isEmpty()))
-    return false;
+    return;
+
+  this.cursor.parent.textInput(ch);
 };
 _.renderCommand = function() {
   this.jQ = this.jQ.last();
@@ -1336,15 +1325,15 @@ _.renderCommand = function() {
 
   var latex = this.firstChild.latex(), cmd;
   if (latex) {
-    if (cmd = LatexCmds[latex])
-      cmd = new cmd(latex);
+    cmd = LatexCmds[latex];
+    if (cmd)
+      cmd = new cmd(this.replacedFragment, latex);
     else {
-      cmd = new TextBlock;
-      cmd.replaces(latex);
+      cmd = new TextBlock(latex);
       cmd.firstChild.focus = function(){ delete this.focus; return this; };
       this.cursor.insertNew(cmd).insertAfter(cmd);
-      if (this._replacedFragment)
-        this._replacedFragment.remove();
+      if (this.replacedFragment)
+        this.replacedFragment.remove();
 
       return;
     }
@@ -1352,37 +1341,41 @@ _.renderCommand = function() {
   else
     cmd = new VanillaSymbol('\\backslash ','\\');
 
-  if (this._replacedFragment)
-    cmd.replaces(this._replacedFragment);
   this.cursor.insertNew(cmd);
+  if (cmd instanceof Symbol && this.replacedFragment)
+    this.replacedFragment.remove();
 };
 
 CharCmds['\\'] = LatexCommandInput;
   
-var Binomial = _class(new MathCmd);
-_.ctrlSeq = '\\binom';
-_.htmlTemplate =
-  ['<span class="block"></span>', '<span></span>', '<span></span>'];
-_.createBlocks = function() {
-  this._createBlocks();
+function Binomial(replacedFragment) {
+  this.init('\\binom', undefined, undefined, replacedFragment);
   this.jQ.wrapInner('<span class="array"></span>');
   this.blockjQ = this.jQ.children();
   this.bracketjQs =
     $('<span class="paren">(</span>').prependTo(this.jQ)
     .add( $('<span class="paren">)</span>').appendTo(this.jQ) );
-};
-_.textTemplate = ['choose(',',',')'];
+}
+_ = Binomial.prototype = new MathCommand;
+_.html_template =
+  ['<span class="block"></span>', '<span></span>', '<span></span>'];
+_.text_template = ['choose(',',',')'];
 _.redraw = Bracket.prototype.redraw;
 LatexCmds.binom = LatexCmds.binomial = Binomial;
 
-var Choose = _subclass(Binomial);
-_.createBefore = LiveFraction.prototype.createBefore;
+function Choose() {
+  Binomial.apply(this, arguments);
+}
+_ = Choose.prototype = new Binomial;
+_.placeCursor = LiveFraction.prototype.placeCursor;
 
 LatexCmds.choose = Choose;
 
-var Vector = _class(new MathCmd);
-_.ctrlSeq = '\\vector';
-_.htmlTemplate = ['<span class="array"></span>', '<span></span>'];
+function Vector(replacedFragment) {
+  this.init('\\vector', undefined, undefined, replacedFragment);
+}
+_ = Vector.prototype = new MathCommand;
+_.html_template = ['<span class="array"></span>', '<span></span>'];
 _.latex = function() {
   return '\\begin{matrix}' + this.foldChildren([], function(latex, child) {
     latex.push(child.latex());
@@ -1395,8 +1388,8 @@ _.text = function() {
     return text;
   }).join() + ']';
 }
-_.createBefore = function(cursor) {
-  this._createBefore(this.cursor = cursor);
+_.placeCursor = function(cursor) {
+  this.cursor = cursor.appendTo(this.firstChild);
 };
 _.keydown = function(e) {
   var currentBlock = this.cursor.parent;
@@ -1416,9 +1409,7 @@ _.keydown = function(e) {
       newBlock.next = currentBlock.next;
       currentBlock.next = newBlock;
       newBlock.prev = currentBlock;
-      this.bubble('redraw').cursor.appendTo(newBlock);
-
-      e.preventDefault();
+      this.cursor.appendTo(newBlock).redraw();
       return false;
     }
     else if (e.which === 9 && !e.shiftKey && !currentBlock.next) { //tab
@@ -1428,13 +1419,11 @@ _.keydown = function(e) {
           delete currentBlock.prev.next;
           this.lastChild = currentBlock.prev;
           currentBlock.jQ.remove();
-          this.bubble('redraw');
-
-          e.preventDefault();
+          this.cursor.redraw();
           return false;
         }
         else
-          return;
+          return this.parent.keydown(e);
       }
 
       var newBlock = new MathBlock;
@@ -1443,9 +1432,7 @@ _.keydown = function(e) {
       this.lastChild = newBlock;
       currentBlock.next = newBlock;
       newBlock.prev = currentBlock;
-      this.bubble('redraw').cursor.appendTo(newBlock);
-
-      e.preventDefault();
+      this.cursor.appendTo(newBlock).redraw();
       return false;
     }
     else if (e.which === 8) { //backspace
@@ -1468,70 +1455,68 @@ _.keydown = function(e) {
         if (this.isEmpty())
           this.cursor.deleteForward();
         else
-          this.bubble('redraw');
+          this.cursor.redraw();
 
-        e.preventDefault();
         return false;
       }
-      else if (!this.cursor.prev) {
-        e.preventDefault();
+      else if (!this.cursor.prev)
         return false;
-      }
     }
   }
+  return this.parent.keydown(e);
 };
 
 LatexCmds.vector = Vector;
 
 LatexCmds.editable = proto(RootMathCommand, function() {
-  MathCmd.call(this, '\\editable');
+  this.init('\\editable');
+  createRoot(this.jQ, this.firstChild, false, true);
   var cursor;
-  this.createBefore = function(c){ this._createBefore(cursor = c); };
-  this.createBlocks = function() {
-    RootMathCommand.prototype.createBlocks.call(this);
-    createRoot(this.jQ, this.firstChild, false, true);
-    this.firstChild.blur = function() {
-      if (cursor.prev !== this.parent) return; //when cursor is inserted after editable, append own cursor FIXME HACK
-      delete this.blur;
-      this.cursor.appendTo(this);
-      MathBlock.prototype.blur.call(this);
-    };
-    this.latex = function(){ return this.firstChild.latex(); };
-    this.text = function(){ return this.firstChild.text(); };
+  this.placeCursor = function(c) { cursor = c.appendTo(this.firstChild); };
+  this.firstChild.blur = function() {
+    if (cursor.prev !== this.parent) return; //when cursor is inserted after editable, append own cursor FIXME HACK
+    delete this.blur;
+    this.cursor.appendTo(this);
+    MathBlock.prototype.blur.call(this);
   };
+  this.latex = function(){ return this.firstChild.latex(); };
+  this.text = function(){ return this.firstChild.text(); };
 });
 
 /**********************************
  * Symbols and Special Characters
  *********************************/
 
-LatexCmds.f = bind(Symbol, 'f', '<var class="florin">&fnof;</var>');
+LatexCmds.f = bind(Symbol, 'f', '<var class="florin">&fnof;</var><span></span>');
 
-var Variable = _class(new Symbol, function(ch, html) {
+function Variable(ch, html) {
   Symbol.call(this, ch, '<var>'+(html || ch)+'</var>');
-});
+}
+_ = Variable.prototype = new Symbol;
 _.text = function() {
-  var text = this.ctrlSeq;
+  var text = this.cmd;
   if (this.prev && !(this.prev instanceof Variable)
       && !(this.prev instanceof BinaryOperator))
     text = '*' + text;
   if (this.next && !(this.next instanceof BinaryOperator)
-      && !(this.next.ctrlSeq === '^'))
+      && !(this.next.cmd === '^'))
     text += '*';
   return text;
 };
 
-var VanillaSymbol = proto(Symbol, function(ch, html) {
+function VanillaSymbol(ch, html) {
   Symbol.call(this, ch, '<span>'+(html || ch)+'</span>');
-});
+}
+VanillaSymbol.prototype = Symbol.prototype;
 
 CharCmds[' '] = bind(VanillaSymbol, '\\:', ' ');
 
 LatexCmds.prime = CharCmds["'"] = bind(VanillaSymbol, "'", '&prime;');
 
-var NonSymbolaSymbol = proto(Symbol, function(ch, html) { //does not use Symbola font
+function NonSymbolaSymbol(ch, html) { //does not use Symbola font
   Symbol.call(this, ch, '<span class="nonSymbola">'+(html || ch)+'</span>');
-});
+}
+NonSymbolaSymbol.prototype = Symbol.prototype;
 
 LatexCmds['@'] = NonSymbolaSymbol;
 LatexCmds['&'] = bind(NonSymbolaSymbol, '\\&', '&');
@@ -1557,7 +1542,7 @@ LatexCmds.sigma =
 LatexCmds.tau =
 LatexCmds.chi =
 LatexCmds.psi =
-LatexCmds.omega = proto(Symbol, function(latex) {
+LatexCmds.omega = proto(Symbol, function(replacedFragment, latex) {
   Variable.call(this,'\\'+latex+' ','&'+latex+';');
 });
 
@@ -1632,18 +1617,19 @@ LatexCmds.Psi =
 LatexCmds.Omega =
 
 //other symbols with the same LaTeX command and HTML character entity reference
-LatexCmds.forall = proto(Symbol, function(latex) {
+LatexCmds.forall = proto(Symbol, function(replacedFragment, latex) {
   VanillaSymbol.call(this,'\\'+latex+' ','&'+latex+';');
 });
 
-var BinaryOperator = _class(new Symbol, //so instanceof will work
-function(cmd, html, text) {
+function BinaryOperator(cmd, html, text) {
   Symbol.call(this, cmd, '<span class="binary-operator">'+html+'</span>', text);
-});
+}
+BinaryOperator.prototype = new Symbol; //so instanceof will work
 
-var PlusMinus = _class(new BinaryOperator, function() {
+function PlusMinus(cmd, html) {
   VanillaSymbol.apply(this, arguments);
-});
+}
+_ = PlusMinus.prototype = new BinaryOperator; //so instanceof will work
 _.respace = function() {
   if (!this.prev) {
     this.jQ[0].className = '';
@@ -1660,9 +1646,10 @@ _.respace = function() {
   return this;
 };
 
-LatexCmds['+'] = bind(PlusMinus, '+');
-LatexCmds['-'] = bind(PlusMinus, '-', '&minus;');
-LatexCmds.pm = LatexCmds.plusmn = LatexCmds.plusminus =
+LatexCmds['+'] = bind(PlusMinus, '+', '+');
+//yes, these are different dashes, I think one is an en dash and the other is a hyphen
+LatexCmds['–'] = LatexCmds['-'] = bind(PlusMinus, '-', '&minus;');
+LatexCmds['±'] = LatexCmds.pm = LatexCmds.plusmn = LatexCmds.plusminus =
   bind(PlusMinus,'\\pm ','&plusmn;');
 LatexCmds.mp = LatexCmds.mnplus = LatexCmds.minusplus =
   bind(PlusMinus,'\\mp ','&#8723;');
@@ -1680,18 +1667,18 @@ LatexCmds.sim =
 LatexCmds.cong =
 LatexCmds.equiv =
 LatexCmds.oplus =
-LatexCmds.otimes = proto(BinaryOperator, function(latex) {
+LatexCmds.otimes = proto(BinaryOperator, function(replacedFragment, latex) {
   BinaryOperator.call(this, '\\'+latex+' ', '&'+latex+';');
 });
 
-LatexCmds.times = proto(BinaryOperator, function(latex) {
+LatexCmds.times = proto(BinaryOperator, function(replacedFragment, latex) {
   BinaryOperator.call(this, '\\times ', '&times;', '[x]')
 });
 
-LatexCmds.div = LatexCmds.divide = LatexCmds.divides =
+LatexCmds['÷'] = LatexCmds.div = LatexCmds.divide = LatexCmds.divides =
   bind(BinaryOperator,'\\div ','&divide;', '[/]');
 
-LatexCmds.ne = LatexCmds.neq = bind(BinaryOperator,'\\ne ','&ne;');
+LatexCmds['≠'] = LatexCmds.ne = LatexCmds.neq = bind(BinaryOperator,'\\ne ','&ne;');
 
 LatexCmds.ast = LatexCmds.star = LatexCmds.loast = LatexCmds.lowast =
   bind(BinaryOperator,'\\ast ','&lowast;');
@@ -1704,15 +1691,15 @@ LatexCmds.because = bind(BinaryOperator,'\\because ','&#8757;');
 
 LatexCmds.prop = LatexCmds.propto = bind(BinaryOperator,'\\propto ','&prop;');
 
-LatexCmds.asymp = LatexCmds.approx = bind(BinaryOperator,'\\approx ','&asymp;');
+LatexCmds['≈'] = LatexCmds.asymp = LatexCmds.approx = bind(BinaryOperator,'\\approx ','&asymp;');
 
 LatexCmds.lt = bind(BinaryOperator,'<','&lt;');
 
 LatexCmds.gt = bind(BinaryOperator,'>','&gt;');
 
-LatexCmds.le = LatexCmds.leq = bind(BinaryOperator,'\\le ','&le;');
+LatexCmds['≤'] = LatexCmds.le = LatexCmds.leq = bind(BinaryOperator,'\\le ','&le;');
 
-LatexCmds.ge = LatexCmds.geq = bind(BinaryOperator,'\\ge ','&ge;');
+LatexCmds['≥'] = LatexCmds.ge = LatexCmds.geq = bind(BinaryOperator,'\\ge ','&ge;');
 
 LatexCmds.isin = LatexCmds['in'] = bind(BinaryOperator,'\\in ','&isin;');
 
@@ -1759,15 +1746,15 @@ LatexCmds.notsupersete = LatexCmds.notsuperseteq =
 
 
 //sum, product, coproduct, integral
-var BigSymbol = _class(new Symbol, //so instanceof will work
-function(ch, html) {
+function BigSymbol(ch, html) {
   Symbol.call(this, ch, '<big>'+html+'</big>');
-});
+}
+BigSymbol.prototype = new Symbol; //so instanceof will work
 
-LatexCmds.sum = LatexCmds.summation = bind(BigSymbol,'\\sum ','&sum;');
-LatexCmds.prod = LatexCmds.product = bind(BigSymbol,'\\prod ','&prod;');
+LatexCmds['∑'] = LatexCmds.sum = LatexCmds.summation = bind(BigSymbol,'\\sum ','&sum;');
+LatexCmds['∏'] = LatexCmds.prod = LatexCmds.product = bind(BigSymbol,'\\prod ','&prod;');
 LatexCmds.coprod = LatexCmds.coproduct = bind(BigSymbol,'\\coprod ','&#8720;');
-LatexCmds.int = LatexCmds.integral = LatexCmds['∫'] = bind(BigSymbol,'\\int ','&int;');
+LatexCmds['∫'] = LatexCmds.int = LatexCmds.integral = bind(BigSymbol,'\\int ','&int;');
 
 
 
@@ -1935,9 +1922,9 @@ LatexCmds.setminus = LatexCmds.smallsetminus =
   bind(VanillaSymbol,'\\setminus ','&#8726;');
 
 LatexCmds.not = //bind(Symbol,'\\not ','<span class="not">/</span>');
-LatexCmds.neg = bind(VanillaSymbol,'\\neg ','&not;');
+LatexCmds['¬'] = LatexCmds.neg = bind(VanillaSymbol,'\\neg ','&not;');
 
-LatexCmds.dots = LatexCmds.ellip = LatexCmds.hellip =
+LatexCmds['…'] = LatexCmds.dots = LatexCmds.ellip = LatexCmds.hellip =
 LatexCmds.ellipsis = LatexCmds.hellipsis =
   bind(VanillaSymbol,'\\dots ','&hellip;');
 
@@ -2016,9 +2003,10 @@ LatexCmds.deg = LatexCmds.degree = bind(VanillaSymbol,'^\\circ ','&deg;');
 LatexCmds.ang = LatexCmds.angle = bind(VanillaSymbol,'\\angle ','&ang;');
 
 
-var NonItalicizedFunction = _class(new Symbol, function(fn) {
+function NonItalicizedFunction(replacedFragment, fn) {
   Symbol.call(this, '\\'+fn+' ', '<span>'+fn+'</span>');
-});
+}
+_ = NonItalicizedFunction.prototype = new Symbol;
 _.respace = function()
 {
   this.jQ[0].className =
@@ -2065,13 +2053,14 @@ textbox, but any one HTML document can contain many such textboxes, so any one
 JS environment could actually contain many instances. */
 
 //A fake cursor in the fake textbox that the math is rendered in.
-var Cursor = _baseclass(function(root) {
+function Cursor(root) {
   this.parent = this.root = root;
-  var jQ = this.jQ = this._jQ = $('<span class="cursor"></span>');
+  var jQ = this.jQ = this._jQ = $('<span class="cursor">&zwj;</span>');
 
   //closured for setInterval
   this.blink = function(){ jQ.toggleClass('blink'); }
-});
+}
+_ = Cursor.prototype;
 _.prev = 0;
 _.next = 0;
 _.parent = 0;
@@ -2081,7 +2070,7 @@ _.show = function() {
     clearInterval(this.intervalId);
   else { //was hidden and detached, insert this.jQ back into HTML DOM
     if (this.next) {
-      if (this.selection && this.selection.first.prev === this.prev)
+      if (this.selection && this.selection.prev === this.prev)
         this.jQ.insertBefore(this.selection.jQ);
       else
         this.jQ.insertBefore(this.next.jQ.first());
@@ -2100,6 +2089,11 @@ _.hide = function() {
   this.jQ.detach();
   this.jQ = $();
   return this;
+};
+_.redraw = function() {
+  for (var ancestor = this.parent; ancestor; ancestor = ancestor.parent)
+    if (ancestor.redraw)
+      ancestor.redraw();
 };
 _.insertAt = function(parent, prev, next) {
   var old_parent = this.parent;
@@ -2151,7 +2145,7 @@ _.hopRight = function() {
 };
 _.moveLeft = function() {
   if (this.selection)
-    this.insertBefore(this.selection.first).clearSelection();
+    this.insertBefore(this.selection.prev.next || this.parent.firstChild).clearSelection();
   else {
     if (this.prev) {
       if (this.prev.lastChild)
@@ -2171,7 +2165,7 @@ _.moveLeft = function() {
 };
 _.moveRight = function() {
   if (this.selection)
-    this.insertAfter(this.selection.last).clearSelection();
+    this.insertAfter(this.selection.next.prev || this.parent.lastChild).clearSelection();
   else {
     if (this.next) {
       if (this.next.firstChild)
@@ -2266,7 +2260,7 @@ _.writeLatex = function(latex) {
         token = token.slice(1);
         var cmd = LatexCmds[token];
         if (cmd)
-          cursor.insertNew(cmd = new cmd(token));
+          cursor.insertNew(cmd = new cmd(undefined, token));
         else {
           cmd = new TextBlock(token);
           cursor.insertNew(cmd).insertAfter(cmd);
@@ -2277,7 +2271,7 @@ _.writeLatex = function(latex) {
         if (token.match(/[a-eg-zA-Z]/)) //exclude f because want florin
           cmd = new Variable(token);
         else if (cmd = LatexCmds[token])
-          cmd = new cmd(token);
+          cmd = new cmd;
         else
           cmd = new VanillaSymbol(token);
 
@@ -2302,25 +2296,30 @@ _.write = function(ch) {
   return this.show().insertCh(ch);
 };
 _.insertCh = function(ch) {
+  if (this.selection) {
+    //gotta do this before this.selection is mutated by 'new cmd(this.selection)'
+    this.prev = this.selection.prev;
+    this.next = this.selection.next;
+  }
+
   var cmd;
   if (ch.match(/^[a-eg-zA-Z]$/)) //exclude f because want florin
     cmd = new Variable(ch);
   else if (cmd = CharCmds[ch] || LatexCmds[ch])
-    cmd = new cmd(ch);
+    cmd = new cmd(this.selection, ch);
   else
     cmd = new VanillaSymbol(ch);
 
   if (this.selection) {
-    this.prev = this.selection.first.prev;
-    this.next = this.selection.last.next;
-    cmd.replaces(this.selection);
+    if (cmd instanceof Symbol)
+      this.selection.remove();
     delete this.selection;
   }
 
   return this.insertNew(cmd);
 };
 _.insertNew = function(cmd) {
-  cmd.createBefore(this);
+  cmd.insertAt(this);
   return this;
 };
 _.unwrapGramp = function() {
@@ -2397,7 +2396,7 @@ _.backspace = function() {
     this.prev.respace();
   if (this.next)
     this.next.respace();
-  this.parent.bubble('redraw');
+  this.redraw();
 
   return this;
 };
@@ -2420,7 +2419,7 @@ _.deleteForward = function() {
     this.prev.respace();
   if (this.next)
     this.next.respace();
-  this.parent.bubble('redraw');
+  this.redraw();
 
   return this;
 };
@@ -2462,25 +2461,31 @@ _.selectFrom = function(anticursor) {
       left = leftRight;
     }
   }
-  this.hide().selection = new Selection(left.prev.next || left.parent.firstChild, right.next.prev || right.parent.lastChild);
+  this.hide().selection = new Selection(
+    left.parent,
+    left.prev,
+    right.next
+  );
   this.insertAfter(right.next.prev || right.parent.lastChild);
   this.root.selectionChanged();
 };
 _.selectLeft = function() {
   if (this.selection) {
-    if (this.selection.first === this.next) { //if cursor is at left edge of selection;
-      if (this.prev) //then extend left if possible
-        this.hopLeft().selection.extendLeft();
+    if (this.selection.prev === this.prev) { //if cursor is at left edge of selection;
+      if (this.prev) { //then extend left if possible
+        this.hopLeft().next.jQ.prependTo(this.selection.jQ);
+        this.selection.prev = this.prev;
+      }
       else if (this.parent !== this.root) //else level up if possible
         this.insertBefore(this.parent.parent).selection.levelUp();
     }
-    else { //else cursor is at right edge of selection, retract left if possible
-      this.hopLeft();
-      if (this.selection.first === this.selection.last) {
-        this.clearSelection(); //clear selection if retracting to nothing
-        return; //skip this.root.selectionChanged(), this.clearSelection() does it anyway
+    else { //else cursor is at right edge of selection, retract left
+      this.prev.jQ.insertAfter(this.selection.jQ);
+      this.hopLeft().selection.next = this.next;
+      if (this.selection.prev === this.prev) {
+        this.deleteSelection();
+        return;
       }
-      this.selection.retractLeft();
     }
   }
   else {
@@ -2492,25 +2497,27 @@ _.selectLeft = function() {
       else
         return;
 
-    this.hide().selection = new Selection(this.next);
+    this.hide().selection = new Selection(this.parent, this.prev, this.next.next);
   }
   this.root.selectionChanged();
 };
 _.selectRight = function() {
   if (this.selection) {
-    if (this.selection.last === this.prev) { //if cursor is at right edge of selection;
-      if (this.next) //then extend right if possible
-        this.hopRight().selection.extendRight();
+    if (this.selection.next === this.next) { //if cursor is at right edge of selection;
+      if (this.next) { //then extend right if possible
+        this.hopRight().prev.jQ.appendTo(this.selection.jQ);
+        this.selection.next = this.next;
+      }
       else if (this.parent !== this.root) //else level up if possible
         this.insertAfter(this.parent.parent).selection.levelUp();
     }
-    else { //else cursor is at left edge of selection, retract right if possible
-      this.hopRight();
-      if (this.selection.first === this.selection.last) {
-        this.clearSelection(); //clear selection if retracting to nothing
-        return; //skip this.root.selectionChanged(), this.clearSelection() does it anyway
+    else { //else cursor is at left edge of selection, retract right
+      this.next.jQ.insertBefore(this.selection.jQ);
+      this.hopRight().selection.prev = this.prev;
+      if (this.selection.next === this.next) {
+        this.deleteSelection();
+        return;
       }
-      this.selection.retractRight();
     }
   }
   else {
@@ -2522,7 +2529,7 @@ _.selectRight = function() {
       else
         return;
 
-    this.hide().selection = new Selection(this.prev);
+    this.hide().selection = new Selection(this.parent, this.prev.prev, this.next);
   }
   this.root.selectionChanged();
 };
@@ -2537,46 +2544,46 @@ _.clearSelection = function() {
 _.deleteSelection = function() {
   if (!this.show().selection) return false;
 
-  this.prev = this.selection.first.prev;
-  this.next = this.selection.last.next;
+  this.prev = this.selection.prev;
+  this.next = this.selection.next;
   this.selection.remove();
+  delete this.selection;
   this.root.selectionChanged();
-  return delete this.selection;
+  return true;
 };
 
-var Selection = _subclass(MathFragment);
+function Selection(parent, prev, next) {
+  MathFragment.apply(this, arguments);
+}
+_ = Selection.prototype = new MathFragment;
 _.jQinit = function(children) {
   this.jQ = children.wrapAll('<span class="selection"></span>').parent();
     //can't do wrapAll(this.jQ = $(...)) because wrapAll will clone it
 };
-_.blockify = function() {
-  this.jQ.replaceWith(this.jQ = this.jQ.children());
-  return MathFragment.prototype.blockify.call(this);
+_.levelUp = function() {
+  this.clear().jQinit(this.parent.parent.jQ);
+
+  this.prev = this.parent.parent.prev;
+  this.next = this.parent.parent.next;
+  this.parent = this.parent.parent.parent;
+
+  return this;
 };
 _.clear = function() {
   this.jQ.replaceWith(this.jQ.children());
   return this;
 };
-_.levelUp = function() {
-  var self = this, gramp = self.first = self.last = self.last.parent.parent;
-  self.clear().jQinit(gramp.jQ);
-  return self;
+_.blockify = function() {
+  this.jQ.replaceWith(this.jQ = this.jQ.children());
+  return MathFragment.prototype.blockify.call(this);
 };
-_.extendLeft = function() {
-  this.first = this.first.prev;
-  this.first.jQ.prependTo(this.jQ);
-};
-_.extendRight = function() {
-  this.last = this.last.next;
-  this.last.jQ.appendTo(this.jQ);
-};
-_.retractRight = function() {
-  this.first.jQ.insertBefore(this.jQ);
-  this.first = this.first.next;
-};
-_.retractLeft = function() {
-  this.last.jQ.insertAfter(this.jQ);
-  this.last = this.last.prev;
+_.detach = function() {
+  var block = MathFragment.prototype.blockify.call(this);
+  this.blockify = function() {
+    this.jQ.replaceWith(block.jQ = this.jQ = this.jQ.children());
+    return block;
+  };
+  return this;
 };
 
 /*********************************************************
@@ -2589,9 +2596,8 @@ $.fn.mathquill = function(cmd, latex) {
   switch (cmd) {
   case 'redraw':
     this.find(':not(:has(:first))').each(function() {
-      var data = $(this).data(jQueryDataKey),
-        mathEl = data && (data.block || data.cmd);
-      if (mathEl) mathEl.bubble('redraw');
+      var data = $(this).data(jQueryDataKey);
+      if (data && (data.cmd || data.block)) Cursor.prototype.redraw.call(data.cmd || data.block);
     });
     return this;
   case 'revert':
