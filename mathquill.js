@@ -10,7 +10,9 @@
 var $ = jQuery,
   undefined,
   _, //temp variable of prototypes
-  jQueryDataKey = '[[mathquill internal data]]';
+  jQueryDataKey = '[[mathquill internal data]]',
+  min = Math.min,
+  max = Math.max;
 
 /*************************************************
  * Abstract base classes of blocks and commands.
@@ -255,7 +257,7 @@ function MathFragment(parent, prev, next) {
   self.jQinit(self.fold($(), function(jQ, child){ return child.jQ.add(jQ); }));
 }
 _ = MathFragment.prototype;
-_.remove= MathCommand.prototype.remove;
+_.remove = MathCommand.prototype.remove;
 _.jQinit = function(children) {
   this.jQ = children;
 };
@@ -477,18 +479,27 @@ function createRoot(jQ, root, textbox, editable) {
   }
 
   //keyboard events and text input, see Wiki page "Keyboard Events"
-  var lastKeydn = {}, skipTextInput = false;
+  var lastKeydn, lastKeydnHappened, lastKeypressWhich, skipTextInput = false;
   jQ.bind('keydown.mathquill', function(e) {
-    lastKeydn.evt = e;
-    lastKeydn.happened = true;
+    lastKeydn = e;
+    lastKeydnHappened = true;
     if (cursor.parent.keydown(e) === false)
       e.preventDefault();
   }).bind('keypress.mathquill', function(e) {
-    //on auto-repeated key events, keypress may get triggered but not keydown
-    if (lastKeydn.happened)
-      lastKeydn.happened = false;
-    else
-      cursor.parent.keydown(lastKeydn.evt);
+    if (lastKeydnHappened)
+      lastKeydnHappened = false;
+    else {
+      //there's two ways keypress might be triggered without a keydown happening first:
+      if (lastKeypressWhich !== e.which)
+        //all browsers do that if this textarea is given focus during the keydown of
+        //a different focusable element, i.e. by that element's keydown event handler.
+        //No way of knowing original keydown, so ignore this keypress
+        return;
+      else
+        //some browsers do that when auto-repeating key events, replay the keydown
+        cursor.parent.keydown(lastKeydn);
+    }
+    lastKeypressWhich = e.which;
 
     if (textareaSelectionTimeout !== undefined)
       clearTimeout(textareaSelectionTimeout);
@@ -507,11 +518,8 @@ function createRoot(jQ, root, textbox, editable) {
     var text = textarea.val();
     if (text) {
       textarea.val('');
-      // textarea can contain more than one character
-      // when typing quickly on slower platforms;
-      // so process each character separately
-      for (var i=0; i<text.length; i++) {
-          cursor.parent.textInput(text.charAt(i));
+      for (var i = 0; i < text.length; i += 1) {
+        cursor.parent.textInput(text.charAt(i));
       }
     }
     else {
@@ -560,7 +568,7 @@ _.keydown = function(e)
 
     var parent = this.cursor.parent;
     if (e.shiftKey) { //shift+Tab = go one block left if it exists, else escape left.
-      if (parent === this) //cursor is in root editable, continue default
+      if (parent === this.cursor.root) //cursor is in root editable, continue default
         return this.skipTextInput = true;
       else if (parent.prev) //go one block left
         this.cursor.appendTo(parent.prev);
@@ -568,7 +576,7 @@ _.keydown = function(e)
         this.cursor.insertBefore(parent.parent);
     }
     else { //plain Tab = go one block right if it exists, else escape right.
-      if (parent === this) //cursor is in root editable, continue default
+      if (parent === this.cursor.root) //cursor is in root editable, continue default
         return this.skipTextInput = true;
       else if (parent.next) //go one block right
         this.cursor.prependTo(parent.next);
@@ -774,16 +782,16 @@ var scale, // = function(jQ, x, y) { ... }
 
   div = document.createElement('div'),
   div_style = div.style,
-  styleTransformPropNames = {
+  transformPropNames = {
+    transform:1,
     WebkitTransform:1,
     MozTransform:1,
-    msTransform:1,
     OTransform:1,
-    transform:1
+    msTransform:1
   },
   transformPropName;
 
-for (var prop in styleTransformPropNames) {
+for (var prop in transformPropNames) {
   if (prop in div_style) {
     transformPropName = prop;
     break;
@@ -795,11 +803,13 @@ if (transformPropName) {
     jQ.css(transformPropName, 'scale('+x+','+y+')');
   };
 }
-else if ('filter' in div_style) {
-  scale = function(jQ, x, y) {
-    jQ.css('filter', 'progid:DXImageTransform.Microsoft'
-      + '.Matrix(M11='+x+',M22='+y+',SizingMethod=\'auto expand\')'
-    );
+else if ('filter' in div_style) { //IE 6 & 7 fallback
+  scale = function(jQ, x, y) { //NOTE: assumes y > x
+    jQ.addClass('matrixed').css({
+      fontSize: y,
+      filter: 'progid:DXImageTransform.Microsoft'
+        + '.Matrix(M11=' + (x/y) + ",SizingMethod='auto expand')"
+    });
   };
 }
 else {
@@ -847,17 +857,23 @@ _.latex = function() {
     return this.cmd + '{' + (latex || ' ') + '}';
 };
 _.redraw = function() {
-  this.respace();
-  if (this.next)
-    this.next.respace();
   if (this.prev)
     this.prev.respace();
+  //SupSub::respace recursively calls respace on all the following SupSubs
+  //so if prev is a SupSub, no need to call respace on this or following nodes
+  if (!(this.prev instanceof SupSub)) {
+    this.respace();
+    //and if next is a SupSub, then this.respace() will have already called
+    //this.next.respace()
+    if (this.next && !(this.next instanceof SupSub))
+      this.next.respace();
+  }
 };
 _.respace = function() {
   if (
     this.prev.cmd === '\\int ' || (
-      this.prev instanceof SupSub && this.prev.cmd != this.cmd &&
-      this.prev.prev && this.prev.prev.cmd === '\\int '
+      this.prev instanceof SupSub && this.prev.cmd != this.cmd
+      && this.prev.prev && this.prev.prev.cmd === '\\int '
     )
   ) {
     if (!this.limit) {
@@ -872,13 +888,14 @@ _.respace = function() {
     }
   }
 
-  if (this.respaced = this.prev instanceof SupSub && this.prev.cmd != this.cmd && !this.prev.respaced) {
+  this.respaced = this.prev instanceof SupSub && this.prev.cmd != this.cmd && !this.prev.respaced;
+  if (this.respaced) {
     var fontSize = +this.jQ.css('fontSize').slice(0,-2),
       prevWidth = this.prev.jQ.outerWidth()
       thisWidth = this.jQ.outerWidth();
     this.jQ.css({
       left: (this.limit && this.cmd === '_' ? -.25 : 0) - prevWidth/fontSize + 'em',
-      marginRight: .1 - Math.min(thisWidth, prevWidth)/fontSize + 'em'
+      marginRight: .1 - min(thisWidth, prevWidth)/fontSize + 'em'
         //1px extra so it doesn't wrap in retarded browsers (Firefox 2, I think)
     });
   }
@@ -894,6 +911,9 @@ _.respace = function() {
       marginRight: ''
     });
   }
+
+  if (this.next instanceof SupSub)
+    this.next.respace();
 
   return this;
 };
@@ -955,7 +975,7 @@ _.placeCursor = function(cursor) { //TODO: better architecture so this can be do
   cursor.appendTo(this.lastChild);
 };
 
-CharCmds['/'] = LiveFraction;
+LatexCmds.over = CharCmds['/'] = LiveFraction;
 
 function SquareRoot(replacedFragment) {
   this.init('\\sqrt', undefined, undefined, replacedFragment);
@@ -1015,7 +1035,7 @@ _.latex = function() {
 };
 _.redraw = function() {
   var height = this.blockjQ.outerHeight()/+this.blockjQ.css('fontSize').slice(0,-2);
-  scale(this.bracketjQs, 1 + .2*(height - 1), 1.05*height);
+  scale(this.bracketjQs, min(1 + .2*(height - 1), 1.2), 1.05*height);
 };
 
 LatexCmds.lbrace = CharCmds['{'] = proto(Bracket, function(replacedFragment) {
@@ -1035,8 +1055,10 @@ _.placeCursor = function(cursor) {
   //  a selection fragment, get rid of me and put cursor after my parent
   if (!this.next && this.parent.parent && this.parent.parent.end === this.end && this.firstChild.isEmpty())
     cursor.backspace().insertAfter(this.parent.parent);
-  else
+  else {
     this.firstChild.blur();
+    this.redraw();
+  }
 };
 
 LatexCmds.rbrace = CharCmds['}'] = proto(CloseBracket, function(replacedFragment) {
@@ -1303,7 +1325,8 @@ _.renderCommand = function() {
 
   var latex = this.firstChild.latex(), cmd;
   if (latex) {
-    if (cmd = LatexCmds[latex])
+    cmd = LatexCmds[latex];
+    if (cmd)
       cmd = new cmd(this.replacedFragment, latex);
     else {
       cmd = new TextBlock(latex);
@@ -1464,7 +1487,7 @@ LatexCmds.editable = proto(RootMathCommand, function() {
  * Symbols and Special Characters
  *********************************/
 
-LatexCmds.f = bind(Symbol, 'f', '<var class="florin">&fnof;</var>');
+LatexCmds.f = bind(Symbol, 'f', '<var class="florin">&fnof;</var><span></span>');
 
 function Variable(ch, html) {
   Symbol.call(this, ch, '<var>'+(html || ch)+'</var>');
@@ -1623,9 +1646,10 @@ _.respace = function() {
   return this;
 };
 
-LatexCmds['+'] = bind(PlusMinus, '+');
-LatexCmds['-'] = bind(PlusMinus, '-', '&minus;');
-LatexCmds.pm = LatexCmds.plusmn = LatexCmds.plusminus =
+LatexCmds['+'] = bind(PlusMinus, '+', '+');
+//yes, these are different dashes, I think one is an en dash and the other is a hyphen
+LatexCmds['–'] = LatexCmds['-'] = bind(PlusMinus, '-', '&minus;');
+LatexCmds['±'] = LatexCmds.pm = LatexCmds.plusmn = LatexCmds.plusminus =
   bind(PlusMinus,'\\pm ','&plusmn;');
 LatexCmds.mp = LatexCmds.mnplus = LatexCmds.minusplus =
   bind(PlusMinus,'\\mp ','&#8723;');
@@ -1651,10 +1675,10 @@ LatexCmds.times = proto(BinaryOperator, function(replacedFragment, latex) {
   BinaryOperator.call(this, '\\times ', '&times;', '[x]')
 });
 
-LatexCmds.div = LatexCmds.divide = LatexCmds.divides =
+LatexCmds['÷'] = LatexCmds.div = LatexCmds.divide = LatexCmds.divides =
   bind(BinaryOperator,'\\div ','&divide;', '[/]');
 
-LatexCmds.ne = LatexCmds.neq = bind(BinaryOperator,'\\ne ','&ne;');
+LatexCmds['≠'] = LatexCmds.ne = LatexCmds.neq = bind(BinaryOperator,'\\ne ','&ne;');
 
 LatexCmds.ast = LatexCmds.star = LatexCmds.loast = LatexCmds.lowast =
   bind(BinaryOperator,'\\ast ','&lowast;');
@@ -1667,15 +1691,15 @@ LatexCmds.because = bind(BinaryOperator,'\\because ','&#8757;');
 
 LatexCmds.prop = LatexCmds.propto = bind(BinaryOperator,'\\propto ','&prop;');
 
-LatexCmds.asymp = LatexCmds.approx = bind(BinaryOperator,'\\approx ','&asymp;');
+LatexCmds['≈'] = LatexCmds.asymp = LatexCmds.approx = bind(BinaryOperator,'\\approx ','&asymp;');
 
 LatexCmds.lt = bind(BinaryOperator,'<','&lt;');
 
 LatexCmds.gt = bind(BinaryOperator,'>','&gt;');
 
-LatexCmds.le = LatexCmds.leq = bind(BinaryOperator,'\\le ','&le;');
+LatexCmds['≤'] = LatexCmds.le = LatexCmds.leq = bind(BinaryOperator,'\\le ','&le;');
 
-LatexCmds.ge = LatexCmds.geq = bind(BinaryOperator,'\\ge ','&ge;');
+LatexCmds['≥'] = LatexCmds.ge = LatexCmds.geq = bind(BinaryOperator,'\\ge ','&ge;');
 
 LatexCmds.isin = LatexCmds['in'] = bind(BinaryOperator,'\\in ','&isin;');
 
@@ -1727,10 +1751,10 @@ function BigSymbol(ch, html) {
 }
 BigSymbol.prototype = new Symbol; //so instanceof will work
 
-LatexCmds.sum = LatexCmds.summation = bind(BigSymbol,'\\sum ','&sum;');
-LatexCmds.prod = LatexCmds.product = bind(BigSymbol,'\\prod ','&prod;');
+LatexCmds['∑'] = LatexCmds.sum = LatexCmds.summation = bind(BigSymbol,'\\sum ','&sum;');
+LatexCmds['∏'] = LatexCmds.prod = LatexCmds.product = bind(BigSymbol,'\\prod ','&prod;');
 LatexCmds.coprod = LatexCmds.coproduct = bind(BigSymbol,'\\coprod ','&#8720;');
-LatexCmds.int = LatexCmds.integral = LatexCmds['∫'] = bind(BigSymbol,'\\int ','&int;');
+LatexCmds['∫'] = LatexCmds.int = LatexCmds.integral = bind(BigSymbol,'\\int ','&int;');
 
 
 
@@ -1765,7 +1789,7 @@ LatexCmds.H = LatexCmds.Hamiltonian = LatexCmds.quaternions = LatexCmds.Quaterni
 //spacing
 LatexCmds.quad = LatexCmds.emsp = bind(VanillaSymbol,'\\quad ','    ');
 LatexCmds.qquad = bind(VanillaSymbol,'\\qquad ','        ');
-/* spacing special characters, gonna have to implement this in LatexCommandInput.prototype.textInput somehow
+/* spacing special characters, gonna have to implement this in LatexCommandInput::textInput somehow
 case ',':
   return new VanillaSymbol('\\, ',' ');
 case ':':
@@ -1898,9 +1922,9 @@ LatexCmds.setminus = LatexCmds.smallsetminus =
   bind(VanillaSymbol,'\\setminus ','&#8726;');
 
 LatexCmds.not = //bind(Symbol,'\\not ','<span class="not">/</span>');
-LatexCmds.neg = bind(VanillaSymbol,'\\neg ','&not;');
+LatexCmds['¬'] = LatexCmds.neg = bind(VanillaSymbol,'\\neg ','&not;');
 
-LatexCmds.dots = LatexCmds.ellip = LatexCmds.hellip =
+LatexCmds['…'] = LatexCmds.dots = LatexCmds.ellip = LatexCmds.hellip =
 LatexCmds.ellipsis = LatexCmds.hellipsis =
   bind(VanillaSymbol,'\\dots ','&hellip;');
 
@@ -2031,7 +2055,7 @@ JS environment could actually contain many instances. */
 //A fake cursor in the fake textbox that the math is rendered in.
 function Cursor(root) {
   this.parent = this.root = root;
-  var jQ = this.jQ = this._jQ = $('<span class="cursor"></span>');
+  var jQ = this.jQ = this._jQ = $('<span class="cursor">&zwj;</span>');
 
   //closured for setInterval
   this.blink = function(){ jQ.toggleClass('blink'); }
@@ -2470,6 +2494,8 @@ _.selectLeft = function() {
     else //end of a block
       if (this.parent !== this.root)
         this.insertBefore(this.parent.parent);
+      else
+        return;
 
     this.hide().selection = new Selection(this.parent, this.prev, this.next.next);
   }
@@ -2500,6 +2526,8 @@ _.selectRight = function() {
     else //end of a block
       if (this.parent !== this.root)
         this.insertAfter(this.parent.parent);
+      else
+        return;
 
     this.hide().selection = new Selection(this.parent, this.prev.prev, this.next);
   }
@@ -2528,7 +2556,7 @@ function Selection(parent, prev, next) {
   MathFragment.apply(this, arguments);
 }
 _ = Selection.prototype = new MathFragment;
-_.jQinit= function(children) {
+_.jQinit = function(children) {
   this.jQ = children.wrapAll('<span class="selection"></span>').parent();
     //can't do wrapAll(this.jQ = $(...)) because wrapAll will clone it
 };
