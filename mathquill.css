@@ -108,6 +108,10 @@
   width: 0.5em; /* Sets a min-width for IE7 when empty */
 }
 
+.mathquill-rendered-math .matrixed {
+  background: white;
+}
+
 .mathquill-editable .selection *,
 .mathquill-rendered-math .selection * {
   background: #B4D5FE;
@@ -374,9 +378,8 @@
 }
 
 .mathquill-rendered-math .paren {
-  padding: 0 .1em\9; /* Fix the outside paren have too much spaces for IE8 */
+  padding-left: .1em\9; /* Fix the outside paren have too much spaces for IE8 */
   margin: 0 -.1em\9; /* Fix the inside of paren have too much spaces for IE8*/
-
 }
 
 .mathquill-rendered-math .array {
