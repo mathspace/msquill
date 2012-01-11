@@ -806,7 +806,7 @@ if (transformPropName) {
 else if ('filter' in div_style) { //IE 6 & 7 fallback
   scale = function(jQ, x, y) { //NOTE: assumes y > x
     jQ.addClass('matrixed').css({
-      fontSize: y,
+      fontSize: y + 'em',
       filter: 'progid:DXImageTransform.Microsoft'
         + '.Matrix(M11=' + (x/y) + ",SizingMethod='auto expand')"
     });
