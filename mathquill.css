@@ -1,25 +1,34 @@
-/*
- * LaTeX Math in pure HTML and CSS -- No images whatsoever
- * v0.xa
- * by Jay and Han
- * Lesser GPL Licensed: http: //www.gnu.org/licenses/lgpl.html
- * 
- * This file is automatically included by mathquill.js
- * 
- */
+@font-face {
+    font-family: 'Symbola';
+    src: url('font/Symbola/symbola-webfont.eot');
+    src: url('font/Symbola/symbola-webfont.eot?#iefix') format('embedded-opentype'),
+         url('font/Symbola/symbola-webfont.woff') format('woff'),
+         url('font/Symbola/symbola-webfont.ttf') format('truetype'),
+         url('font/Symbola/symbola-webfont.svg#SymbolaRegular') format('svg');
+}
 
 @font-face {
-  font-family: Symbola;
-  src: url(font/Symbola.eot);
-  src: local("Symbola Regular"), local("Symbola"),
-    url(font/Symbola.ttf) format("truetype"),
-    url(font/Symbola.otf) format("opentype"),
-    url(font/Symbola.svg#Symbola) format("svg");
+    font-family: 'BellMTBold';
+    src: url('font/Bell_MTBold/bell-webfont.eot');
+    src: url('font/Bell_MTBold/bell-webfont.eot?#iefix') format('embedded-opentype'),
+         url('font/Bell_MTBold/bell-webfont.woff') format('woff'),
+         url('font/Bell_MTBold/bell-webfont.ttf') format('truetype'),
+         url('font/Bell_MTBold/bell-webfont.svg#BellMTBold') format('svg');
+
 }
+
+/*@font-face {*/
+    /*font-family: 'BellMT';*/
+    /*src: url('font/Bell_MT/bell-webfont.eot');*/
+    /*src: url('font/Bell_MT/bell-webfont.eot?#iefix') format('embedded-opentype'),*/
+         /*url('font/Bell_MT/bell-webfont.woff') format('woff'),*/
+         /*url('font/Bell_MT/bell-webfont.ttf') format('truetype'),*/
+         /*url('font/Bell_MT/bell-webfont.svg#BellMTRegular') format('svg');*/
+/*}*/
+
 
 .mathquill-editable,
 .mathquill-rendered-math,
-.mathquill-rendered-math .cursor,
 .mathquill-rendered-math .underline,
 .mathquill-rendered-math .overline,
 .mathquill-rendered-math .font,
@@ -66,6 +75,15 @@
   -moz-user-select: text;
   -webkit-user-select: text;
 }
+*:first-child+html .mathquill-editable .textarea textarea { /* IE7 only */
+  display: none; /* Prevents text cursor from showing in mathquill box in IE7 */ 
+}
+
+/* Lighten up nested mathquill-editable */
+.mathquill-rendered-math .mathquill-editable {
+	border-color: #cccccc;
+	padding: 1px 1px 0;
+}
 
 .mathquill-editable .cursor {
   border-left: 1px solid black;
@@ -86,82 +104,33 @@
   visibility: hidden;
   content: 'c';
 }
+*:first-child+html .mathquill-editable.empty { /* IE7 only */
+  width: 0.5em; /* Sets a min-width for IE7 when empty */
+}
 
 .mathquill-rendered-math .matrixed {
   background: white;
 }
 
-.mathquill-editable .selection,
-.mathquill-rendered-math .selection,
-.mathquill-editable .selection .mathquill-rendered-math,
-.mathquill-rendered-math .selection .underline,
-.mathquill-rendered-math .selection .overline,
-.mathquill-rendered-math .selection .font,
-.mathquill-rendered-math .selection sup,
-.mathquill-rendered-math .selection sub,
-.mathquill-rendered-math .selection .fraction,
-.mathquill-rendered-math .selection .sqrt-prefix,
-.mathquill-rendered-math .selection .sqrt-stem,
-.mathquill-rendered-math .selection .paren,
-.mathquill-rendered-math .selection .array,
-.mathquill-rendered-math .selection .matrixed,
-.mathquill-rendered-math .selection .block {
+.mathquill-editable .selection *,
+.mathquill-rendered-math .selection * {
   background: #B4D5FE;
   background: Highlight;
   color: HighlightText;
   border-color: HighlightText;
 }
-.mathquill-editable .selection.blur,
-.mathquill-rendered-math .selection.blur,
-.mathquill-editable .selection.blur .mathquill-rendered-math,
-.mathquill-rendered-math .selection.blur .underline,
-.mathquill-rendered-math .selection.blur .overline,
-.mathquill-rendered-math .selection.blur .font,
-.mathquill-rendered-math .selection.blur sup,
-.mathquill-rendered-math .selection.blur sub,
-.mathquill-rendered-math .selection.blur .fraction,
-.mathquill-rendered-math .selection.blur .sqrt-prefix,
-.mathquill-rendered-math .selection.blur .sqrt-stem,
-.mathquill-rendered-math .selection.blur .paren,
-.mathquill-rendered-math .selection.blur .array,
-.mathquill-rendered-math .selection.blur .matrixed,
-.mathquill-rendered-math .selection.blur .block {
+.mathquill-editable .selection.blur *,
+.mathquill-rendered-math .selection.blur * {
   background: #D4D4D4;
   color: black;
   border-color: black;
 }
-.mathquill-editable .selection .selection.blur,
-.mathquill-rendered-math .selection .selection.blur,
-.mathquill-editable .selection .selection.blur .mathquill-rendered-math,
-.mathquill-rendered-math .selection .selection.blur .underline,
-.mathquill-rendered-math .selection .selection.blur .overline,
-.mathquill-rendered-math .selection .selection.blur .font,
-.mathquill-rendered-math .selection .selection.blur sup,
-.mathquill-rendered-math .selection .selection.blur sub,
-.mathquill-rendered-math .selection .selection.blur .fraction,
-.mathquill-rendered-math .selection .selection.blur .sqrt-prefix,
-.mathquill-rendered-math .selection .selection.blur .sqrt-stem,
-.mathquill-rendered-math .selection .selection.blur .paren,
-.mathquill-rendered-math .selection .selection.blur .array,
-.mathquill-rendered-math .selection .selection.blur .matrixed,
-.mathquill-rendered-math .selection .selection.blur .block {
+.mathquill-editable .selection .selection.blur *,
+.mathquill-rendered-math .selection .selection.blur * {
   background: #ABF;
 }
-.mathquill-editable .selection.blur .selection.blur,
-.mathquill-rendered-math .selection.blur .selection.blur,
-.mathquill-editable .selection.blur .selection.blur .mathquill-rendered-math,
-.mathquill-rendered-math .selection.blur .selection.blur .underline,
-.mathquill-rendered-math .selection.blur .selection.blur .overline,
-.mathquill-rendered-math .selection.blur .selection.blur .font,
-.mathquill-rendered-math .selection.blur .selection.blur sup,
-.mathquill-rendered-math .selection.blur .selection.blur sub,
-.mathquill-rendered-math .selection.blur .selection.blur .fraction,
-.mathquill-rendered-math .selection.blur .selection.blur .sqrt-prefix,
-.mathquill-rendered-math .selection.blur .selection.blur .sqrt-stem,
-.mathquill-rendered-math .selection.blur .selection.blur .paren,
-.mathquill-rendered-math .selection.blur .selection.blur .array,
-.mathquill-rendered-math .selection.blur .selection.blur .matrixed,
-.mathquill-rendered-math .selection.blur .selection.blur .block {
+.mathquill-editable .selection.blur .selection.blur *,
+.mathquill-rendered-math .selection.blur .selection.blur * {
   background: #AAA;
   background: rgba(0, 0, 0, .15);
 }
@@ -178,6 +147,9 @@
   font-size: 115%;
   line-height: 1;
 }
+.mathquill-rendered-math { 
+  min-width: 1.0em\0/ /* Fixes display of square root in IE8 */
+}
 .mathquill-rendered-math var, .mathquill-rendered-math .text, .mathquill-rendered-math .nonSymbola {
   font-family: "Times New Roman", Symbola, serif;
 }
@@ -193,7 +165,7 @@
 }
 .mathquill-editable.hasCursor,
 .mathquill-rendered-math .latex-command-input.hasCursor {
-  border-color: ActiveBorder;
+  border-color: #68B44DF; /* Mathspace active colour */
 }
 .mathquill-editable.hasCursor, .mathquill-editable .hasCursor {
   -webkit-box-shadow: #68B4DF 0 0 3px 2px;
@@ -265,6 +237,9 @@
 .mathquill-rendered-math sup {
   vertical-align: .5em;
 }
+*:first-child+html .mathquill-rendered-math sup { /* IE7 only */
+  line-height: .8em; /* Fix exponent display in IE7 */
+}
 .mathquill-rendered-math sub {
   vertical-align: -.4em;
 }
@@ -286,6 +261,11 @@
 
 .mathquill-rendered-math .binary-operator {
   padding: 0 .2em;
+  display: inline-block; /* Allows word-wrap to occur around operators */
+}
+.mathquill-rendered-math .comma {
+  padding: 0 0.15em 0 0.1em; /* Tighten up char kerning display of lists */
+  display: inline-block; /* Allows word-wrap to occur around operators */
 }
 .mathquill-rendered-math .unary-operator {
   padding-left: .2em;
@@ -316,13 +296,22 @@
   padding-top: .075em;
 }
 .mathquill-rendered-math .numerator {
+  border-bottom: 1px solid #777; /* black is too black, contrasts with antialised text */
   padding-left: .1em;
   padding-right: .1em;
 }
 .mathquill-rendered-math .denominator {
-  border-top: 1px solid;
+  border-top: 1px solid #ddd;
   float: right; /* take out of normal flow to manipulate baseline */
   width: 100%;
+}
+*:first-child+html .mathquill-rendered-math .numerator { /* IE7 only */
+  float: left;
+}
+*:first-child+html .mathquill-rendered-math .denominator { /* IE7 only */
+  clear: both;
+  width: auto;
+  float: left;
 }
 
 .mathquill-rendered-math sup .fraction, .mathquill-rendered-math sub .fraction {
@@ -330,6 +319,7 @@
   vertical-align: -.4em;
 }
 .mathquill-rendered-math sup .numerator, .mathquill-rendered-math sub .numerator {
+  border-bottom: none;
   padding-bottom: 0;
 }
 .mathquill-rendered-math sup .denominator, .mathquill-rendered-math sub .denominator {
@@ -359,22 +349,39 @@
   -o-transform-origin: top;
   transform-origin: top;
 }
+.mathquill-rendered-math .sqrt-prefix {
+  top: .05em\9;      /* Fix the left part of square root is too high for IE8. */
+}
+
 .mathquill-rendered-math .sqrt-stem {
-  border-top: 1px solid;
+  border-top: 1.5px solid;
   margin-top: 1px;
   padding-left: .15em;
   padding-right: .2em;
   margin-right: .1em;
 }
 
+
+.mathquill-rendered-math .sqrt-stem {
+    margin-top: 0.07em\9;   /* Fix the square root horizontal bar is too far away from the symbol for IE8. */
+}
+
 .mathquill-rendered-math .paren {
-  padding: 0 .1em;
+  padding: 0;
+  margin-top: -.1em;        /* Fix the parens lower than text base line and too many spaces inside for webkit */
   vertical-align: top;
-  -webkit-transform-origin: top left;
-  -moz-transform-origin: top left;
-  -ms-transform-origin: top left;
-  -o-transform-origin: top left;
-  transform-origin: top left;
+  font-family: BellMTBold, "Times New Roman", serif;
+  -webkit-transform-origin: left 10%;
+  -moz-transform-origin: left 10%;
+  -ms-transform-origin: left 10%;
+  -o-transform-origin: left 10%;
+  transform-origin: left 10%;
+}
+
+.mathquill-rendered-math .paren {
+  padding: 0 .1em\9; /* Fix the outside paren have too much spaces for IE8 */
+  margin: 0 -.1em\9; /* Fix the inside of paren have too much spaces for IE8*/
+
 }
 
 .mathquill-rendered-math .array {
@@ -386,10 +393,15 @@
   display: block;
 }
 
-.mathquill-rendered-math .non-italicized-function {
+.mathquill-rendered-math .un-italicized {
   padding-right: .2em;
 }
 
 /*.mathquill-rendered-math .not {
   margin-right: -.75em;
 }*/
+
+/* Fix the cursor in IE8 */
+.mathquill-editable span.textarea textarea {
+   text-indent: -9999px\9;
+}
