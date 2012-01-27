@@ -10,8 +10,6 @@
 var $ = jQuery,
   undefined,
   _, //temp variable of prototypes
-  isIE7 = $.browser.msie && (parseInt($.browser.version) == 7), // Browser sniffing
-  isIE8 = $.browser.msie && (parseInt($.browser.version) == 8),
   jQueryDataKey = '[[mathquill internal data]]',
   min = Math.min,
   max = Math.max;
@@ -43,11 +41,11 @@ _.foldChildren = function(fold, fn) {
   });
   return fold;
 };
-_.bubble = function(event, arg) {
-  for (var ancestor = this; ancestor; ancestor = ancestor.parent)
-    if (ancestor[event] && ancestor[event](arg) === false) break;
-
-  return this;
+_.keydown = function(e) {
+  return this.parent.keydown(e);
+};
+_.textInput = function(ch) {
+  return this.parent.textInput(ch);
 };
 
 /**
@@ -156,7 +154,7 @@ _.insertAt = function(cursor) {
 
   cmd.placeCursor(cursor);
 
-  cmd.bubble('redraw');
+  cursor.redraw(); //this will soon be cmd.trigger('redraw')
 };
 _.respace = $.noop; //placeholder for context-sensitive spacing
 _.placeCursor = function(cursor) {
@@ -332,7 +330,9 @@ function createRoot(jQ, root, textbox, editable) {
   root.renderLatex(contents.text());
 
   //textarea stuff
-  var textareaSpan = root.textarea = $('<span class="textarea"><textarea></textarea></span>'),
+  var textareaSpan = root.textarea = $.browser.webkit && /Mobile/.test(navigator.userAgent) ?
+      $('<span class="textarea"><span tabindex=0></span></span>')
+    : $('<span class="textarea"><textarea></textarea></span>'),
     textarea = textareaSpan.children();
 
   var textareaSelectionTimeout;
@@ -457,7 +457,7 @@ function createRoot(jQ, root, textbox, editable) {
   jQ.bind('cut', function(e) {
     setTextareaSelection();
     if (cursor.selection)
-      setTimeout(function(){ cursor.deleteSelection(); cursor.parent.bubble('redraw'); });
+      setTimeout(function(){ cursor.deleteSelection(); cursor.redraw(); cursor.root.triggerSpecialEvent("render"); });
     e.stopPropagation();
   }).bind('copy', function(e) {
     setTextareaSelection();
@@ -474,24 +474,36 @@ function createRoot(jQ, root, textbox, editable) {
     var latex = textarea.val();
     if (latex.slice(0,1) === '$' && latex.slice(-1) === '$')
       latex = latex.slice(1, -1);
-    else
-      latex = '\\text{' + latex + '}';
+    //else
+    //  latex = '\\text{' + latex + '}';
     cursor.writeLatex(latex).show();
     textarea.val('');
+    
+    cursor.root.triggerSpecialEvent("render");
   }
 
   //keyboard events and text input, see Wiki page "Keyboard Events"
-  var lastKeydn = {}, skipTextInput = false;
+  var lastKeydn, lastKeydnHappened, lastKeypressWhich, skipTextInput = false;
   jQ.bind('keydown.mathquill', function(e) {
-    lastKeydn.evt = e;
-    lastKeydn.happened = true;
-    cursor.parent.bubble('keydown', e);
+    lastKeydn = e;
+    lastKeydnHappened = true;
+    if (cursor.parent.keydown(e) === false)
+      e.preventDefault();
   }).bind('keypress.mathquill', function(e) {
-    //on auto-repeated key events, keypress may get triggered but not keydown
-    if (lastKeydn.happened)
-      lastKeydn.happened = false;
-    else
-      cursor.parent.bubble('keydown', lastKeydn.evt);
+    if (lastKeydnHappened)
+      lastKeydnHappened = false;
+    else {
+      //there's two ways keypress might be triggered without a keydown happening first:
+      if (lastKeypressWhich !== e.which)
+        //all browsers do that if this textarea is given focus during the keydown of
+        //a different focusable element, i.e. by that element's keydown event handler.
+        //No way of knowing original keydown, so ignore this keypress
+        return;
+      else
+        //some browsers do that when auto-repeating key events, replay the keydown
+        cursor.parent.keydown(lastKeydn);
+    }
+    lastKeypressWhich = e.which;
 
     if (textareaSelectionTimeout !== undefined)
       clearTimeout(textareaSelectionTimeout);
@@ -511,7 +523,7 @@ function createRoot(jQ, root, textbox, editable) {
     if (text) {
       textarea.val('');
       for (var i = 0; i < text.length; i += 1) {
-        cursor.parent.bubble('textInput', text.charAt(i));
+        cursor.parent.textInput(text.charAt(i));
       }
     }
     else {
@@ -541,19 +553,19 @@ _.keydown = function(e)
 {
   e.ctrlKey = e.ctrlKey || e.metaKey;
   switch ((e.originalEvent && e.originalEvent.keyIdentifier) || e.which) {
-  case 32: //space
-  case 'Space':
-  case 'U+0020':
-    // do nothing
-    return false;
   case 8: //backspace
   case 'Backspace':
   case 'U+0008':
     if (e.ctrlKey)
       while (this.cursor.prev || this.cursor.selection)
         this.cursor.backspace();
-    else
-      this.cursor.backspace();
+    else {
+   	  if( this.isEmpty() )
+        this.triggerSpecialEvent( "upwardDelete" );
+      else
+        this.cursor.backspace();
+    }
+    this.triggerSpecialEvent('render');
     break;
   case 27: //may as well be the same as tab until we figure out what to do with it
   case 'Esc':
@@ -585,6 +597,7 @@ _.keydown = function(e)
     break;
   case 13: //enter
   case 'Enter':
+  	this.triggerSpecialEvent( "enterPressed" );
     break;
   case 35: //end
   case 'End':
@@ -613,21 +626,32 @@ _.keydown = function(e)
     break;
   case 38: //up
   case 'Up':
-    if (e.ctrlKey) break;
+    if (e.ctrlKey || e.shiftKey) break;
 
-    if (e.shiftKey) {
-      if (this.cursor.prev)
-        while (this.cursor.prev)
-          this.cursor.selectLeft();
+    if (this.cursor.next.cmd === '\\sum ') //TODO: better architecture to not need a special case for these
+      this.cursor.clearSelection().prependTo(this.cursor.next.lastChild);
+    else if (this.cursor.prev.cmd === '\\sum ')
+      this.cursor.clearSelection().appendTo(this.cursor.prev.lastChild);
+    else if (this.cursor.next instanceof Fraction)
+      this.cursor.clearSelection().prependTo(this.cursor.next.firstChild);
+    else if (this.cursor.prev instanceof Fraction)
+      this.cursor.clearSelection().appendTo(this.cursor.prev.firstChild);
+    else if (this.cursor.next.cmd === '^')
+      this.cursor.clearSelection().prependTo(this.cursor.next.firstChild);
+    else if (this.cursor.next && this.cursor.next.next.cmd === '^' && this.cursor.next.next.respaced)
+      this.cursor.clearSelection().prependTo(this.cursor.next.next.firstChild);
+    else {
+      var ancestor = this.cursor.parent, ancestor_prev;
+      while (ancestor && !ancestor_prev) {
+        ancestor_prev = ancestor.prev;
+        ancestor = ancestor.parent.parent;
+      }
+      if (ancestor_prev)
+        this.cursor.clearSelection().appendTo(ancestor_prev);
       else
-        this.cursor.selectLeft();
+        this.triggerSpecialEvent('upPressed');
     }
-    else if (this.cursor.parent.prev)
-      this.cursor.clearSelection().appendTo(this.cursor.parent.prev);
-    else if (this.cursor.prev)
-      this.cursor.clearSelection().prependTo(this.cursor.parent);
-    else if (this.cursor.parent !== this)
-      this.cursor.clearSelection().insertBefore(this.cursor.parent.parent);
+
     break;
   case 39: //right
   case 'Right':
@@ -640,21 +664,32 @@ _.keydown = function(e)
     break;
   case 40: //down
   case 'Down':
-    if (e.ctrlKey) break;
+    if (e.ctrlKey || e.shiftKey) break;
 
-    if (e.shiftKey) {
-      if (this.cursor.next)
-        while (this.cursor.next)
-          this.cursor.selectRight();
+    if (this.cursor.next.cmd === '\\sum ') //TODO: better architecture to not need a special case for these
+      this.cursor.clearSelection().prependTo(this.cursor.next.firstChild);
+    else if (this.cursor.prev.cmd === '\\sum ')
+      this.cursor.clearSelection().appendTo(this.cursor.prev.firstChild);
+    else if (this.cursor.next instanceof Fraction)
+      this.cursor.clearSelection().prependTo(this.cursor.next.lastChild);
+    else if (this.cursor.prev instanceof Fraction)
+      this.cursor.clearSelection().appendTo(this.cursor.prev.lastChild);
+    else if (this.cursor.next.cmd === '_')
+      this.cursor.clearSelection().prependTo(this.cursor.next.firstChild);
+    else if (this.cursor.next && this.cursor.next.next.cmd === '_' && this.cursor.next.next.respaced)
+      this.cursor.clearSelection().prependTo(this.cursor.next.next.firstChild);
+    else {
+      var ancestor = this.cursor.parent, ancestor_next;
+      while (ancestor && !ancestor_next) {
+        ancestor_next = ancestor.next;
+        ancestor = ancestor.parent.parent;
+      }
+      if (ancestor_next)
+        this.cursor.clearSelection().prependTo(ancestor_next);
       else
-        this.cursor.selectRight();
+        this.triggerSpecialEvent('downPressed');
     }
-    else if (this.cursor.parent.next)
-      this.cursor.clearSelection().prependTo(this.cursor.parent.next);
-    else if (this.cursor.next)
-      this.cursor.clearSelection().appendTo(this.cursor.parent);
-    else if (this.cursor.parent !== this)
-      this.cursor.clearSelection().insertAfter(this.cursor.parent.parent);
+
     break;
   case 46: //delete
   case 'Del':
@@ -662,15 +697,20 @@ _.keydown = function(e)
     if (e.ctrlKey)
       while (this.cursor.next || this.cursor.selection)
         this.cursor.deleteForward();
-    else
-      this.cursor.deleteForward();
+    else {
+          if( this.isEmpty() )
+		  this.triggerSpecialEvent( "downwardDelete" );  
+	  else
+	      this.cursor.deleteForward();
+    }
+    this.triggerSpecialEvent('render');
     break;
   case 65: //the 'A' key, as in Ctrl+A Select All
   case 'A':
   case 'U+0041':
     if (e.ctrlKey && !e.shiftKey && !e.altKey) {
       if (this !== this.cursor.root) //so not stopPropagation'd at RootMathCommand
-        return;
+        return this.parent.keydown(e);
 
       this.cursor.clearSelection().appendTo(this);
       while (this.cursor.prev)
@@ -679,23 +719,34 @@ _.keydown = function(e)
     }
   default:
     this.skipTextInput = false;
-    return false;
+    return true;
   }
   this.skipTextInput = true;
-  e.preventDefault();
   return false;
 };
 _.textInput = function(ch) {
-  if (!this.skipTextInput)
+  if (!this.skipTextInput) {
     this.cursor.write(ch);
-  return false;
+	this.triggerSpecialEvent("render");
+  }
 };
+
+//triggers a special event occured:
+//	1) pressed up and was at 'top' of equation
+//  2) pressed down and was at 'bottom' of equation
+//  3) pressed backspace and equation was empty
+//  4) the equation was rendered
+//  5) etc
+_.triggerSpecialEvent = function(eventName){
+	var jQ = this.jQ;
+	setTimeout( function(){ jQ.trigger(eventName)}, 1 );
+}
 
 function RootMathCommand(cursor) {
   this.init('$');
   this.firstChild.cursor = cursor;
   this.firstChild.textInput = function(ch) {
-    if (this.skipTextInput) return false;
+    if (this.skipTextInput) return;
 
     if (ch !== '$' || cursor.parent !== this)
       cursor.write(ch);
@@ -709,8 +760,6 @@ function RootMathCommand(cursor) {
       cursor.insertBefore(this.parent);
     else
       cursor.write(ch);
-
-    return false;
   };
 }
 _ = RootMathCommand.prototype = new MathCommand;
@@ -758,15 +807,13 @@ _.renderLatex = function(latex) {
 };
 _.keydown = RootMathBlock.prototype.keydown;
 _.textInput = function(ch) {
-  if (this.skipTextInput) return false;
+  if (this.skipTextInput) return;
 
   this.cursor.deleteSelection();
   if (ch === '$')
     this.cursor.insertNew(new RootMathCommand(this.cursor));
   else
     this.cursor.insertNew(new VanillaSymbol(ch));
-
-  return false;
 };
 
 /***************************
@@ -849,9 +896,37 @@ LatexCmds.underline = bind(Style, '\\underline', '<span class="underline"></span
 LatexCmds.overline = LatexCmds.bar = bind(Style, '\\overline', '<span class="overline"></span>');
 
 function SupSub(cmd, html, text, replacedFragment) {
-  this.init(cmd, [ html ], [ text ], replacedFragment);
+  this.init(cmd, [ '<'+html+'/>', '<span class="'+html+'"/>' ], [ text ], replacedFragment);
 }
 _ = SupSub.prototype = new MathCommand;
+_.placeCursor = function(cursor) {
+  //TODO: should there be a better place for this?
+  if (this.prev instanceof BigSymbol && this.prev.cmd !== '\\int ') {
+    var bigSym = this.prev, block = this.firstChild,
+      firstChild = {_: 'firstChild', '^': 'lastChild'}[this.cmd],
+      lastChild = {_: 'lastChild', '^': 'firstChild'}[this.cmd],
+      append = {_: 'append', '^': 'prepend'}[this.cmd],
+      prev = {_: 'prev', '^': 'next'}[this.cmd],
+      next = {_: 'next', '^': 'prev'}[this.cmd];
+    bigSym.jQ[append](
+      $('<span class="'+{_: 'from', '^': 'to'}[this.cmd]+'"></span>')[append](
+        block.jQ.removeClass('sup sub')
+      )
+    );
+    block.parent = bigSym;
+    bigSym[firstChild] = block;
+    if (bigSym[lastChild]) {
+      bigSym[lastChild][prev] = block;
+      block[next] = bigSym[lastChild];
+    }
+    else
+      bigSym[lastChild] = block;
+    this.isEmpty = function(){ return true; };//FIXME hack so backspace deletes this
+    cursor.backspace().appendTo(block);
+    return;
+  }
+  this.cursor = cursor.appendTo(this.firstChild);
+};
 _.latex = function() {
   var latex = this.firstChild.latex();
   if (latex.length === 1)
@@ -860,42 +935,49 @@ _.latex = function() {
     return this.cmd + '{' + (latex || ' ') + '}';
 };
 _.redraw = function() {
-  this.respace();
-  if (this.next)
-    this.next.respace();
   if (this.prev)
     this.prev.respace();
+  //SupSub::respace recursively calls respace on all the following SupSubs
+  //so if prev is a SupSub, no need to call respace on this or following nodes
+  if (!(this.prev instanceof SupSub)) {
+    this.respace();
+    //and if next is a SupSub, then this.respace() will have already called
+    //this.next.respace()
+    if (this.next && !(this.next instanceof SupSub))
+      this.next.respace();
+  }
 };
 _.respace = function() {
   if (
     this.prev.cmd === '\\int ' || (
-      this.prev instanceof SupSub && this.prev.cmd != this.cmd &&
-      this.prev.prev && this.prev.prev.cmd === '\\int '
+      this.prev instanceof SupSub && this.prev.cmd != this.cmd
+      && this.prev.prev && this.prev.prev.cmd === '\\int '
     )
   ) {
-    if (!this.limit) {
-      this.limit = true;
-      this.jQ.addClass('limit');
+    if (!this.int) {
+      this.int = true;
+      this.jQ.addClass('int');
     }
   }
   else {
-    if (this.limit) {
-      this.limit = false;
-      this.jQ.removeClass('limit');
+    if (this.int) {
+      this.int = false;
+      this.jQ.removeClass('int');
     }
   }
 
-  if (this.respaced = this.prev instanceof SupSub && this.prev.cmd != this.cmd && !this.prev.respaced) {
+  this.respaced = this.prev instanceof SupSub && this.prev.cmd != this.cmd && !this.prev.respaced;
+  if (this.respaced) {
     var fontSize = +this.jQ.css('fontSize').slice(0,-2),
-      prevWidth = this.prev.jQ.outerWidth()
+      prevWidth = this.prev.jQ.outerWidth(),
       thisWidth = this.jQ.outerWidth();
     this.jQ.css({
-      left: (this.limit && this.cmd === '_' ? -.25 : 0) - prevWidth/fontSize + 'em',
+      left: (this.int && this.cmd === '_' ? -.25 : 0) - prevWidth/fontSize + 'em',
       marginRight: .1 - min(thisWidth, prevWidth)/fontSize + 'em'
         //1px extra so it doesn't wrap in retarded browsers (Firefox 2, I think)
     });
   }
-  else if (this.limit && this.cmd === '_') {
+  else if (this.int && this.cmd === '_') {
     this.jQ.css({
       left: '-.25em',
       marginRight: ''
@@ -908,40 +990,58 @@ _.respace = function() {
     });
   }
 
+  if (this.next instanceof SupSub)
+    this.next.respace();
+
   return this;
+};
+_.keydown = function(e) {
+  if (this.cursor.parent.parent !== this || e.ctrlKey || e.metaKey)
+    return this.parent.keydown(e);
+  //e.which === 9 <=> Tab key
+  else if (e.which === 9) {
+    e.preventDefault();
+    if (e.shiftKey && this.respaced)
+      this.cursor.clearSelection().appendTo(this.prev.firstChild);
+    else if (!e.shiftKey && this.next.respaced)
+      this.cursor.clearSelection().prependTo(this.next.firstChild);
+    else
+      return this.parent.keydown(e);
+  }
+  else if (e.shiftKey)
+    return this.parent.keydown(e);
+  //e.which === 37 <=> Left key
+  else if (e.which === 37 && !this.cursor.prev && this.respaced)
+    this.cursor.clearSelection().insertBefore(this.prev);
+  //e.which === 39 <=> Right key
+  else if (e.which === 39 && !this.cursor.next && this.next.respaced)
+    this.cursor.clearSelection().insertAfter(this.next);
+  //e.which === 38 <=> Up, 40 <=> Down key
+  else if ((e.which === 38 && this.cmd === '_' && !(this.cursor.next.cmd === '^'))
+        || (e.which === 40 && this.cmd === '^' && !(this.cursor.next.cmd === '_'))
+  ) {
+    if (!this.cursor.prev || this.cursor.next)
+      this.cursor.clearSelection().insertBefore(this.respaced ? this.prev : this);
+    else
+      this.cursor.clearSelection().insertAfter(this.next.respaced ? this.next : this);
+  }
+  else
+    return this.parent.keydown(e);
 };
 
 LatexCmds.subscript = LatexCmds._ = proto(SupSub, function(replacedFragment) {
-  SupSub.call(this, '_', '<sub></sub>', '_', replacedFragment);
+  SupSub.call(this, '_', 'sub', '_', replacedFragment);
 });
 
 LatexCmds.superscript =
 LatexCmds.supscript =
-LatexCmds['^'] = LatexCmds['`'] = proto(SupSub, function(replacedFragment) {
-  SupSub.call(this, '^', '<sup></sup>', '**', replacedFragment);
+LatexCmds['^'] = proto(SupSub, function(replacedFragment) {
+  SupSub.call(this, '^', 'sup', '**', replacedFragment);
 });
 
 function Fraction(replacedFragment) {
   this.init('\\frac', undefined, undefined, replacedFragment);
   this.jQ.append('<span style="display:inline-block;width:0">&nbsp;</span>');
-  
-  // Fixes display in IE7 - where each numerator/denominator pair aren't set to equal widths
-  if (isIE7) {
-    this.jQ.change(function(){
-        var $self = $(this),
-			$num = $self.children('.numerator'),
-			$denom = $self.children('.denominator'),
-			maxWidth;
-        // Remove any forced width styles, so we can measure natural width of elements
-        $num.css('width', null);
-        $denom.css('width', null);
-        // Find width that can fit both elements
-        maxWidth = Math.max($num.width(), $denom.width())
-        // Apply this width to both elements
-        $num.css('width', maxWidth+'px');
-        $denom.css('width', maxWidth+'px');
-    });
-  }
 }
 _ = Fraction.prototype = new MathCommand;
 _.html_template = [
@@ -965,7 +1065,8 @@ _.placeCursor = function(cursor) { //TODO: better architecture so this can be do
         prev instanceof BinaryOperator ||
         prev instanceof TextBlock ||
         prev instanceof BigSymbol ||
-        prev.cmd === ','
+        prev.cmd === ',' ||
+        prev.cmd === ':'
       ) //lookbehind for operator
     )
       prev = prev.prev;
@@ -1003,9 +1104,8 @@ _.redraw = function() {
   scale(block.prev(), 1, block.innerHeight()/+block.css('fontSize').slice(0,-2) - .1);
 };
 
-LatexCmds.sqrt = LatexCmds['√'] = LatexCmds['~'] = SquareRoot;
+LatexCmds.sqrt = LatexCmds['√'] = SquareRoot;
 
-SquareRoot.with_optional_block = NthRoot;
 function NthRoot(replacedFragment) {
   SquareRoot.call(this, replacedFragment);
   this.jQ = this.firstChild.jQ.detach().add(this.jQ);
@@ -1068,8 +1168,10 @@ _.placeCursor = function(cursor) {
   //  a selection fragment, get rid of me and put cursor after my parent
   if (!this.next && this.parent.parent && this.parent.parent.end === this.end && this.firstChild.isEmpty())
     cursor.backspace().insertAfter(this.parent.parent);
-  else
+  else {
     this.firstChild.blur();
+    this.redraw();
+  }
 };
 
 LatexCmds.rbrace = CharCmds['}'] = proto(CloseBracket, function(replacedFragment) {
@@ -1156,9 +1258,9 @@ _.keydown = function(e) {
   ) {
     if (this.isEmpty())
       this.cursor.insertAfter(this);
-    e.preventDefault();
     return false;
   }
+  return this.parent.keydown(e);
 };
 _.textInput = function(ch) {
   this.cursor.deleteSelection();
@@ -1183,7 +1285,6 @@ _.textInput = function(ch) {
     this.cursor.insertBefore(next);
     delete next.firstChild.focus;
   }
-  return false;
 };
 function InnerTextBlock(){}
 _ = InnerTextBlock.prototype = new MathBlock;
@@ -1201,7 +1302,7 @@ _.blur = function() {
       else if (cursor.prev === textblock)
         cursor.prev = textblock.prev;
 
-      cursor.show().parent.bubble('redraw');
+      cursor.show().redraw();
     }
   }
   return this;
@@ -1235,7 +1336,7 @@ _.focus = function() {
     else
       cursor.prependTo(this);
 
-    cursor.parent.bubble('redraw');
+    cursor.redraw();
   }
   else if (textblock.prev.cmd === textblock.cmd) {
     var cursor = textblock.cursor;
@@ -1311,19 +1412,21 @@ _.latex = function() {
 _.keydown = function(e) {
   if (e.which === 9 || e.which === 13) { //tab or enter
     this.renderCommand();
-    e.preventDefault();
     return false;
   }
+  return this.parent.keydown(e);
 };
 _.textInput = function(ch) {
   if (ch.match(/[a-z]/i)) {
     this.cursor.deleteSelection();
     this.cursor.insertNew(new VanillaSymbol(ch));
-    return false;
+    return;
   }
   this.renderCommand();
   if (ch === ' ' || (ch === '\\' && this.firstChild.isEmpty()))
-    return false;
+    return;
+
+  this.cursor.parent.textInput(ch);
 };
 _.renderCommand = function() {
   this.jQ = this.jQ.last();
@@ -1335,7 +1438,8 @@ _.renderCommand = function() {
 
   var latex = this.firstChild.latex(), cmd;
   if (latex) {
-    if (cmd = LatexCmds[latex])
+    cmd = LatexCmds[latex];
+    if (cmd)
       cmd = new cmd(this.replacedFragment, latex);
     else {
       cmd = new TextBlock(latex);
@@ -1418,9 +1522,7 @@ _.keydown = function(e) {
       newBlock.next = currentBlock.next;
       currentBlock.next = newBlock;
       newBlock.prev = currentBlock;
-      this.bubble('redraw').cursor.appendTo(newBlock);
-
-      e.preventDefault();
+      this.cursor.appendTo(newBlock).redraw();
       return false;
     }
     else if (e.which === 9 && !e.shiftKey && !currentBlock.next) { //tab
@@ -1430,13 +1532,11 @@ _.keydown = function(e) {
           delete currentBlock.prev.next;
           this.lastChild = currentBlock.prev;
           currentBlock.jQ.remove();
-          this.bubble('redraw');
-
-          e.preventDefault();
+          this.cursor.redraw();
           return false;
         }
         else
-          return;
+          return this.parent.keydown(e);
       }
 
       var newBlock = new MathBlock;
@@ -1445,9 +1545,7 @@ _.keydown = function(e) {
       this.lastChild = newBlock;
       currentBlock.next = newBlock;
       newBlock.prev = currentBlock;
-      this.bubble('redraw').cursor.appendTo(newBlock);
-
-      e.preventDefault();
+      this.cursor.appendTo(newBlock).redraw();
       return false;
     }
     else if (e.which === 8) { //backspace
@@ -1470,17 +1568,15 @@ _.keydown = function(e) {
         if (this.isEmpty())
           this.cursor.deleteForward();
         else
-          this.bubble('redraw');
+          this.cursor.redraw();
 
-        e.preventDefault();
         return false;
       }
-      else if (!this.cursor.prev) {
-        e.preventDefault();
+      else if (!this.cursor.prev)
         return false;
-      }
     }
   }
+  return this.parent.keydown(e);
 };
 
 LatexCmds.vector = Vector;
@@ -1496,9 +1592,7 @@ LatexCmds.editable = proto(RootMathCommand, function() {
     this.cursor.appendTo(this);
     MathBlock.prototype.blur.call(this);
   };
-  // Need the \editable{} latex output or we won't be able to
-  // re-display it e.g. when it's an incorrect answer
-  this.latex = function(){ return '\\editable{'+this.firstChild.latex()+'}'; };
+  this.latex = function(){ return this.firstChild.latex(); };
   this.text = function(){ return this.firstChild.text(); };
 });
 
@@ -1506,34 +1600,71 @@ LatexCmds.editable = proto(RootMathCommand, function() {
  * Symbols and Special Characters
  *********************************/
 
-LatexCmds.f = bind(Symbol, 'f', '<var class="florin">&fnof;</var>');
+LatexCmds.f = bind(Symbol, 'f', '<var class="florin">&fnof;</var><span></span>');
 
 function Variable(ch, html) {
   Symbol.call(this, ch, '<var>'+(html || ch)+'</var>');
 }
 _ = Variable.prototype = new Symbol;
 _.insertAt = function(cursor) {
-  var cmd = this.cmd;
   //want the longest possible autocommand, so assemble longest series of letters (Variables) first
-  for (var i = 0, prev = cursor.prev; i < 8 && prev && prev instanceof Variable; i += 1, prev = prev.prev)
+  var cmd = this.cmd;
+  for (var i = 0, prev = cursor.prev; i < MAX_AUTOCMD_LEN - 1 && prev && prev instanceof Variable; i += 1, prev = prev.prev)
     cmd = prev.cmd + cmd;
-  //and check for autocommand before that, since autocommands may be prefixes of longer autocommands
-  if (prev instanceof UnItalicized && AutoCmds.hasOwnProperty(prev.text() + cmd)) {
-    for (var i = 0; i < cmd.length; i += 1) cursor.backspace();
-    cursor.insertNew(new UnItalicized(undefined, prev.text() + cmd));
-    return;
-  }
-  else { //and test if there's an autocommand here, starting with the longest possible and slicing
-    for (var i = 0; i < cmd.length; i += 1) {
-      if (AutoCmds.hasOwnProperty(cmd)) {
-        for (var i = 1; i < cmd.length; i += 1) cursor.backspace();
-        cursor.insertNew(new UnItalicized(undefined, cmd));
-        return;
-      }
-      cmd = cmd.slice(1);
+  //then test if there's an autocommand here, starting with the longest possible and slicing
+  while (cmd.length) {
+    if (AutoCmds.hasOwnProperty(cmd)) {
+      for (var i = 1; i < cmd.length; i += 1) cursor.backspace();
+      cursor.insertNew(new LatexCmds[cmd](undefined, cmd));
+      return;
     }
+    cmd = cmd.slice(1);
   }
   MathCommand.prototype.insertAt.apply(this, arguments);
+};
+_.respace = function() {
+  //TODO: in better architecture, should be done in createBefore and backspace
+  //respace is called too often, inefficient
+
+  //want the longest possible autocommand, so assemble longest series of letters (Variables)
+  var cmd = this.cmd;
+  for (var prev = this.prev; prev instanceof Variable; prev = prev.prev)
+    cmd = prev.cmd + cmd;
+  for (var next = this.next; next instanceof Variable; next = next.next)
+    cmd += next.cmd;
+
+  //removeClass from all the things before figuring out what's an autocmd, if any
+  (new MathFragment(this.parent, prev, next)).each(function(el) {
+    el.jQ.removeClass('un-italicized last');
+    delete el.isFirstLetter;
+    delete el.isLastLetter;
+  });
+
+  //test if there's an autocommand here, going through substrings from longest to shortest
+  outer: for (var i = 0, first = prev.next || this.parent.firstChild; i < cmd.length; i += 1, first = first.next) {
+    for (var len = min(MAX_UNITALICIZED_LEN, cmd.length - i); len > 0; len -= 1) {
+      if (UnItalicizedCmds.hasOwnProperty(cmd.slice(i, i + len))) {
+        first.isFirstLetter = true;
+        for (var j = 0, letter = first; j < len; j += 1, letter = letter.next) {
+          letter.jQ.addClass('un-italicized');
+          var last = letter;
+        }
+        last.isLastLetter = true;
+        if (!(last.next instanceof SupSub || last.next instanceof Bracket))
+          last.jQ.addClass('last');
+        i += len - 1;
+        first = last;
+        continue outer;
+      }
+    }
+  }
+};
+_.latex = function() {
+  if (this.isFirstLetter)
+    return '\\' + this.cmd;
+  else if (this.isLastLetter)
+    return this.cmd + ' ';
+  return this.cmd;
 };
 _.text = function() {
   var text = this.cmd;
@@ -1547,18 +1678,15 @@ _.text = function() {
 };
 
 function UnItalicized(replacedFragment, fn) {
-  Symbol.call(this, '\\'+fn+' ', '<span>'+fn+'</span>', fn);
+  this.cmd = fn;
 }
 _ = UnItalicized.prototype = new Symbol;
-_.respace = function()
-{
-  this.jQ[0].className =
-    (this.next instanceof SupSub || this.next instanceof Bracket) ?
-    '' : 'un-italicized';
+_.insertAt = function(cursor) {
+  cursor.writeLatex(this.cmd).show();
 };
 //backslashless commands, words where adjacent letters (Variables)
 //that form them automatically are turned into commands
-var AutoCmds = {
+var UnItalicizedCmds = {
   ln: 1,
   lg: 1,
   log: 1,
@@ -1574,23 +1702,22 @@ var AutoCmds = {
   gcf: 1,
   hcf: 1,
   lim: 1
-};
+}, MAX_UNITALICIZED_LEN = 9, AutoCmds = {
+  sqrt: 1,
+  sum: 1,
+  pi: 1
+}, MAX_AUTOCMD_LEN = 4;
 
 (function() {
   var trigs = { sin: 1, cos: 1, tan: 1, sec: 1, cosec: 1, csc: 1, cotan: 1, cot: 1, ctg: 1 };
   for (var trig in trigs) {
-    AutoCmds[trig] =
-    AutoCmds['arc'+trig] =
-      1;
-
-    LatexCmds[trig+'h'] =
-    LatexCmds['a'+trig] =
-    LatexCmds['a'+trig+'h'] =
-    LatexCmds['arc'+trig+'h'] =
-      UnItalicized;
+    UnItalicizedCmds[trig] =
+    UnItalicizedCmds['arc'+trig] =
+    UnItalicizedCmds[trig+'h'] =
+    UnItalicizedCmds['arc'+trig+'h'] = 1;
   }
 
-  for (var fn in AutoCmds)
+  for (var fn in UnItalicizedCmds)
     LatexCmds[fn] = UnItalicized;
 }());
 
@@ -1600,7 +1727,7 @@ function VanillaSymbol(ch, html) {
 }
 VanillaSymbol.prototype = Symbol.prototype;
 
-CharCmds[' '] = bind(VanillaSymbol, '\\:', ' ');
+CharCmds[' '] = bind(VanillaSymbol, '\\space ', ' ');
 
 LatexCmds.prime = CharCmds["'"] = bind(VanillaSymbol, "'", '&prime;');
 
@@ -1611,7 +1738,7 @@ NonSymbolaSymbol.prototype = Symbol.prototype;
 
 LatexCmds['@'] = NonSymbolaSymbol;
 LatexCmds['&'] = bind(NonSymbolaSymbol, '\\&', '&');
-LatexCmds['%'] = bind(NonSymbolaSymbol, '%', '%');
+LatexCmds['%'] = bind(NonSymbolaSymbol, '\\%', '%');
 
 //the following are all Greek to me, but this helped a lot: http://www.ams.org/STIX/ion/stixsig03.html
 
@@ -1718,13 +1845,10 @@ function BinaryOperator(cmd, html, text) {
 _ = BinaryOperator.prototype = new Symbol; //so instanceof will work
 _.insertAt = function(cursor) {
   var cmd = cursor.prev.cmd + this.cmd;
-  // DRY; would prefer to use LatexCmds.cong, LatexCmds.le, etc.
   if (cmd === '<=')
     cursor.backspace().insertNew(new BinaryOperator('\\le ', '&le;'));
   else if (cmd === '>=')
     cursor.backspace().insertNew(new BinaryOperator('\\ge ', '&ge;'));
-  else if (cmd === '==')
-     cursor.backspace().insertNew(new BinaryOperator('\\cong ','&equiv;'));
   else
     MathCommand.prototype.insertAt.apply(this, arguments);
 };
@@ -1757,7 +1881,7 @@ LatexCmds['±'] = LatexCmds.pm = LatexCmds.plusmn = LatexCmds.plusminus =
 LatexCmds.mp = LatexCmds.mnplus = LatexCmds.minusplus =
   bind(PlusMinus,'\\mp ','&#8723;');
 
-LatexCmds.sdot = LatexCmds.cdot =
+CharCmds['*'] = LatexCmds.sdot = LatexCmds.cdot =
   bind(BinaryOperator, '\\cdot ', '&middot;');
 //semantically should be &sdot;, but &middot; looks better
 
@@ -1765,23 +1889,18 @@ LatexCmds['='] = bind(BinaryOperator, '=', '=');
 LatexCmds['<'] = bind(BinaryOperator, '<', '&lt;');
 LatexCmds['>'] = bind(BinaryOperator, '>', '&gt;');
 
-// We subclass instead of use BinaryOperator, as we want to control the CSS class
-// to fix wrapping and tighten up display of lists
-function Comma(cmd, html, text) {
-  Symbol.call(this, cmd, '<span class="comma">'+html+'</span>', text);
-}
-Comma.prototype = new Symbol; //so instanceof will work
-LatexCmds[','] = bind(Comma, ',', ',');
-
 LatexCmds.notin =
 LatexCmds.sim =
+LatexCmds.cong =
+LatexCmds.equiv =
 LatexCmds.oplus =
 LatexCmds.otimes = proto(BinaryOperator, function(replacedFragment, latex) {
   BinaryOperator.call(this, '\\'+latex+' ', '&'+latex+';');
 });
 
-LatexCmds.cong = bind(BinaryOperator,'\\cong ','&equiv;');
-CharCmds['*'] = LatexCmds.times = bind(BinaryOperator, '\\times ', '&times;', '[x]');
+LatexCmds.times = proto(BinaryOperator, function(replacedFragment, latex) {
+  BinaryOperator.call(this, '\\times ', '&times;', '[x]')
+});
 
 LatexCmds['÷'] = LatexCmds.div = LatexCmds.divide = LatexCmds.divides =
   bind(BinaryOperator,'\\div ','&divide;', '[/]');
@@ -1855,14 +1974,55 @@ LatexCmds.notsupersete = LatexCmds.notsuperseteq =
 
 //sum, product, coproduct, integral
 function BigSymbol(ch, html) {
-  Symbol.call(this, ch, '<big>'+html+'</big>');
+  Symbol.call(this, ch, '<span class="large-operator"><big>'+html+'</big></span>');
 }
-BigSymbol.prototype = new Symbol; //so instanceof will work
+_ = BigSymbol.prototype = new Symbol; //so instanceof will work
+_.isEmpty = MathCommand.prototype.isEmpty;
+_.insertAt = function(cursor, isWriteLatex) {
+  //FIXME HACK
+  if (this.cmd === '\\sum ')
+    if (isWriteLatex)
+      this.placeCursor = function(cursor) {
+        this.cursor = cursor;
+      };
+    else
+      this.placeCursor = function(cursor) {
+        this.cursor = cursor.writeLatex('^{}_{i=}').appendTo(this.firstChild).show();
+      };
+  MathCommand.prototype.insertAt.apply(this, arguments);
+};
+_.latex = function() {
+  var fromLatex = this.firstChild ? '_'+simplify(this.firstChild.latex()) : '',
+    toLatex = this.lastChild ? '^'+simplify(this.lastChild.latex()) : '';
+  return this.cmd + fromLatex + toLatex;
+
+  function simplify(latex) {
+    return latex.length === 1 ? latex : '{' + (latex || ' ') + '}';
+  }
+};
+_.keydown = function(e) {
+  if (this.cursor.parent.parent !== this || e.ctrlKey || e.metaKey)
+    return this.parent.keydown(e);
+  //e.which === 38 <=> Up key
+  else if (e.which === 38) {
+    if (this.cursor.parent === this.firstChild)
+      this.cursor.clearSelection()[this.cursor.prev || !this.cursor.next ? 'insertAfter' : 'insertBefore'](this);
+  }
+  //e.which === 40 <=> Down key
+  else if (e.which === 40) {
+    if (this.cursor.parent === this.lastChild)
+      this.cursor.clearSelection()[this.cursor.prev || !this.cursor.next ? 'insertAfter' : 'insertBefore'](this);
+  }
+  else
+    return this.parent.keydown(e);
+};
 
 LatexCmds['∑'] = LatexCmds.sum = LatexCmds.summation = bind(BigSymbol,'\\sum ','&sum;');
 LatexCmds['∏'] = LatexCmds.prod = LatexCmds.product = bind(BigSymbol,'\\prod ','&prod;');
 LatexCmds.coprod = LatexCmds.coproduct = bind(BigSymbol,'\\coprod ','&#8720;');
-LatexCmds['∫'] = LatexCmds['int'] = LatexCmds.integral = bind(BigSymbol,'\\int ','&int;');  // "LatexCmds.int" is disliked by Closure Compiler
+LatexCmds['∫'] = LatexCmds.int = LatexCmds.integral = proto(BigSymbol, function() {
+  Symbol.call(this, '\\int ', '<big>&int;</big>');
+});
 
 
 
@@ -1931,7 +2091,7 @@ LatexCmds.prec = bind(VanillaSymbol, '\\prec ', '&#8826;');
 LatexCmds.succ = bind(VanillaSymbol, '\\succ ', '&#8827;');
 LatexCmds.preceq = bind(VanillaSymbol, '\\preceq ', '&#8828;');
 LatexCmds.succeq = bind(VanillaSymbol, '\\succeq ', '&#8829;');
-LatexCmds.simeq = bind(VanillaSymbol, '\\simeq ', '&#11003;');
+LatexCmds.simeq = bind(VanillaSymbol, '\\simeq ', '&#8771;');
 LatexCmds.mid = bind(VanillaSymbol, '\\mid ', '&#8739;');
 LatexCmds.ll = bind(VanillaSymbol, '\\ll ', '&#8810;');
 LatexCmds.gg = bind(VanillaSymbol, '\\gg ', '&#8811;');
@@ -1969,12 +2129,13 @@ LatexCmds.rightharpoondown = bind(VanillaSymbol, '\\rightharpoondown ', '&#8641;
 LatexCmds.nwarrow = bind(VanillaSymbol, '\\nwarrow ', '&#8598;');
 
 //Misc
+LatexCmds.space = bind(VanillaSymbol, '\\space', '&nbsp;');
 LatexCmds.ldots = bind(VanillaSymbol, '\\ldots ', '&#8230;');
 LatexCmds.cdots = bind(VanillaSymbol, '\\cdots ', '&#8943;');
 LatexCmds.vdots = bind(VanillaSymbol, '\\vdots ', '&#8942;');
 LatexCmds.ddots = bind(VanillaSymbol, '\\ddots ', '&#8944;');
 LatexCmds.surd = bind(VanillaSymbol, '\\surd ', '&#8730;');
-LatexCmds.triangle = bind(VanillaSymbol, '\\triangle ', '&#9651;');
+LatexCmds.triangle = bind(VanillaSymbol, '\\triangle ', '&#9653;');
 LatexCmds.ell = bind(VanillaSymbol, '\\ell ', '&#8467;');
 LatexCmds.top = bind(VanillaSymbol, '\\top ', '&#8868;');
 LatexCmds.flat = bind(VanillaSymbol, '\\flat ', '&#9837;');
@@ -2106,7 +2267,7 @@ LatexCmds.cup = LatexCmds.union = bind(VanillaSymbol,'\\cup ','&cup;');
 LatexCmds.cap = LatexCmds.intersect = LatexCmds.intersection =
   bind(VanillaSymbol,'\\cap ','&cap;');
 
-LatexCmds.deg = LatexCmds.degree = bind(VanillaSymbol,'\\deg ','&deg;');
+LatexCmds.deg = LatexCmds.degree = bind(VanillaSymbol,'^\\circ ','&deg;');
 
 LatexCmds.ang = LatexCmds.angle = bind(VanillaSymbol,'\\angle ','&ang;');
 
@@ -2124,7 +2285,7 @@ JS environment could actually contain many instances. */
 //A fake cursor in the fake textbox that the math is rendered in.
 function Cursor(root) {
   this.parent = this.root = root;
-  var jQ = this.jQ = this._jQ = $('<span class="cursor"></span>');
+  var jQ = this.jQ = this._jQ = $('<span class="cursor">&zwj;</span>');
 
   //closured for setInterval
   this.blink = function(){ jQ.toggleClass('blink'); }
@@ -2158,6 +2319,11 @@ _.hide = function() {
   this.jQ.detach();
   this.jQ = $();
   return this;
+};
+_.redraw = function() {
+  for (var ancestor = this.parent; ancestor; ancestor = ancestor.parent)
+    if (ancestor.redraw)
+      ancestor.redraw();
 };
 _.insertAt = function(parent, prev, next) {
   var old_parent = this.parent;
@@ -2212,15 +2378,17 @@ _.moveLeft = function() {
     this.insertBefore(this.selection.prev.next || this.parent.firstChild).clearSelection();
   else {
     if (this.prev) {
-      if (this.prev.lastChild)
-        this.appendTo(this.prev.lastChild)
+      if (this.prev.cmd === '_' && this.prev.respaced) //FIXME HACKS
+        this.appendTo(this.prev.prev.firstChild);
+      else if (this.prev.cmd === '\\sum ')
+        this.appendTo(this.prev.lastChild);
+      else if (this.prev.firstChild)
+        this.appendTo(this.prev.firstChild)
       else
         this.hopLeft();
     }
     else { //we're at the beginning of a block
-      if (this.parent.prev)
-        this.appendTo(this.parent.prev);
-      else if (this.parent !== this.root)
+      if (this.parent !== this.root)
         this.insertBefore(this.parent.parent);
       //else we're at the beginning of the root, so do nothing.
     }
@@ -2232,15 +2400,17 @@ _.moveRight = function() {
     this.insertAfter(this.selection.next.prev || this.parent.lastChild).clearSelection();
   else {
     if (this.next) {
-      if (this.next.firstChild)
+      if (this.next.cmd === '_' && this.next.next.respaced) //FIXME HACKS
+        this.prependTo(this.next.next.firstChild);
+      else if (this.next.cmd === '\\sum ')
+        this.prependTo(this.next.lastChild);
+      else if (this.next.firstChild)
         this.prependTo(this.next.firstChild)
       else
         this.hopRight();
     }
     else { //we're at the end of a block
-      if (this.parent.next)
-        this.prependTo(this.parent.next);
-      else if (this.parent !== this.root)
+      if (this.parent !== this.root)
         this.insertAfter(this.parent.parent);
       //else we're at the end of the root, so do nothing.
     }
@@ -2299,7 +2469,7 @@ _.writeLatex = function(latex) {
   (function writeLatexBlock(cursor) {
     while (latex.length) {
       var token = latex.shift(); //pop first item
-      if (!token || token === '}' || token === ']') return;
+      if (!token || token === '}') return;
 
       var cmd;
       if (token.slice(0, 6) === '\\text{') {
@@ -2316,17 +2486,15 @@ _.writeLatex = function(latex) {
         cmd = cursor.prev || cursor.parent.parent;
 
         if (cursor.prev) //was a close-paren, so break recursion
-          return;
+          return cursor.appendTo(cursor.prev.lastChild);
         else //was an open-paren, hack to put the following latex
           latex.unshift('{'); //in the ParenBlock in the math DOM
       }
       else if (/^\\[a-z]+$/i.test(token)) {
         token = token.slice(1);
         var cmd = LatexCmds[token];
-        if (latex[0] === '[' && cmd.with_optional_block)
-          cmd = cmd.with_optional_block;
         if (cmd)
-          cursor.insertNew(cmd = new cmd(undefined, token));
+          cursor.insertNew(cmd = new cmd(undefined, token), true); //FIX ME HACK isWriteLatex
         else {
           cmd = new TextBlock(token);
           cursor.insertNew(cmd).insertAfter(cmd);
@@ -2343,17 +2511,23 @@ _.writeLatex = function(latex) {
 
         cursor.insertNew(cmd);
       }
-      cmd.eachChild(function(child) {
-        cursor.appendTo(child);
-        var token = latex.shift();
-        if (!token) return false;
+      if (!cursor.prev) {
+        while (true) {
+          var token = latex.shift();
+          if (!token) return false;
 
-        if (token === '{' || token === '[')
-          writeLatexBlock(cursor);
-        else
-          cursor.insertCh(token);
-      });
-      cursor.insertAfter(cmd);
+          if (token === '{')
+            writeLatexBlock(cursor);
+          else
+            cursor.insertCh(token);
+
+          if (cursor.parent.next)
+            cursor.prependTo(cursor.parent.next);
+          else
+            break;
+        }
+        cursor.insertAfter(cursor.parent.parent);
+      }
     }
   }(this));
   return this.hide();
@@ -2384,8 +2558,8 @@ _.insertCh = function(ch) {
 
   return this.insertNew(cmd);
 };
-_.insertNew = function(cmd) {
-  cmd.insertAt(this);
+_.insertNew = function(cmd, isWriteLatex) { //FIXME HACK isWriteLatex
+  cmd.insertAt(this, isWriteLatex);
   return this;
 };
 _.unwrapGramp = function() {
@@ -2462,7 +2636,7 @@ _.backspace = function() {
     this.prev.respace();
   if (this.next)
     this.next.respace();
-  this.parent.bubble('redraw');
+  this.redraw();
 
   return this;
 };
@@ -2485,7 +2659,7 @@ _.deleteForward = function() {
     this.prev.respace();
   if (this.next)
     this.next.respace();
-  this.parent.bubble('redraw');
+  this.redraw();
 
   return this;
 };
@@ -2662,9 +2836,8 @@ $.fn.mathquill = function(cmd, latex) {
   switch (cmd) {
   case 'redraw':
     this.find(':not(:has(:first))').each(function() {
-      var data = $(this).data(jQueryDataKey),
-        mathEl = data && (data.block || data.cmd);
-      if (mathEl) mathEl.bubble('redraw');
+      var data = $(this).data(jQueryDataKey);
+      if (data && (data.cmd || data.block)) Cursor.prototype.redraw.call(data.cmd || data.block);
     });
     return this;
   case 'revert':
@@ -2677,8 +2850,10 @@ $.fn.mathquill = function(cmd, latex) {
     if (arguments.length > 1) {
       return this.each(function() {
         var data = $(this).data(jQueryDataKey);
-        if (data && data.block && data.block.renderLatex)
+        if (data && data.block && data.block.renderLatex){
           data.block.renderLatex(latex);
+          data.block.triggerSpecialEvent( 'render' );
+        }
       });
     }
 
@@ -2704,6 +2879,16 @@ $.fn.mathquill = function(cmd, latex) {
           block.blur();
         }
       });
+  case 'moveStart':
+  	var data = this.data(jQueryDataKey);
+  	if( data && data.block )
+	   	data.block.cursor.prependTo( data.block );
+  	break;
+  case 'moveEnd':
+    var data = this.data(jQueryDataKey);
+  	if( data && data.block )
+	   	data.block.cursor.appendTo( data.block );
+  	break;
   default:
     var textbox = cmd === 'textbox',
       editable = textbox || cmd === 'editable',
