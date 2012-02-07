@@ -55,13 +55,7 @@
 }
 .mathquill-editable .textarea textarea, .mathquill-rendered-math .textarea textarea, .mathquill-rendered-math .selectable {
   position: absolute;
-  z-index: -1;
-  height: 1px;
-  width: 1px;
-  opacity: 0;
-  border: none;
-  outline: none;
-  overflow: hidden;
+  clip: rect(1em 1em 1em 1em); /* the only way to hide the textarea *and the blinking insertion point* in IE */
   user-select: text;
   -moz-user-select: text;
   -webkit-user-select: text;
@@ -369,12 +363,12 @@
 
 .mathquill-rendered-math .paren {
   padding: 0 .1em;
-  vertical-align: top;
-  -webkit-transform-origin: top left;
-  -moz-transform-origin: top left;
-  -ms-transform-origin: top left;
-  -o-transform-origin: top left;
-  transform-origin: top left;
+  vertical-align: bottom;
+  -webkit-transform-origin: bottom left;
+  -moz-transform-origin: bottom left;
+  -ms-transform-origin: bottom left;
+  -o-transform-origin: bottom left;
+  transform-origin: bottom left;
 }
 
 .mathquill-rendered-math .array {
