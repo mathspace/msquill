@@ -205,6 +205,7 @@ _.placeCursor = function(cursor) { //TODO: better architecture so this can be do
         prev instanceof BinaryOperator ||
         prev instanceof TextBlock ||
         prev instanceof BigSymbol ||
+        prev.isLastLetter ||
         prev.cmd === ','
       ) //lookbehind for operator
     )
