@@ -400,3 +400,16 @@
 .mathquill-editable span.textarea textarea {
    text-indent: -9999px\9;
 }
+
+.mathquill-editable .latexerror {
+    color:red !important;
+}
+    .mathquill-editable .latexerror .numerator {
+        border-bottom-color:red !important;
+    }
+    .mathquill-editable .latexerror .denominator {
+        border-top-color:red !important;
+    }
+    .mathquill-editable .latexerror .sqrt-stem {
+        border-top-color:red !important;
+    }
