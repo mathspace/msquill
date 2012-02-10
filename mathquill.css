@@ -29,6 +29,7 @@
 
 .mathquill-editable,
 .mathquill-rendered-math,
+.mathquill-rendered-math .cursor,
 .mathquill-rendered-math .underline,
 .mathquill-rendered-math .overline,
 .mathquill-rendered-math .font,
@@ -64,19 +65,10 @@
 }
 .mathquill-editable .textarea textarea, .mathquill-rendered-math .textarea textarea, .mathquill-rendered-math .selectable {
   position: absolute;
-  z-index: -1;
-  height: 1px;
-  width: 1px;
-  opacity: 0;
-  border: none;
-  outline: none;
-  overflow: hidden;
+  clip: rect(1em 1em 1em 1em); /* the only way to hide the textarea *and the blinking insertion point* in IE */
   user-select: text;
   -moz-user-select: text;
   -webkit-user-select: text;
-}
-*:first-child+html .mathquill-editable .textarea textarea { /* IE7 only */
-  display: none; /* Prevents text cursor from showing in mathquill box in IE7 */ 
 }
 
 /* Lighten up nested mathquill-editable */
@@ -106,6 +98,10 @@
 }
 *:first-child+html .mathquill-editable.empty { /* IE7 only */
   width: 0.5em; /* Sets a min-width for IE7 when empty */
+}
+
+.mathquill-rendered-math .matrixed {
+  background: white;
 }
 
 .mathquill-editable .selection *,
@@ -374,9 +370,8 @@
 }
 
 .mathquill-rendered-math .paren {
-  padding: 0 .1em\9; /* Fix the outside paren have too much spaces for IE8 */
+  padding-left: .1em\9; /* Fix the outside paren have too much spaces for IE8 */
   margin: 0 -.1em\9; /* Fix the inside of paren have too much spaces for IE8*/
-
 }
 
 .mathquill-rendered-math .array {
@@ -388,7 +383,11 @@
   display: block;
 }
 
-.mathquill-rendered-math .un-italicized {
+.mathquill-rendered-math var.un-italicized {
+  font-family: Symbola, "Times New Roman", serif;
+  font-style: normal;
+}
+.mathquill-rendered-math var.un-italicized.last {
   padding-right: .2em;
 }
 

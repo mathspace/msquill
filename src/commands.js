@@ -35,6 +35,26 @@ if (transformPropName) {
     jQ.css(transformPropName, 'scale('+x+','+y+')');
   };
 }
+else if ('filter' in div_style) { //IE 6, 7, & 8 fallback, see https://github.com/laughinghan/mathquill/wiki/Transforms
+  scale = function(jQ, x, y) { //NOTE: assumes y > x
+    x /= (1+(y-1)/2);
+    jQ.addClass('matrixed').css({
+      fontSize: y + 'em',
+      marginTop: '-.02em',
+      filter: 'progid:DXImageTransform.Microsoft'
+        + '.Matrix(M11=' + x + ",SizingMethod='auto expand')"
+    });
+    function calculateMarginRight() {
+      jQ.css('marginRight', jQ.width()*(x-1)/x - 1 + 'px');
+    }
+    calculateMarginRight();
+    var intervalId = setInterval(calculateMarginRight);
+    $(window).load(function() {
+      clearTimeout(intervalId);
+      calculateMarginRight();
+    });
+  };
+}
 else {
   scale = function(jQ, x, y) {
     jQ.css('fontSize', y + 'em');
@@ -185,6 +205,7 @@ _.placeCursor = function(cursor) { //TODO: better architecture so this can be do
         prev instanceof BinaryOperator ||
         prev instanceof TextBlock ||
         prev instanceof BigSymbol ||
+        prev.isLastLetter ||
         prev.cmd === ','
       ) //lookbehind for operator
     )
