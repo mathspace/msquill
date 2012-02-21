@@ -302,18 +302,14 @@
 }
 
 .mathquill-rendered-math .sqrt-prefix {
-  padding-top: 0;
   position: relative;
-  top: .1em;
+  top: .15em;
   vertical-align: top;
-  -webkit-transform-origin: top;
-  -moz-transform-origin: top;
-  -ms-transform-origin: top;
-  -o-transform-origin: top;
-  transform-origin: top;
-}
-.mathquill-rendered-math .sqrt-prefix {
-  top: .05em\9;      /* Fix the left part of square root is too high for IE8. */
+  -webkit-transform-origin: center -2%;
+  -moz-transform-origin: center -2%;
+  -ms-transform-origin: center -2%;
+  -o-transform-origin: center -2%;
+  transform-origin: center -2%;
 }
 
 .mathquill-rendered-math .sqrt-stem {
@@ -324,24 +320,14 @@
   margin-right: .1em;
 }
 
-
-.mathquill-rendered-math .sqrt-stem {
-    margin-top: 0.07em\9;   /* Fix the square root horizontal bar is too far away from the symbol for IE8. */
-}
-
 .mathquill-rendered-math .paren {
-  padding: 0 0 0.1em 0;      /* Fix the parens lower than text base line and too many spaces inside for webkit */
+  padding: 0 .1em;
   vertical-align: bottom;
-  -webkit-transform-origin: bottom left;
-  -moz-transform-origin: bottom left;
-  -ms-transform-origin: bottom left;
-  -o-transform-origin: bottom left;
-  transform-origin: bottom left;
-}
-
-.mathquill-rendered-math .paren {
-  padding-left: .1em\9; /* Fix the outside paren have too much spaces for IE8 */
-  margin: 0 -.1em\9; /* Fix the inside of paren have too much spaces for IE8*/
+  -webkit-transform-origin: center 107%;
+  -moz-transform-origin: center 107%;
+  -ms-transform-origin: center 107%;
+  -o-transform-origin: center 107%;
+  transform-origin: center 107%;
 }
 
 .mathquill-rendered-math .array {
