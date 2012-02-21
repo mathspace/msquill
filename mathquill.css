@@ -394,8 +394,3 @@
 /*.mathquill-rendered-math .not {
   margin-right: -.75em;
 }*/
-
-/* Fix the cursor in IE8 */
-.mathquill-editable span.textarea textarea {
-   text-indent: -9999px\9;
-}
