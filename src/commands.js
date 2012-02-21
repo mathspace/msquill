@@ -40,12 +40,13 @@ else if ('filter' in div_style) { //IE 6, 7, & 8 fallback, see https://github.co
     x /= (1+(y-1)/2);
     jQ.addClass('matrixed').css({
       fontSize: y + 'em',
-      marginTop: '-.02em',
+      padding: 0,
+      top: 0,
       filter: 'progid:DXImageTransform.Microsoft'
         + '.Matrix(M11=' + x + ",SizingMethod='auto expand')"
     });
     function calculateMarginRight() {
-      jQ.css('marginRight', jQ.width()*(x-1)/x - 1 + 'px');
+      jQ.css('marginRight', jQ.innerWidth()*(x-1)/x - 1 + 'px');
     }
     calculateMarginRight();
     var intervalId = setInterval(calculateMarginRight);
