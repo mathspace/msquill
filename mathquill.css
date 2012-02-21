@@ -1,32 +1,3 @@
-@font-face {
-    font-family: 'Symbola';
-    src: url('font/Symbola/symbola-webfont.eot');
-    src: url('font/Symbola/symbola-webfont.eot?#iefix') format('embedded-opentype'),
-         url('font/Symbola/symbola-webfont.woff') format('woff'),
-         url('font/Symbola/symbola-webfont.ttf') format('truetype'),
-         url('font/Symbola/symbola-webfont.svg#SymbolaRegular') format('svg');
-}
-
-@font-face {
-    font-family: 'BellMTBold';
-    src: url('font/Bell_MTBold/bell-webfont.eot');
-    src: url('font/Bell_MTBold/bell-webfont.eot?#iefix') format('embedded-opentype'),
-         url('font/Bell_MTBold/bell-webfont.woff') format('woff'),
-         url('font/Bell_MTBold/bell-webfont.ttf') format('truetype'),
-         url('font/Bell_MTBold/bell-webfont.svg#BellMTBold') format('svg');
-
-}
-
-/*@font-face {*/
-    /*font-family: 'BellMT';*/
-    /*src: url('font/Bell_MT/bell-webfont.eot');*/
-    /*src: url('font/Bell_MT/bell-webfont.eot?#iefix') format('embedded-opentype'),*/
-         /*url('font/Bell_MT/bell-webfont.woff') format('woff'),*/
-         /*url('font/Bell_MT/bell-webfont.ttf') format('truetype'),*/
-         /*url('font/Bell_MT/bell-webfont.svg#BellMTRegular') format('svg');*/
-/*}*/
-
-
 .mathquill-editable,
 .mathquill-rendered-math,
 .mathquill-rendered-math .cursor,
@@ -361,7 +332,6 @@
 .mathquill-rendered-math .paren {
   padding: 0 0 0.1em 0;      /* Fix the parens lower than text base line and too many spaces inside for webkit */
   vertical-align: bottom;
-  font-family: BellMTBold, "Times New Roman", serif;
   -webkit-transform-origin: bottom left;
   -moz-transform-origin: bottom left;
   -ms-transform-origin: bottom left;
