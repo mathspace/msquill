@@ -12,6 +12,7 @@ var scale, // = function(jQ, x, y) { ... }
 //ideas from http://github.com/louisremi/jquery.transform.js
 //see also http://msdn.microsoft.com/en-us/library/ms533014(v=vs.85).aspx
 
+  forceIERedraw = $.noop,
   div = document.createElement('div'),
   div_style = div.style,
   transformPropNames = {
@@ -36,16 +37,18 @@ if (transformPropName) {
   };
 }
 else if ('filter' in div_style) { //IE 6, 7, & 8 fallback, see https://github.com/laughinghan/mathquill/wiki/Transforms
+  forceIERedraw = function(el){ el.className = el.className; };
   scale = function(jQ, x, y) { //NOTE: assumes y > x
     x /= (1+(y-1)/2);
     jQ.addClass('matrixed').css({
       fontSize: y + 'em',
-      marginTop: '-.02em',
+      padding: 0,
+      top: 0,
       filter: 'progid:DXImageTransform.Microsoft'
         + '.Matrix(M11=' + x + ",SizingMethod='auto expand')"
     });
     function calculateMarginRight() {
-      jQ.css('marginRight', jQ.width()*(x-1)/x - 1 + 'px');
+      jQ.css('marginRight', jQ.innerWidth()*(x-1)/x - 1 + 'px');
     }
     calculateMarginRight();
     var intervalId = setInterval(calculateMarginRight);
@@ -74,6 +77,11 @@ function bind(cons) { //shorthand for binding arguments to constructor
   });
 }
 
+//because I miss the <font> tag
+//(that's a joke, I hate this, it's like actively *fighting*
+// separation of presentation and content and everything HTML and CSS
+// are about, but it's an intrinsic problem with WYSIWYG)
+//TODO: WYSIWYM?
 function Style(cmd, html_template, replacedFragment) {
   this.init(cmd, [ html_template ], undefined, replacedFragment);
 }
@@ -574,26 +582,15 @@ _.renderCommand = function() {
   else
     this.cursor.appendTo(this.parent);
 
-  var latex = this.firstChild.latex(), cmd;
-  if (latex) {
-    if (cmd = LatexCmds[latex])
-      cmd = new cmd(this.replacedFragment, latex);
-    else {
-      cmd = new TextBlock(latex);
-      cmd.firstChild.focus = function(){ delete this.focus; return this; };
-      this.cursor.insertNew(cmd).insertAfter(cmd);
-      if (this.replacedFragment)
-        this.replacedFragment.remove();
-
-      return;
-    }
+  var latex = this.firstChild.latex();
+  if (latex)
+    this.cursor.insertCmd(latex, this.replacedFragment);
+  else {
+    var cmd = new VanillaSymbol('\\backslash ','\\');
+    this.cursor.insertNew(cmd);
+    if (this.replacedFragment)
+      this.replacedFragment.remove();
   }
-  else
-    cmd = new VanillaSymbol('\\backslash ','\\');
-
-  this.cursor.insertNew(cmd);
-  if (cmd instanceof Symbol && this.replacedFragment)
-    this.replacedFragment.remove();
 };
 
 CharCmds['\\'] = LatexCommandInput;

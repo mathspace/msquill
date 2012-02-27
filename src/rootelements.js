@@ -29,6 +29,7 @@ function createRoot(jQ, root, textbox, editable) {
   root.selectionChanged = function() {
     if (textareaSelectionTimeout === undefined)
       textareaSelectionTimeout = setTimeout(setTextareaSelection);
+    forceIERedraw(jQ[0]);
   };
   function setTextareaSelection() {
     textareaSelectionTimeout = undefined;
@@ -185,9 +186,6 @@ function createRoot(jQ, root, textbox, editable) {
 
     if (textareaSelectionTimeout !== undefined)
       clearTimeout(textareaSelectionTimeout);
-
-    if (cursor.selection || textareaSelectionTimeout !== undefined)
-      textarea.val('');
 
     //after keypress event, trigger virtual textInput event if text was
     //input to textarea
