@@ -1,4 +1,4 @@
-	@font-face {
+@font-face {
     font-family: 'Symbola';
     src: url('font/Symbola/symbola-webfont.eot');
     src: url('font/Symbola/symbola-webfont.eot?#iefix') format('embedded-opentype'),
@@ -6,25 +6,6 @@
          url('font/Symbola/symbola-webfont.ttf') format('truetype'),
          url('font/Symbola/symbola-webfont.svg#SymbolaRegular') format('svg');
 }
-
-@font-face {
-    font-family: 'BellMTBold';
-    src: url('font/Bell_MTBold/bell-webfont.eot');
-    src: url('font/Bell_MTBold/bell-webfont.eot?#iefix') format('embedded-opentype'),
-         url('font/Bell_MTBold/bell-webfont.woff') format('woff'),
-         url('font/Bell_MTBold/bell-webfont.ttf') format('truetype'),
-         url('font/Bell_MTBold/bell-webfont.svg#BellMTBold') format('svg');
-
-}
-
-/*@font-face {*/
-    /*font-family: 'BellMT';*/
-    /*src: url('font/Bell_MT/bell-webfont.eot');*/
-    /*src: url('font/Bell_MT/bell-webfont.eot?#iefix') format('embedded-opentype'),*/
-         /*url('font/Bell_MT/bell-webfont.woff') format('woff'),*/
-         /*url('font/Bell_MT/bell-webfont.ttf') format('truetype'),*/
-         /*url('font/Bell_MT/bell-webfont.svg#BellMTRegular') format('svg');*/
-/*}*/
 
 
 .mathquill-editable,
