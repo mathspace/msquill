@@ -93,11 +93,13 @@
   See http://github.com/laughinghan/mathquill/wiki/Transforms
   for more details.
 */
-.mathquill-rendered-math .matrixed {
+.mathquill-rendered-math .matrixed,
+.mathquill-rendered-math .matrixed span {
   display: inline-block;
   background: white;
+  width: 1em;
 }
-.mathquill-rendered-math .matrixed-container {
+.mathquill-rendered-math .matrixed {
   filter: progid:DXImageTransform.Microsoft.Chroma(color='white');
 }
 
@@ -116,7 +118,8 @@
   color: HighlightText;
   border-color: HighlightText;
 }
-.mathquill-rendered-math .selection .matrixed {
+.mathquill-rendered-math .selection .matrixed,
+.mathquill-rendered-math .selection .matrixed span {
   /*
     The Chroma filter doesn't support the 'Highlight' keyword,
     but is only used in IE 8 and below anyway, so just use the
@@ -137,8 +140,6 @@
     go do something that would make you unhappy instead.
   */
   background: #39F !important;
-}
-.mathquill-rendered-math .selection .matrixed-container {
   filter: progid:DXImageTransform.Microsoft.Chroma(color='#3399FF') !important;
 }
 .mathquill-editable .selection.blur *,
@@ -147,14 +148,14 @@
   color: black;
   border-color: black;
 }
-.mathquill-rendered-math .selection.blur .matrixed-container {
+.mathquill-rendered-math .selection.blur .matrixed {
   filter: progid:DXImageTransform.Microsoft.Chroma(color='#D4D4D4') !important;
 }
 .mathquill-editable .selection .selection.blur *,
 .mathquill-rendered-math .selection .selection.blur * {
   background: #ABF !important;
 }
-.mathquill-rendered-math .selection .selection.blur .matrixed-container {
+.mathquill-rendered-math .selection .selection.blur .matrixed {
   filter: progid:DXImageTransform.Microsoft.Chroma(color='#AABBFF') !important;
 }
 .mathquill-editable .selection.blur .selection.blur *,
@@ -162,7 +163,7 @@
   background: #AAA !important;
   background: rgba(0, 0, 0, .15) !important;
 }
-.mathquill-rendered-math .selection.blur .selection.blur .matrixed-container {
+.mathquill-rendered-math .selection.blur .selection.blur .matrixed {
   filter: progid:DXImageTransform.Microsoft.Chroma(color='#AAAAAA') !important;
 }
 
@@ -260,22 +261,55 @@
 .mathquill-rendered-math .diacritic {
   position: relative;
 }
-.mathquill-rendered-math .diacritic-char {
+.mathquill-rendered-math .diacritic-char,
+.mathquill-rendered-math .overarrow,
+.mathquill-rendered-math .widehat {
   font-family: Symbola, "Times New Roman", serif;
-  text-align: center;
   position: absolute;
   top: -.2em;
-  left: -.4em;
   right: 0;
+}
+.mathquill-rendered-math .diacritic-char {
+  text-align: center;
+  left: -.1em;
 }
 .mathquill-rendered-math .lowercase.diacritic-char {
   top: .1em;
-  left: -.55em;
+  left: -.3em;
 }
 .mathquill-rendered-math .only-lowercase-t.diacritic-char {
   top: -.1em;
-  left: -.4em;
+  left: -.2em;
 }
+.mathquill-rendered-math .widehat {
+  left: -.1em;
+  -webkit-transform-origin: .15em;
+  -moz-transform-origin: .15em;
+  -ms-transform-origin: .125em; /* I have no idea why it's slightly off in IE9 */
+  -o-transform-origin: .15em;
+  transform-origin: .15em;
+}
+.mathquill-rendered-math .lowercase.widehat {
+  top: .15em;
+}
+.mathquill-rendered-math .only-lowercase-t.widehat {
+  top: -.1em;
+}
+.mathquill-rendered-math .overarrow {
+  left: -.1em;
+  -webkit-transform-origin: .0535em;
+  -moz-transform-origin: .0535em;
+  -ms-transform-origin: .0535em;
+  -o-transform-origin: .0535em;
+  transform-origin: .0535em;
+}
+.mathquill-rendered-math .lowercase.overarrow {
+  top: .15em;
+}
+.mathquill-rendered-math .only-lowercase-t.overarrow {
+  top: -.1em;
+}
+
 .mathquill-rendered-math .overline {
   border-top: 1px solid black;
   margin-top: 1px;

@@ -38,31 +38,35 @@ if (transformPropName) {
 }
 else if ('filter' in div_style) { //IE 6, 7, & 8 fallback, see https://github.com/laughinghan/mathquill/wiki/Transforms
   forceIERedraw = function(el){ el.className = el.className; };
-  scale = function(jQ, x, y) { //NOTE: assumes y > x
-    x /= (1+(y-1)/2);
-    jQ.css('fontSize', y + 'em');
-    if (!jQ.hasClass('matrixed-container')) {
-      jQ.addClass('matrixed-container')
-      .wrapInner('<span class="matrixed"></span>');
+  scale = function(jQ, x, y) {
+    var matrixEl = y > x ? 'M11=' : 'M22=',
+      stretch = max(x, y),
+      shrink = min(x, y);
+    shrink /= (1+(stretch-1)/2);
+    if (jQ.children().length === 0)
+      jQ.wrapInner('<span></span>');
+    jQ.addClass('matrixed').css({
+      fontSize: stretch + 'em',
+      marginTop: '-.175em'
+    });
+    var innerjQ = jQ.children().css({
+      filter: 'progid:DXImageTransform.Microsoft'
+        + '.Matrix(' + matrixEl + shrink + ",SizingMethod='auto expand')"
+    });
+    function calculateMargin() {
+      jQ.css('marginRight', (1+innerjQ.width()*(shrink-1))/shrink + 'px');
     }
-    var innerjQ = jQ.children()
-    .css('filter', 'progid:DXImageTransform.Microsoft'
-        + '.Matrix(M11=' + x + ",SizingMethod='auto expand')"
-    );
-    function calculateMarginRight() {
-      jQ.css('marginRight', innerjQ.width()*(x-1)/x - 1 + 'px');
-    }
-    calculateMarginRight();
-    var intervalId = setInterval(calculateMarginRight);
+    calculateMargin();
+    var intervalId = setInterval(calculateMargin);
     $(window).load(function() {
       clearTimeout(intervalId);
-      calculateMarginRight();
+      calculateMargin();
     });
   };
 }
 else {
   scale = function(jQ, x, y) {
-    jQ.css('fontSize', y + 'em');
+    jQ.css('fontSize', max(x,y) + 'em');
   };
 }
 
@@ -101,7 +105,7 @@ function Diacritic(cmd, html, replacedFragment) {
   this.init(cmd, [ '<span class="diacritic"><span class="diacritic-char">'+html+'&nbsp;</span></span>', '<span></span>' ], undefined, replacedFragment);
 }
 _ = Diacritic.prototype = new MathCommand;
-_.redraw = function() {
+_.redraw = _._redraw = function() {
   var allLowerCase = !this.firstChild.isEmpty();
   this.firstChild.eachChild(function(child) {
     return allLowerCase = allLowerCase && (
@@ -132,6 +136,20 @@ LatexCmds.overline = proto(Diacritic, function(replacedFragment) {
   Style.call(this, '\\overline',
     '<span class="diacritic"><span class="overline"></span></span>', replacedFragment);
 });
+
+function StretchyDiacritic(cmd, className, html, stretchFactor, replacedFragment) {
+  this.stretchFactor = stretchFactor;
+  this.init(cmd, [ '<span class="diacritic"><span class="' + className + '">'+html+'&nbsp;</span></span>', '<span></span>' ], undefined, replacedFragment);
+}
+_ = StretchyDiacritic.prototype = new Diacritic;
+_.redraw = function() {
+  this._redraw();
+  var width = max(1, this.stretchFactor*this.jQ.innerWidth()/+this.jQ.css('fontSize').slice(0,-2));
+  scale(this.jQ.children(':first'), width, 1.2);
+};
+LatexCmds.widehat = bind(StretchyDiacritic, '\\widehat', 'widehat', '&#770;', 2.95);
+LatexCmds.overleftarrow = bind(StretchyDiacritic, '\\overleftarrow', 'overarrow', '&#8406;', 2);
+LatexCmds.overrightarrow = bind(StretchyDiacritic, '\\overrightarrow', 'overarrow', '&#8407;', 2);
 
 function SupSub(cmd, html, text, replacedFragment) {
   this.init(cmd, [ html ], [ text ], replacedFragment);
