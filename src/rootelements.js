@@ -233,6 +233,7 @@ _.keydown = function(e)
   case 'Space':
   case 'U+0020':
     // do nothing
+    this.skipTextInput = true;
     return false;
   case 8: //backspace
   case 'Backspace':
