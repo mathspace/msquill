@@ -396,6 +396,9 @@ _.write = function(ch) {
   this.cursor.insertNew(new VanillaSymbol(ch));
 };
 _.keydown = function(e) {
+  //space doesn't get to root to be treated like tab
+  if (e.which === 32)
+    return false;
   //backspace and delete and ends of block don't unwrap
   if (!this.cursor.selection &&
     (
@@ -558,7 +561,7 @@ _.latex = function() {
   return '\\' + this.firstChild.latex() + ' ';
 };
 _.keydown = function(e) {
-  if (e.which === 9 || e.which === 13) { //tab or enter
+  if (e.which === 9 || e.which === 13 || e.which === 32) { //tab, enter or space
     this.renderCommand();
     e.preventDefault();
     return false;
@@ -571,7 +574,7 @@ _.textInput = function(ch) {
     return false;
   }
   this.renderCommand();
-  if (ch === ' ' || (ch === '\\' && this.firstChild.isEmpty()))
+  if (ch === '\\' && this.firstChild.isEmpty())
     return false;
 };
 _.renderCommand = function() {

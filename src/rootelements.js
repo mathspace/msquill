@@ -229,12 +229,6 @@ _.keydown = function(e)
 {
   e.ctrlKey = e.ctrlKey || e.metaKey;
   switch ((e.originalEvent && e.originalEvent.keyIdentifier) || e.which) {
-  case 32: //space
-  case 'Space':
-  case 'U+0020':
-    // do nothing
-    this.skipTextInput = true;
-    return false;
   case 8: //backspace
   case 'Backspace':
   case 'U+0008':
@@ -244,6 +238,9 @@ _.keydown = function(e)
     else
       this.cursor.backspace();
     break;
+  case 32: //space
+  case 'Space':
+  case 'U+0020':
   case 27: //may as well be the same as tab until we figure out what to do with it
   case 'Esc':
   case 'U+001B':
