@@ -312,14 +312,15 @@
 }
 
 .mathquill-rendered-math .sqrt-prefix {
+  padding-top: 0;
   position: relative;
-  top: .15em;
+  top: .1em;
   vertical-align: top;
-  -webkit-transform-origin: center -2%;
-  -moz-transform-origin: center -2%;
-  -ms-transform-origin: center -2%;
-  -o-transform-origin: center -2%;
-  transform-origin: center -2%;
+  -webkit-transform-origin: top;
+  -moz-transform-origin: top;
+  -ms-transform-origin: top;
+  -o-transform-origin: top;
+  transform-origin: top;
 }
 
 .mathquill-rendered-math .sqrt-stem {
