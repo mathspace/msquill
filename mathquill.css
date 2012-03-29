@@ -1,10 +1,12 @@
 @font-face {
-    font-family: 'Symbola';
-    src: url('font/Symbola/symbola-webfont.eot');
-    src: url('font/Symbola/symbola-webfont.eot?#iefix') format('embedded-opentype'),
-         url('font/Symbola/symbola-webfont.woff') format('woff'),
-         url('font/Symbola/symbola-webfont.ttf') format('truetype'),
-         url('font/Symbola/symbola-webfont.svg#SymbolaRegular') format('svg');
+  font-family: 'Symbola';
+  src: url('font/Symbola/symbola-webfont.eot');
+  /* local() needed for custom fonts to appear in our PDF exports */
+  src: local("Symbola Regular"), 
+       url('font/Symbola/symbola-webfont.eot?#iefix') format('embedded-opentype'),
+       url('font/Symbola/symbola-webfont.woff') format('woff'),
+       url('font/Symbola/symbola-webfont.ttf') format('truetype'),
+       url('font/Symbola/symbola-webfont.svg#SymbolaRegular') format('svg');
 }
 
 
