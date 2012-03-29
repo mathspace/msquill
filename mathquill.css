@@ -122,7 +122,7 @@
   line-height: 1;
 }
 .mathquill-rendered-math { 
-  min-width: 1.0em\0/ /* Fixes display of square root in IE8 */
+  min-width: 0.5em\0/ /* Fixes display of square root in IE8 */
 }
 .mathquill-rendered-math var, .mathquill-rendered-math .text, .mathquill-rendered-math .nonSymbola {
   font-family: "Times New Roman", Symbola, serif;
