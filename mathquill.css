@@ -83,31 +83,85 @@
   width: 0.5em; /* Sets a min-width for IE7 when empty */
 }
 
+/*
+  We have to set an opaque background color for matrix-stretched
+  elements to anti-alias correctly, so we use the Chroma filter
+  on the immediate parent to make the solid background color
+  transparent.
+  See http://github.com/laughinghan/mathquill/wiki/Transforms
+  for more details.
+*/
 .mathquill-rendered-math .matrixed {
+  display: inline-block;
   background: white;
 }
+.mathquill-rendered-math .matrixed-container {
+  filter: progid:DXImageTransform.Microsoft.Chroma(color='white');
+}
 
+/*
+  All these !important's are unfortunately necessary, because
+  pages using MathQuill who change the background color have to
+  have rules setting the background color of .matrixed and
+  .matrixed-container, and we need to guarantee that our rules
+  setting the background color of matrixed/containers inside
+  selections have higher specificity.
+*/
 .mathquill-editable .selection *,
 .mathquill-rendered-math .selection * {
-  background: #B4D5FE;
-  background: Highlight;
+  background: #B4D5FE !important;
+  background: Highlight !important;
   color: HighlightText;
   border-color: HighlightText;
 }
+.mathquill-rendered-math .selection .matrixed {
+  /*
+    The Chroma filter doesn't support the 'Highlight' keyword,
+    but is only used in IE 8 and below anyway, so just use the
+    default Windows highlight color. Even if the highlight color
+    of the system has been customized, it's not a big deal,
+    most of the solid blue area is chroma keyed, there'll just
+    be a blue anti-aliased fringe around the matrix-filter-
+    stretched text.
+
+    If you use IE 8 or below and customized your highlight
+    color, and after the effort I put into making everything
+    else in MathQuill work in IE 8 and below have the *gall*
+    to complain about the blue fringe that appears in selections
+    around the otherwise beautifully stretched square roots and
+    stuff, and you have no ideas for how to solve the problem,
+    just a complaint, then I'd like to politely suggest that you
+    go choke on a dick. Unless you're into that, in which case,
+    go do something that would make you unhappy instead.
+  */
+  background: #39F !important;
+}
+.mathquill-rendered-math .selection .matrixed-container {
+  filter: progid:DXImageTransform.Microsoft.Chroma(color='#3399FF') !important;
+}
 .mathquill-editable .selection.blur *,
 .mathquill-rendered-math .selection.blur * {
-  background: #D4D4D4;
+  background: #D4D4D4 !important;
   color: black;
   border-color: black;
 }
+.mathquill-rendered-math .selection.blur .matrixed-container {
+  filter: progid:DXImageTransform.Microsoft.Chroma(color='#D4D4D4') !important;
+}
 .mathquill-editable .selection .selection.blur *,
 .mathquill-rendered-math .selection .selection.blur * {
-  background: #ABF;
+  background: #ABF !important;
+}
+.mathquill-rendered-math .selection .selection.blur .matrixed-container {
+  filter: progid:DXImageTransform.Microsoft.Chroma(color='#AABBFF') !important;
 }
 .mathquill-editable .selection.blur .selection.blur *,
 .mathquill-rendered-math .selection.blur .selection.blur * {
-  background: #AAA;
-  background: rgba(0, 0, 0, .15);
+  background: #AAA !important;
+  background: rgba(0, 0, 0, .15) !important;
+}
+.mathquill-rendered-math .selection.blur .selection.blur .matrixed-container {
+  filter: progid:DXImageTransform.Microsoft.Chroma(color='#AAAAAA') !important;
 }
 
 .mathquill-editable, .mathquill-rendered-math {

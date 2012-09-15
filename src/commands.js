@@ -41,12 +41,16 @@ else if ('filter' in div_style) { //IE 6, 7, & 8 fallback, see https://github.co
   scale = function(jQ, x, y) { //NOTE: assumes y > x
     x /= (1+(y-1)/2);
     jQ.css('fontSize', y + 'em');
-    jQ.addClass('matrixed')
+    if (!jQ.hasClass('matrixed-container')) {
+      jQ.addClass('matrixed-container')
+      .wrapInner('<span class="matrixed"></span>');
+    }
+    var innerjQ = jQ.children()
     .css('filter', 'progid:DXImageTransform.Microsoft'
         + '.Matrix(M11=' + x + ",SizingMethod='auto expand')"
     );
     function calculateMarginRight() {
-      jQ.css('marginRight', jQ.innerWidth()*(x-1)/x - 1 + 'px');
+      jQ.css('marginRight', innerjQ.width()*(x-1)/x - 1 + 'px');
     }
     calculateMarginRight();
     var intervalId = setInterval(calculateMarginRight);
