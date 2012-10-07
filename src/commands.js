@@ -216,6 +216,7 @@ _.placeCursor = function(cursor) { //TODO: better architecture so this can be do
         prev instanceof TextBlock ||
         prev instanceof BigSymbol ||
         prev.isLastLetter ||
+        prev.cmd === ':' ||
         prev.cmd === ','
       ) //lookbehind for operator
     )
