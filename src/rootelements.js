@@ -36,8 +36,10 @@ function createRoot(jQ, root, textbox, editable) {
     var latex = cursor.selection ? '$'+cursor.selection.latex()+'$' : '';
     textarea.val(latex);
     if (latex) {
-      if (textarea[0].select)
-        textarea[0].select();
+      if (textarea[0].select) {
+        // IE9/IE10 will raise an error if the textarea is invisible.
+        try { textarea[0].select(); } catch (e) {}
+      }
       else if (document.selection) {
         var range = textarea[0].createTextRange();
         range.expand('textedit');
