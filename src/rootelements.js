@@ -149,8 +149,13 @@ function createRoot(jQ, root, textbox, editable) {
   //clipboard event handling
   jQ.bind('cut', function(e) {
     setTextareaSelection();
-    if (cursor.selection)
-      setTimeout(function(){ cursor.deleteSelection(); cursor.parent.bubble('redraw'); });
+    if (cursor.selection) {
+      setTimeout(function(){
+        cursor.deleteSelection();
+        jQ.trigger('latexupdate.mathquill');
+        cursor.parent.bubble('redraw');
+      });
+    }
     e.stopPropagation();
   }).bind('copy', function(e) {
     setTextareaSelection();
@@ -171,6 +176,7 @@ function createRoot(jQ, root, textbox, editable) {
       latex = '\\text{' + latex + '}';
     cursor.writeLatex(latex).show();
     textarea.val('');
+    jQ.trigger('latexupdate.mathquill');
   }
 
   //keyboard events and text input, see Wiki page "Keyboard Events"
@@ -208,6 +214,7 @@ function createRoot(jQ, root, textbox, editable) {
       if (cursor.selection || textareaSelectionTimeout !== undefined)
         setTextareaSelection();
     }
+    jQ.trigger('latexupdate.mathquill');
   }
 }
 
