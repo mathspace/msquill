@@ -246,6 +246,7 @@ _.keydown = function(e)
         this.cursor.backspace();
     else
       this.cursor.backspace();
+    this.jQ.trigger('latexupdate.mathquill');
     break;
   case 32: //space
   case 'Space':
@@ -359,6 +360,7 @@ _.keydown = function(e)
         this.cursor.deleteForward();
     else
       this.cursor.deleteForward();
+    this.jQ.trigger('latexupdate.mathquill');
     break;
   case 65: //the 'A' key, as in Ctrl+A Select All
   case 'A':
