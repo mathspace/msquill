@@ -129,8 +129,26 @@ var UnItalicizedCmds = {
 }());
 
 
+var rSingleDigit = /^\d$/;
 function VanillaSymbol(ch, html) {
   Symbol.call(this, ch, '<span>'+(html || ch)+'</span>');
+  if (rSingleDigit.test(ch)) {
+    this.respace = function() {
+      //get longest contiguous string of digits
+      var digitsStr = ch;
+      for (var prev = this.prev; rSingleDigit.test(prev.cmd); prev = prev.prev)
+        digitsStr = prev.cmd + digitsStr;
+      for (var next = this.next; rSingleDigit.test(next.cmd); next = next.next)
+        digitsStr += next.cmd;
+
+      (new MathFragment(this.parent, prev, next)).jQ.removeClass('thousands-separator-after');
+
+      var lastDigit = next.prev || this.parent.lastChild;
+      for (var i = 1, digit = lastDigit.prev; digit !== prev; i += 1, digit = digit.prev) {
+        if (i % 3 === 0) digit.jQ.addClass('thousands-separator-after');
+      }
+    };
+  }
 }
 VanillaSymbol.prototype = Symbol.prototype;
 

@@ -288,6 +288,10 @@
   vertical-align: -.6em;
 }
 
+.mathquill-rendered-math .thousands-separator-after {
+  padding-right: .2em;
+}
+
 .mathquill-rendered-math .binary-operator {
   padding: 0 .2em;
   display: inline-block; /* Allows word-wrap to occur around operators */
@@ -387,11 +391,11 @@
 
 .mathquill-rendered-math .paren {
   vertical-align: bottom;
-  -webkit-transform-origin: center 107%;
-  -moz-transform-origin: center 107%;
-  -ms-transform-origin: center 107%;
-  -o-transform-origin: center 107%;
-  transform-origin: center 107%;
+  -webkit-transform-origin: center 97%;
+  -moz-transform-origin: center 97%;
+  -ms-transform-origin: center 97%;
+  -o-transform-origin: center 97%;
+  transform-origin: center 97%;
 }
 
 .mathquill-rendered-math .array {
