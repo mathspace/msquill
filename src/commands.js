@@ -301,6 +301,10 @@ _.latex = function() {
 _.redraw = function() {
   var height = this.blockjQ.outerHeight()/+this.blockjQ.css('fontSize').slice(0,-2);
   scale(this.bracketjQs, min(1 + .2*(height - 1), 1.2), 1.05*height);
+  var bracketWidth = this.bracketjQs.width();
+  this.blockjQ.css({ marginLeft: bracketWidth, marginRight: bracketWidth });
+  this.bracketjQs.first().css('marginRight', -bracketWidth);
+  this.bracketjQs.last().css('marginLeft', -bracketWidth);
 };
 
 LatexCmds.lbrace = CharCmds['{'] = proto(Bracket, function(replacedFragment) {
