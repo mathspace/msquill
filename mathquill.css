@@ -288,6 +288,9 @@
   vertical-align: -.6em;
 }
 
+.mathquill-rendered-math .thousands-separator-before {
+  padding-left: .2em;
+}
 .mathquill-rendered-math .thousands-separator-after {
   padding-right: .2em;
 }
