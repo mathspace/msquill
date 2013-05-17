@@ -141,11 +141,20 @@ function VanillaSymbol(ch, html) {
       for (var next = this.next; rSingleDigit.test(next.cmd); next = next.next)
         digitsStr += next.cmd;
 
-      (new MathFragment(this.parent, prev, next)).jQ.removeClass('thousands-separator-after');
+      (new MathFragment(this.parent, prev, next)).jQ
+        .removeClass('thousands-separator-before thousands-separator-after');
 
-      var lastDigit = next.prev || this.parent.lastChild;
-      for (var i = 1, digit = lastDigit.prev; digit !== prev; i += 1, digit = digit.prev) {
-        if (i % 3 === 0) digit.jQ.addClass('thousands-separator-after');
+      if (prev.cmd === '.') { //after decimal
+        var firstDigit = prev.next || this.parent.firstChild;
+        for (var i = 1, digit = firstDigit.next; digit !== next; i += 1, digit = digit.next) {
+          if (i % 3 === 0) digit.jQ.addClass('thousands-separator-before');
+        }
+      }
+      else {
+        var lastDigit = next.prev || this.parent.lastChild;
+        for (var i = 1, digit = lastDigit.prev; digit !== prev; i += 1, digit = digit.prev) {
+          if (i % 3 === 0) digit.jQ.addClass('thousands-separator-after');
+        }
       }
     };
   }
