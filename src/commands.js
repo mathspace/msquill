@@ -49,14 +49,14 @@ else if ('filter' in div_style) { //IE 6, 7, & 8 fallback, see https://github.co
     .css('filter', 'progid:DXImageTransform.Microsoft'
         + '.Matrix(M11=' + x + ",SizingMethod='auto expand')"
     );
-    function calculateMarginRight() {
-      jQ.css('marginRight', innerjQ.width()*(x-1)/x - 1 + 'px');
+    function calculatePaddingRight() {
+      jQ.css('paddingRight', innerjQ.width()*(x-1)/x - 1 + 'px');
     }
-    calculateMarginRight();
-    var intervalId = setInterval(calculateMarginRight);
+    calculatePaddingRight();
+    var intervalId = setInterval(calculatePaddingRight);
     $(window).load(function() {
       clearTimeout(intervalId);
-      calculateMarginRight();
+      calculatePaddingRight();
     });
   };
 }
