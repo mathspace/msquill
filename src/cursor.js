@@ -279,6 +279,14 @@ _.insertCh = function(ch) {
   return this.insertNew(cmd);
 };
 _.insertNew = function(cmd) {
+  /*
+   * MaTHsPaCe HaCk: Inserted an empty try-catch block to disable
+   * Chrome V8 optimizer here. See Trello #3633.
+   * In Chrome 30 and 31, it appears that `insertAt()` receives the wrong
+   * object reference for `this`, causing an error on `blur()`.
+   */
+  try {} catch (e) {}
+  
   cmd.insertAt(this);
   return this;
 };
