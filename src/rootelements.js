@@ -29,6 +29,8 @@ function createRoot(jQ, root, textbox, editable, interactive) {
 
   root.jQ = jQ.data(jQueryDataKey, {
     block: root,
+    editable: editable,
+    interactive: interactive,
     revert: function() {
       jQ.empty().unbind('.mathquill')
         .removeClass('mathquill-rendered-math mathquill-editable mathquill-textbox')
@@ -82,7 +84,7 @@ function createRoot(jQ, root, textbox, editable, interactive) {
 
     anticursor = new MathFragment(cursor.parent, cursor.prev, cursor.next);
 
-    if (!editable)
+    if (!root.jQ.data(jQueryDataKey).interactive)
       jQ.prepend(textareaSpan);
 
     jQ.mousemove(mousemove);
@@ -107,7 +109,7 @@ function createRoot(jQ, root, textbox, editable, interactive) {
     anticursor = undefined;
     cursor.blink = blink;
     if (!cursor.selection) {
-      if (editable)
+      if (root.jQ.data(jQueryDataKey).interactive)
         cursor.show();
       else
         textareaSpan.detach();
