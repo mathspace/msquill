@@ -3,6 +3,20 @@
  ********************************************/
 
 function createRoot(jQ, root, textbox, editable) {
+
+  // Allow us to safely re-apply `mathquill()` or `mathquill('editable')`.
+  // Without clearing out existing elements and bindings, successive calls
+  // would mangle the latex in the field.
+  // Importantly, this also allows for transitioning between read-only and
+  // editable mode.
+  if (jQ.hasClass('mathquill-rendered-math')) {
+    var latex = jQ.data(jQueryDataKey).block.latex();
+    // Like revert(), except we keep the latex **currently** in the field.
+    jQ.empty().unbind('.mathquill')
+      .removeClass('mathquill-rendered-math mathquill-editable mathquill-textbox')
+      .append(latex);
+  }
+
   var contents = jQ.contents().detach();
 
   if (!textbox)
