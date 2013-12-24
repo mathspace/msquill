@@ -28,7 +28,8 @@
   display: inline-block;
   padding-top: .075em;
 }
-.mathquill-editable, .mathquill-embedded-latex .mathquill-editable {
+.mathquill-editable, .mathquill-embedded-latex .mathquill-editable,
+.mathquill-nested-editable {
   border: 1px solid gray;
   padding: 2px;
 }
@@ -55,7 +56,7 @@
 }
 
 /* Lighten up nested mathquill-editable */
-.mathquill-rendered-math .mathquill-editable {
+.mathquill-rendered-math .mathquill-nested-editable {
 	border-color: #cccccc;
 	padding: 1px 1px 0;
 }

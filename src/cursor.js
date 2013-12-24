@@ -183,6 +183,7 @@ _.seek = function(target, pageX, pageY) {
 };
 _.writeLatex = function(latex) {
   this.deleteSelection();
+  var latexString = latex;
   latex = ( latex && latex.match(/\\text\{([^}]|\\\})*\}|\\[a-z]*|[^\s]/ig) ) || 0;
   (function writeLatexBlock(cursor) {
     while (latex.length) {
@@ -247,6 +248,56 @@ _.writeLatex = function(latex) {
             break;
         }
         cursor.insertAfter(cursor.parent.parent);
+      }
+    }
+
+    // Patch up which components are interactive, based on these possible
+    // states:
+    // Has nested     Root is           Root is         Nested editable is
+    // editable?      editable?  -->    interactive?    interactive?
+    // =====================================================================
+    //   NO             NO                NO              -
+    //   YES            NO                NO              NO
+    //   NO             YES               YES             -
+    //   YES            YES               NO              YES
+    //
+    parentRoot = cursor.root;
+    parentRootData = parentRoot.jQ.data(jQueryDataKey);
+    if (latexString && (latexString.indexOf('\\editable') > -1)) {
+      // There is a nested editable...
+      var nestedEditables = parentRoot.jQ.find('.mathquill-editable');
+      parentRoot.jQ.addClass('mathquill-has-nested-editable');
+      if (parentRootData.editable) {
+        // If the root is editable...
+        // ... the root node should NOT be interactive.
+        parentRootData.setInteractive(false);
+        // ... each nested editable should be interactive.
+        nestedEditables.each(function(i, nestedEditable) {
+          $(nestedEditable).data(jQueryDataKey).setInteractive(true);
+        });
+      }
+      else {
+        // If the root is NOT editable...
+        // ... the root node should NOT be interactive.
+        parentRootData.setInteractive(false);
+        // ... the nested editables node should NOT be interactive.
+        nestedEditables.each(function(i, nestedEditable) {
+          $(nestedEditable).data(jQueryDataKey).setInteractive(false);
+        });
+      }
+    }
+    else {
+      // There is no nested editable...
+      parentRoot.jQ.removeClass('mathquill-has-nested-editable');
+      if (parentRootData.editable) {
+        // If the root is editable...
+        // ... then make sure it is interactive.
+        parentRootData.setInteractive(true);
+      }
+      else {
+        // If the root is NOT editable...
+        // ... then make sure it is NOT interactive.
+        parentRootData.setInteractive(false);
       }
     }
   }(this));

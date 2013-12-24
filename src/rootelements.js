@@ -2,7 +2,26 @@
  * Root math elements with event delegation.
  ********************************************/
 
-function createRoot(jQ, root, textbox, editable) {
+// Added an argument, `interactive` which determines whether this particular
+// root node is interactive, independent of any other root nodes in this
+// mathquill field.
+// Compared to `editable` which applies to the whole container. When `editable`
+// is false, no nested roots may be interactive.
+function createRoot(jQ, root, textbox, editable, interactive) {
+
+  // Allow us to safely re-apply `mathquill()` or `mathquill('editable')`.
+  // Without clearing out existing elements and bindings, successive calls
+  // would mangle the latex in the field.
+  // Importantly, this also allows for transitioning between read-only and
+  // editable mode.
+  if (jQ.hasClass('mathquill-rendered-math')) {
+    var latex = jQ.data(jQueryDataKey).block.latex();
+    // Like revert(), except we keep the latex **currently** in the field.
+    jQ.empty().unbind('.mathquill')
+      .removeClass('mathquill-rendered-math mathquill-editable mathquill-textbox')
+      .append(latex);
+  }
+
   var contents = jQ.contents().detach();
 
   if (!textbox)
@@ -10,6 +29,16 @@ function createRoot(jQ, root, textbox, editable) {
 
   root.jQ = jQ.data(jQueryDataKey, {
     block: root,
+    editable: editable,
+    interactive: interactive,
+    setInteractive: function(interactive) {
+      if (!interactive) {
+        setReadOnlyMode();
+      }
+      else {
+        setEditableMode();
+      }
+    },
     revert: function() {
       jQ.empty().unbind('.mathquill')
         .removeClass('mathquill-rendered-math mathquill-editable mathquill-textbox')
@@ -19,7 +48,11 @@ function createRoot(jQ, root, textbox, editable) {
 
   var cursor = root.cursor = new Cursor(root);
 
+  // Moved this line to further below, it needs to occur after bindings.
+  /*
   root.renderLatex(contents.text());
+  */
+
 
   //textarea stuff
   var textareaSpan = root.textarea = $('<span class="textarea"><textarea></textarea></span>'),
@@ -63,7 +96,7 @@ function createRoot(jQ, root, textbox, editable) {
 
     anticursor = new MathFragment(cursor.parent, cursor.prev, cursor.next);
 
-    if (!editable)
+    if (!root.jQ.data(jQueryDataKey).interactive)
       jQ.prepend(textareaSpan);
 
     jQ.mousemove(mousemove);
@@ -88,7 +121,7 @@ function createRoot(jQ, root, textbox, editable) {
     anticursor = undefined;
     cursor.blink = blink;
     if (!cursor.selection) {
-      if (editable)
+      if (root.jQ.data(jQueryDataKey).interactive)
         cursor.show();
       else
         textareaSpan.detach();
@@ -97,7 +130,28 @@ function createRoot(jQ, root, textbox, editable) {
     $(document).unbind('mousemove', docmousemove).unbind('mouseup', mouseup);
   }
 
-  if (!editable) {
+  // Perform cleanup, so we can transition to another mode.
+  function cleanupMode() {
+    jQ.children('.selectable').remove();
+    textarea.unbind('focus');
+    textarea.unbind('blur');
+    jQ.children('.textarea').remove();
+    jQ.removeClass('mathquill-editable');
+    jQ.removeClass('mathquill-textbox');
+    jQ.unbind('focus.mathquill');
+    jQ.unbind('blur.mathquill');
+    jQ.unbind('click.mathquill');
+    jQ.unbind('cut');
+    jQ.unbind('copy');
+    jQ.unbind('paste');
+    jQ.unbind('keydown.mathquill');
+    jQ.unbind('keypress.mathquill');
+  }
+
+  function setReadOnlyMode() {
+    cleanupMode();
+    root.jQ.data(jQueryDataKey).interactive = false;
+
     jQ.bind('cut paste', false).bind('copy', setTextareaSelection)
       .prepend('<span class="selectable">$'+root.latex()+'$</span>');
     textarea.blur(function() {
@@ -110,112 +164,124 @@ function createRoot(jQ, root, textbox, editable) {
     return;
   }
 
-  jQ.prepend(textareaSpan);
+  function setEditableMode() {
+    cleanupMode();
+    root.jQ.data(jQueryDataKey).interactive = true;
 
-  //root CSS classes
-  jQ.addClass('mathquill-editable');
-  if (textbox)
-    jQ.addClass('mathquill-textbox');
+    jQ.prepend(textareaSpan);
 
-  //focus and blur handling
-  textarea.focus(function(e) {
-    if (!cursor.parent)
-      cursor.appendTo(root);
-    cursor.parent.jQ.addClass('hasCursor');
-    if (cursor.selection) {
-      cursor.selection.jQ.removeClass('blur');
-      setTimeout(root.selectionChanged); //select textarea after focus
-    }
-    else
-      cursor.show();
-    e.stopPropagation();
-  }).blur(function(e) {
-    cursor.hide().parent.blur();
-    if (cursor.selection)
-      cursor.selection.jQ.addClass('blur');
-    e.stopPropagation();
-  });
+    //root CSS classes
+    jQ.addClass('mathquill-editable');
+    if (textbox)
+      jQ.addClass('mathquill-textbox');
 
-  jQ.bind('focus.mathquill blur.mathquill', function(e) {
-    textarea.trigger(e);
-  }).bind('mousedown.mathquill', function() {
-    setTimeout(focus);
-  }).bind('click.mathquill', focus) //stupid Mobile Safari
-  .blur();
-  function focus() {
-    textarea.focus();
-  }
-
-  //clipboard event handling
-  jQ.bind('cut', function(e) {
-    setTextareaSelection();
-    if (cursor.selection) {
-      setTimeout(function(){
-        cursor.deleteSelection();
-        jQ.trigger('latexupdate.mathquill');
-        cursor.parent.bubble('redraw');
-      });
-    }
-    e.stopPropagation();
-  }).bind('copy', function(e) {
-    setTextareaSelection();
-    skipTextInput = true;
-    e.stopPropagation();
-  }).bind('paste', function(e) {
-    skipTextInput = true;
-    setTimeout(paste);
-    e.stopPropagation();
-  });
-  function paste() {
-    //FIXME HACK the parser in RootTextBlock needs to be moved to
-    //Cursor::writeLatex or something so this'll work with MathQuill textboxes
-    var latex = textarea.val();
-    if (latex.slice(0,1) === '$' && latex.slice(-1) === '$')
-      latex = latex.slice(1, -1);
-    else
-      latex = '\\text{' + latex + '}';
-    cursor.writeLatex(latex).show();
-    textarea.val('');
-    jQ.trigger('latexupdate.mathquill');
-  }
-
-  //keyboard events and text input, see Wiki page "Keyboard Events"
-  var lastKeydn = {}, skipTextInput = false;
-  jQ.bind('keydown.mathquill', function(e) {
-    lastKeydn.evt = e;
-    lastKeydn.happened = true;
-    cursor.parent.bubble('keydown', e);
-  }).bind('keypress.mathquill', function(e) {
-    //on auto-repeated key events, keypress may get triggered but not keydown
-    if (lastKeydn.happened)
-      lastKeydn.happened = false;
-    else
-      cursor.parent.bubble('keydown', lastKeydn.evt);
-
-    if (textareaSelectionTimeout !== undefined)
-      clearTimeout(textareaSelectionTimeout);
-
-    //after keypress event, trigger virtual textInput event if text was
-    //input to textarea
-    skipTextInput = false;
-    setTimeout(textInput);
-  });
-
-  function textInput() {
-    if (skipTextInput) return;
-    var text = textarea.val();
-    if (text) {
-      textarea.val('');
-      for (var i = 0; i < text.length; i += 1) {
-        cursor.parent.bubble('textInput', text.charAt(i));
+    //focus and blur handling
+    textarea.focus(function(e) {
+      if (!cursor.parent)
+        cursor.appendTo(root);
+      cursor.parent.jQ.addClass('hasCursor');
+      if (cursor.selection) {
+        cursor.selection.jQ.removeClass('blur');
+        setTimeout(root.selectionChanged); //select textarea after focus
       }
+      else
+        cursor.show();
+      e.stopPropagation();
+    }).blur(function(e) {
+      cursor.hide().parent.blur();
+      if (cursor.selection)
+        cursor.selection.jQ.addClass('blur');
+      e.stopPropagation();
+    });
+
+    jQ.bind('focus.mathquill blur.mathquill', function(e) {
+      textarea.trigger(e);
+    }).bind('mousedown.mathquill', function() {
+      setTimeout(focus);
+    }).bind('click.mathquill', focus) //stupid Mobile Safari
+    .blur();
+    function focus() {
+      textarea.focus();
     }
-    else {
-      if (cursor.selection || textareaSelectionTimeout !== undefined)
-        setTextareaSelection();
+
+    //clipboard event handling
+    jQ.bind('cut', function(e) {
+      setTextareaSelection();
+      if (cursor.selection) {
+        setTimeout(function(){
+          cursor.deleteSelection();
+          jQ.trigger('latexupdate.mathquill');
+          cursor.parent.bubble('redraw');
+        });
+      }
+      e.stopPropagation();
+    }).bind('copy', function(e) {
+      setTextareaSelection();
+      skipTextInput = true;
+      e.stopPropagation();
+    }).bind('paste', function(e) {
+      skipTextInput = true;
+      setTimeout(paste);
+      e.stopPropagation();
+    });
+    function paste() {
+      //FIXME HACK the parser in RootTextBlock needs to be moved to
+      //Cursor::writeLatex or something so this'll work with MathQuill textboxes
+      var latex = textarea.val();
+      if (latex.slice(0,1) === '$' && latex.slice(-1) === '$')
+        latex = latex.slice(1, -1);
+      else
+        latex = '\\text{' + latex + '}';
+      cursor.writeLatex(latex).show();
+      textarea.val('');
+      jQ.trigger('latexupdate.mathquill');
     }
-    jQ.trigger('latexupdate.mathquill');
+
+    //keyboard events and text input, see Wiki page "Keyboard Events"
+    var lastKeydn = {}, skipTextInput = false;
+    jQ.bind('keydown.mathquill', function(e) {
+      lastKeydn.evt = e;
+      lastKeydn.happened = true;
+      cursor.parent.bubble('keydown', e);
+    }).bind('keypress.mathquill', function(e) {
+      //on auto-repeated key events, keypress may get triggered but not keydown
+      if (lastKeydn.happened)
+        lastKeydn.happened = false;
+      else
+        cursor.parent.bubble('keydown', lastKeydn.evt);
+
+      if (textareaSelectionTimeout !== undefined)
+        clearTimeout(textareaSelectionTimeout);
+
+      //after keypress event, trigger virtual textInput event if text was
+      //input to textarea
+      skipTextInput = false;
+      setTimeout(textInput);
+    });
+
+    function textInput() {
+      if (skipTextInput) return;
+      var text = textarea.val();
+      if (text) {
+        textarea.val('');
+        for (var i = 0; i < text.length; i += 1) {
+          cursor.parent.bubble('textInput', text.charAt(i));
+        }
+      }
+      else {
+        if (cursor.selection || textareaSelectionTimeout !== undefined)
+          setTextareaSelection();
+      }
+      jQ.trigger('latexupdate.mathquill');
+    }
   }
+
+  jQ.data(jQueryDataKey).setInteractive(interactive);
+
+  // Moved this from above, to after all init done - it may make calls that
+  // depend on the bindings that are set above.
+  root.renderLatex(contents.text());
+
 }
 
 function RootMathBlock(){}

@@ -747,7 +747,8 @@ LatexCmds.vector = Vector;
 
 LatexCmds.editable = proto(RootMathCommand, function() {
   this.init('\\editable');
-  createRoot(this.jQ, this.firstChild, false, true);
+  createRoot(this.jQ, this.firstChild, false, true, true);
+  this.jQ.addClass('mathquill-nested-editable');
   var cursor;
   this.placeCursor = function(c) { cursor = c.appendTo(this.firstChild); };
   this.firstChild.blur = function() {
