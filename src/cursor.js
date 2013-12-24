@@ -266,6 +266,7 @@ _.writeLatex = function(latex) {
     if (latexString && (latexString.indexOf('\\editable') > -1)) {
       // There is a nested editable...
       var nestedEditables = parentRoot.jQ.find('.mathquill-editable');
+      parentRoot.jQ.addClass('mathquill-has-nested-editable');
       if (parentRootData.editable) {
         // If the root is editable...
         // ... the root node should NOT be interactive.
@@ -287,6 +288,7 @@ _.writeLatex = function(latex) {
     }
     else {
       // There is no nested editable...
+      parentRoot.jQ.removeClass('mathquill-has-nested-editable');
       if (parentRootData.editable) {
         // If the root is editable...
         // ... then make sure it is interactive.
