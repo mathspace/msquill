@@ -238,6 +238,7 @@ _.keydown = function(e)
 {
   e.ctrlKey = e.ctrlKey || e.metaKey;
   switch ((e.originalEvent && e.originalEvent.keyIdentifier) || e.which) {
+  case '$':     // Disable $
   case 52:      // Windows IE, digit 4
   case 'U+0034':    // Windows, other browsers
   case 'U+0024':    // Mac - Chrome, this is symbol '$'
