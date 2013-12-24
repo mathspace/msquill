@@ -40,7 +40,11 @@ function createRoot(jQ, root, textbox, editable, interactive) {
 
   var cursor = root.cursor = new Cursor(root);
 
+  // Moved this line to further below, it needs to occur after bindings.
+  /*
   root.renderLatex(contents.text());
+  */
+
 
   //textarea stuff
   var textareaSpan = root.textarea = $('<span class="textarea"><textarea></textarea></span>'),
@@ -255,6 +259,10 @@ function createRoot(jQ, root, textbox, editable, interactive) {
     }
     jQ.trigger('latexupdate.mathquill');
   }
+  // Moved this from above, to after all init done - it may make calls that
+  // depend on the bindings that are set above.
+  root.renderLatex(contents.text());
+
 }
 
 function RootMathBlock(){}
