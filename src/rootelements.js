@@ -2,7 +2,12 @@
  * Root math elements with event delegation.
  ********************************************/
 
-function createRoot(jQ, root, textbox, editable) {
+// Added an argument, `interactive` which determines whether this particular
+// root node is interactive, independent of any other root nodes in this
+// mathquill field.
+// Compared to `editable` which applies to the whole container. When `editable`
+// is false, no nested roots may be interactive.
+function createRoot(jQ, root, textbox, editable, interactive) {
 
   // Allow us to safely re-apply `mathquill()` or `mathquill('editable')`.
   // Without clearing out existing elements and bindings, successive calls
