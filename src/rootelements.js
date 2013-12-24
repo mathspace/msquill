@@ -118,6 +118,24 @@ function createRoot(jQ, root, textbox, editable, interactive) {
     $(document).unbind('mousemove', docmousemove).unbind('mouseup', mouseup);
   }
 
+  // Perform cleanup, so we can transition to another mode.
+  function cleanupMode() {
+    jQ.children('.selectable').remove();
+    textarea.unbind('focus');
+    textarea.unbind('blur');
+    jQ.children('.textarea').remove();
+    jQ.removeClass('mathquill-editable');
+    jQ.removeClass('mathquill-textbox');
+    jQ.unbind('focus.mathquill');
+    jQ.unbind('blur.mathquill');
+    jQ.unbind('click.mathquill');
+    jQ.unbind('cut');
+    jQ.unbind('copy');
+    jQ.unbind('paste');
+    jQ.unbind('keydown.mathquill');
+    jQ.unbind('keypress.mathquill');
+  }
+
   if (!editable) {
     jQ.bind('cut paste', false).bind('copy', setTextareaSelection)
       .prepend('<span class="selectable">$'+root.latex()+'$</span>');
