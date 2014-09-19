@@ -341,6 +341,7 @@ LatexCmds.otimes = proto(BinaryOperator, function(replacedFragment, latex) {
   BinaryOperator.call(this, '\\'+latex+' ', '&'+latex+';');
 });
 
+LatexCmds['~'] = bind(VanillaSymbol, '\\sim ', '&#8764;');
 LatexCmds.cong = bind(BinaryOperator,'\\cong ','&equiv;');
 CharCmds['*'] = LatexCmds.times = bind(BinaryOperator, '\\times ', '&times;', '[x]');
 
