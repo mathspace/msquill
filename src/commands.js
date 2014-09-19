@@ -255,7 +255,7 @@ _.redraw = function() {
   scale(block.prev(), 1, block.innerHeight()/+block.css('fontSize').slice(0,-2) - .1);
 };
 
-LatexCmds.sqrt = LatexCmds['√'] = LatexCmds['~'] = SquareRoot;
+LatexCmds.sqrt = LatexCmds['√'] = SquareRoot;
 
 SquareRoot.with_optional_block = NthRoot;
 function NthRoot(replacedFragment) {
