@@ -275,6 +275,26 @@ _.latex = function() {
 
 LatexCmds.nthroot = NthRoot;
 
+// MaTHsPAcE haCK: custom nCr command
+function nCr(replacedFragment) {
+  SquareRoot.call(this, replacedFragment);
+  this.jQ = this.firstChild.jQ.detach().add(this.jQ);
+}
+_ = nCr.prototype = new SquareRoot;
+_.html_template = [
+  '<span class="block"><var>C</var></span>',
+  '<sup class="nthroot sup-ncr"></sup>',
+  '<sub></sub>'
+];
+_.text_template = ['ncr[', '](', ')'];
+_.latex = function() {
+  return '^{'+this.firstChild.latex()+'}C_{'+this.lastChild.latex()+'}';
+};
+
+LatexCmds.ncr = nCr;
+
+
+
 // Round/Square/Curly/Angle Brackets (aka Parens/Brackets/Braces)
 function Bracket(open, close, cmd, end, replacedFragment) {
   this.init('\\left'+cmd,
