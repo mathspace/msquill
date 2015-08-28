@@ -138,6 +138,51 @@ suite('key', function() {
       assert.equal(el.val(), 'foobar', 'it still has content');
     });
 
+    test('blur then empty selection', function() {
+      var shim = saneKeyboardEvents(el, { keystroke: noop });
+      shim.select('foobar');
+      el.blur();
+      shim.select('');
+      assert.ok(document.activeElement !== el[0], 'textarea remains blurred');
+    });
+
+    if (!document.hasFocus()) {
+      test('blur in keystroke handler: DOCUMENT NEEDS FOCUS, SEE CONSOLE ');
+      console.warn(
+        'The test "blur in keystroke handler" needs the document to have ' +
+        'focus. Only when the document has focus does .select() on an ' +
+        'element also focus it, which is part of the problematic behavior ' +
+        'we are testing robustness against. (Specifically, erroneously ' +
+        'calling .select() in a timeout after the textarea has blurred, ' +
+        '"stealing back" focus.)\n' +
+        'Normally, the page being open and focused is enough to have focus, ' +
+        'but with the Developer Tools open, it depends on whether you last ' +
+        'clicked on something in the Developer Tools or on the page itself. ' +
+        'Click the page, or close the Developer Tools, and Refresh.'
+      );
+    }
+    else {
+      test('blur in keystroke handler', function(done) {
+        var shim = saneKeyboardEvents(el, {
+          keystroke: function(key) {
+            assert.equal(key, 'Left');
+            el.blur();
+          }
+        });
+
+        shim.select('foobar');
+        assert.ok(document.activeElement === el[0], 'textarea focused');
+
+        el.trigger(Event('keydown', { which: 37 }));
+        assert.ok(document.activeElement !== el[0], 'textarea blurred');
+
+        setTimeout(function() {
+          assert.ok(document.activeElement !== el[0], 'textarea remains blurred');
+          done();
+        });
+      });
+    }
+
     suite('selected text after keypress or paste doesn\'t get mistaken' +
          ' for inputted text', function() {
       test('select() immediately after paste', function() {
@@ -225,6 +270,74 @@ suite('key', function() {
 
         shim.select('$2$');
         assert.equal(el.val(), '$2$');
+      });
+
+      suite('unrecognized keys that move cursor and clear selection', function() {
+        test('without keypress', function() {
+          var shim = saneKeyboardEvents(el, { keystroke: noop });
+
+          shim.select('a');
+          assert.equal(el.val(), 'a');
+
+          if (!supportsSelectionAPI()) return;
+
+          el.trigger(Event('keydown', { which: 37, altKey: true }));
+          el[0].selectionEnd = 0;
+          el.trigger(Event('keyup', { which: 37, altKey: true }));
+          assert.ok(el[0].selectionStart !== el[0].selectionEnd);
+
+          el.blur();
+          shim.select('');
+          assert.ok(document.activeElement !== el[0], 'textarea remains blurred');
+        });
+
+        test('with keypress, many characters selected', function() {
+          var shim = saneKeyboardEvents(el, { keystroke: noop });
+
+          shim.select('many characters');
+          assert.equal(el.val(), 'many characters');
+
+          if (!supportsSelectionAPI()) return;
+
+          el.trigger(Event('keydown', { which: 37, altKey: true }));
+          el.trigger(Event('keypress', { which: 37, altKey: true }));
+          el[0].selectionEnd = 0;
+
+          el.trigger('keyup');
+          assert.ok(el[0].selectionStart !== el[0].selectionEnd);
+
+          el.blur();
+          shim.select('');
+          assert.ok(document.activeElement !== el[0], 'textarea remains blurred');
+        });
+
+        test('with keypress, only 1 character selected', function() {
+          var count = 0;
+          var shim = saneKeyboardEvents(el, {
+            keystroke: noop,
+            typedText: function(ch) {
+              assert.equal(ch, 'a');
+              assert.equal(el.val(), '');
+              count += 1;
+            }
+          });
+
+          shim.select('a');
+          assert.equal(el.val(), 'a');
+
+          if (!supportsSelectionAPI()) return;
+
+          el.trigger(Event('keydown', { which: 37, altKey: true }));
+          el.trigger(Event('keypress', { which: 37, altKey: true }));
+          el[0].selectionEnd = 0;
+
+          el.trigger('keyup');
+          assert.equal(count, 1);
+
+          el.blur();
+          shim.select('');
+          assert.ok(document.activeElement !== el[0], 'textarea remains blurred');
+        });
       });
     });
   });

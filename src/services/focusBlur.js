@@ -1,23 +1,40 @@
 Controller.open(function(_) {
   _.focusBlurEvents = function() {
     var ctrlr = this, root = ctrlr.root, cursor = ctrlr.cursor;
+    var blurTimeout;
     ctrlr.textarea.focus(function() {
       ctrlr.blurred = false;
+      clearTimeout(blurTimeout);
+      ctrlr.container.addClass('mq-focused');
       if (!cursor.parent)
         cursor.insAtRightEnd(root);
-      cursor.parent.jQ.addClass('hasCursor');
       if (cursor.selection) {
-        cursor.selection.jQ.removeClass('blur');
+        cursor.selection.jQ.removeClass('mq-blur');
         ctrlr.selectionChanged(); //re-select textarea contents after tabbing away and back
       }
       else
         cursor.show();
     }).blur(function() {
       ctrlr.blurred = true;
-      cursor.hide().parent.blur();
-      if (cursor.selection)
-        cursor.selection.jQ.addClass('blur');
-    }).blur();
+      blurTimeout = setTimeout(function() { // wait for blur on window; if
+        root.postOrder('intentionalBlur'); // none, intentional blur: #264
+        cursor.clearSelection();
+        blur();
+      });
+      $(window).on('blur', windowBlur);
+    });
+    function windowBlur() { // blur event also fired on window, just switching
+      clearTimeout(blurTimeout); // tabs/windows, not intentional blur
+      if (cursor.selection) cursor.selection.jQ.addClass('mq-blur');
+      blur();
+    }
+    function blur() { // not directly in the textarea blur handler so as to be
+      cursor.hide().parent.blur(); // synchronous with/in the same frame as
+      ctrlr.container.removeClass('mq-focused'); // clearing/blurring selection
+      $(window).off('blur', windowBlur);
+    }
+    ctrlr.blurred = true;
+    cursor.hide().parent.blur();
   };
 });
 
@@ -25,7 +42,7 @@ Controller.open(function(_) {
  * TODO: I wanted to move MathBlock::focus and blur here, it would clean
  * up lots of stuff like, TextBlock::focus is set to MathBlock::focus
  * and TextBlock::blur calls MathBlock::blur, when instead they could
- * use inheritance and _super.
+ * use inheritance and super_.
  *
  * Problem is, there's lots of calls to .focus()/.blur() on nodes
  * outside Controller::focusBlurEvents(), such as .postOrder('blur') on

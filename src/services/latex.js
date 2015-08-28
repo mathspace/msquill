@@ -72,7 +72,7 @@ var latexMathParser = (function() {
   return latexMath;
 })();
 
-Controller.open(function(_, _super) {
+Controller.open(function(_, super_) {
   _.exportLatex = function() {
     return this.root.latex().replace(/(\\[a-z]+) (?![a-z])/ig,'$1');
   };
@@ -84,15 +84,15 @@ Controller.open(function(_, _super) {
 
     var block = latexMathParser.skip(eof).or(all.result(false)).parse(latex);
 
-    if (block) {
+    if (block && !block.isEmpty()) {
       block.children().adopt(cursor.parent, cursor[L], cursor[R]);
       var jQ = block.jQize();
       jQ.insertBefore(cursor.jQ);
       cursor[L] = block.ends[R];
-      block.finalizeInsert(cursor);
-      if (block.ends[R][R].siblingCreated) block.ends[R][R].siblingCreated(L);
-      if (block.ends[L][L].siblingCreated) block.ends[L][L].siblingCreated(R);
-      cursor.parent.bubble('edited');
+      block.finalizeInsert(cursor.options, cursor);
+      if (block.ends[R][R].siblingCreated) block.ends[R][R].siblingCreated(cursor.options, L);
+      if (block.ends[L][L].siblingCreated) block.ends[L][L].siblingCreated(cursor.options, R);
+      cursor.parent.bubble('reflow');
     }
 
     return this;
@@ -118,12 +118,13 @@ Controller.open(function(_, _super) {
       var html = block.join('html');
       jQ.html(html);
       root.jQize(jQ.children());
-      root.finalizeInsert();
+      root.finalizeInsert(cursor.options);
     }
     else {
       jQ.empty();
     }
 
+    delete cursor.selection;
     cursor.insAtRightEnd(root);
   };
   _.renderLatexText = function(latex) {
@@ -170,7 +171,7 @@ Controller.open(function(_, _super) {
 
       root.jQize().appendTo(root.jQ);
 
-      root.finalizeInsert();
+      root.finalizeInsert(cursor.options);
     }
   };
 });

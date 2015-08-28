@@ -4,17 +4,17 @@
  ********************************************/
 
 Controller.open(function(_) {
+  Options.p.substituteTextarea = function() {
+    return $('<textarea autocapitalize=off autocomplete=off autocorrect=off ' +
+               'spellcheck=false x-palm-disable-ste-all=true />')[0];
+  };
   _.createTextarea = function() {
-    // TODO: everywhere else stop depending on root.textareaSpan, and rm it
-    var textareaSpan = this.textareaSpan = this.root.textareaSpan =
-        $('<span class="textarea"><textarea></textarea></span>'),
-      textarea = this.textarea = textareaSpan.children();
-
-    //prevent native selection except in textarea
-    this.container.bind('selectstart.mathquill', function(e) {
-      var tagName = e.target.tagName;
-      if (!(tagName && tagName.toLowerCase() === 'textarea')) return false;
-    });
+    var textareaSpan = this.textareaSpan = $('<span class="mq-textarea"></span>'),
+      textarea = this.API.__options.substituteTextarea();
+    if (!textarea.nodeType) {
+      throw 'substituteTextarea() must return a DOM element, got ' + textarea;
+    }
+    textarea = this.textarea = $(textarea).appendTo(textareaSpan);
 
     var ctrlr = this;
     ctrlr.cursor.selectionChanged = function() { ctrlr.selectionChanged(); };
@@ -37,7 +37,11 @@ Controller.open(function(_) {
     this.textareaSelectionTimeout = undefined;
     var latex = '';
     if (this.cursor.selection) {
-      latex = '$' + this.cursor.selection.join('latex') + '$';
+      latex = this.cursor.selection.join('latex');
+      if (this.API.__options.statelessClipboard) {
+        // FIXME: like paste, only this works for math fields; should ask parent
+        latex = '$' + latex + '$';
+      }
     }
     this.selectFn(latex);
   };
@@ -45,7 +49,7 @@ Controller.open(function(_) {
     var ctrlr = this, root = ctrlr.root, cursor = ctrlr.cursor,
       textarea = ctrlr.textarea, textareaSpan = ctrlr.textareaSpan;
 
-    this.container.prepend('<span class="selectable">$'+ctrlr.exportLatex()+'$</span>');
+    this.container.prepend('<span class="mq-selectable">$'+ctrlr.exportLatex()+'$</span>');
     ctrlr.blurred = true;
     textarea.bind('cut paste', false)
     .focus(function() { ctrlr.blurred = false; }).blur(function() {
@@ -74,7 +78,7 @@ Controller.open(function(_) {
       if (cursor.selection) {
         setTimeout(function() {
           ctrlr.notify('edit'); // deletes selection if present
-          cursor.parent.bubble('edited');
+          cursor.parent.bubble('reflow');
         });
       }
     });
@@ -82,22 +86,26 @@ Controller.open(function(_) {
     this.focusBlurEvents();
   };
   _.typedText = function(ch) {
-    if (ch === '\n') {
-      if (this.root.handlers.enter) this.root.handlers.enter(this.API);
-      return;
-    }
+    if (ch === '\n') return this.handle('enter');
     var cursor = this.notify().cursor;
-    cursor.parent.write(cursor, ch, cursor.show().replaceSelection());
+    cursor.parent.write(cursor, ch);
+    this.scrollHoriz();
   };
   _.paste = function(text) {
+    // TODO: document `statelessClipboard` config option in README, after
+    // making it work like it should, that is, in both text and math mode
+    // (currently only works in math fields, so worse than pointless, it
+    //  only gets in the way by \text{}-ifying pasted stuff and $-ifying
+    //  cut/copied LaTeX)
+    if (this.API.__options.statelessClipboard) {
+      if (text.slice(0,1) === '$' && text.slice(-1) === '$') {
+        text = text.slice(1, -1);
+      }
+      else {
+        text = '\\text{'+text+'}';
+      }
+    }
     // FIXME: this always inserts math or a TextBlock, even in a RootTextBlock
-    if (text.slice(0,1) === '$' && text.slice(-1) === '$') {
-      text = text.slice(1, -1);
-    }
-    else {
-      text = '\\text{' + text + '}';
-    }
-
     this.writeLatex(text).cursor.show();
   };
 });

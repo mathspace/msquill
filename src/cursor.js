@@ -11,18 +11,19 @@ JS environment could actually contain many instances. */
 
 //A fake cursor in the fake textbox that the math is rendered in.
 var Cursor = P(Point, function(_) {
-  _.init = function(initParent) {
+  _.init = function(initParent, options) {
     this.parent = initParent;
-    var jQ = this.jQ = this._jQ = $('<span class="cursor">&zwj;</span>');
+    this.options = options;
 
+    var jQ = this.jQ = this._jQ = $('<span class="mq-cursor">&#8203;</span>');
     //closured for setInterval
-    this.blink = function(){ jQ.toggleClass('blink'); };
+    this.blink = function(){ jQ.toggleClass('mq-blink'); };
 
     this.upDownCache = {};
   };
 
   _.show = function() {
-    this.jQ = this._jQ.removeClass('blink');
+    this.jQ = this._jQ.removeClass('mq-blink');
     if ('intervalId' in this) //already was shown, just restart interval
       clearInterval(this.intervalId);
     else { //was hidden and detached, insert this.jQ back into HTML DOM
@@ -49,7 +50,7 @@ var Cursor = P(Point, function(_) {
   };
 
   _.withDirInsertAt = function(dir, parent, withDir, oppDir) {
-    if (parent !== this.parent) this.parent.blur();
+    if (parent !== this.parent && this.parent.blur) this.parent.blur();
     this.parent = parent;
     this[dir] = withDir;
     this[-dir] = oppDir;
@@ -57,7 +58,7 @@ var Cursor = P(Point, function(_) {
   _.insDirOf = function(dir, el) {
     prayDirection(dir);
     this.withDirInsertAt(dir, el.parent, el[dir], el);
-    this.parent.jQ.addClass('hasCursor');
+    this.parent.jQ.addClass('mq-hasCursor');
     this.jQ.insDirOf(dir, el.jQ);
     return this;
   };
@@ -102,27 +103,10 @@ var Cursor = P(Point, function(_) {
     //Opera bug DSK-360043
     //http://bugs.jquery.com/ticket/11523
     //https://github.com/jquery/jquery/pull/717
-    var self = this, offset = self.jQ.removeClass('cursor').offset();
-    self.jQ.addClass('cursor');
+    var self = this, offset = self.jQ.removeClass('mq-cursor').offset();
+    self.jQ.addClass('mq-cursor');
     return offset;
   }
-  _.insertCmd = function(latexCmd, replacedFragment) {
-    var cmd = LatexCmds[latexCmd];
-    if (cmd) {
-      cmd = cmd(latexCmd);
-      if (replacedFragment) cmd.replaces(replacedFragment);
-      cmd.createLeftOf(this);
-    }
-    else {
-      cmd = TextBlock();
-      cmd.replaces(latexCmd);
-      cmd.createLeftOf(this);
-      this.insRightOf(cmd);
-      if (replacedFragment)
-        replacedFragment.remove();
-    }
-    return this;
-  };
   _.unwrapGramp = function() {
     var gramp = this.parent.parent;
     var greatgramp = gramp.parent;
@@ -166,33 +150,83 @@ var Cursor = P(Point, function(_) {
 
     gramp.jQ.remove();
 
-    if (gramp[L].siblingDeleted) gramp[L].siblingDeleted(R);
-    if (gramp[R].siblingDeleted) gramp[R].siblingDeleted(L);
+    if (gramp[L].siblingDeleted) gramp[L].siblingDeleted(cursor.options, R);
+    if (gramp[R].siblingDeleted) gramp[R].siblingDeleted(cursor.options, L);
+  };
+  _.startSelection = function() {
+    var anticursor = this.anticursor = Point.copy(this);
+    var ancestors = anticursor.ancestors = {}; // a map from each ancestor of
+      // the anticursor, to its child that is also an ancestor; in other words,
+      // the anticursor's ancestor chain in reverse order
+    for (var ancestor = anticursor; ancestor.parent; ancestor = ancestor.parent) {
+      ancestors[ancestor.parent.id] = ancestor;
+    }
+  };
+  _.endSelection = function() {
+    delete this.anticursor;
   };
   _.select = function() {
     var anticursor = this.anticursor;
     if (this[L] === anticursor[L] && this.parent === anticursor.parent) return false;
 
-    // `this` cursor and the anticursor should be in the same tree, because
-    // the mousemove handler attached to the document, unlike the one attached
-    // to the root HTML DOM element, doesn't try to get the math tree node of
-    // the mousemove target, and Cursor::seek() based solely on coordinates
-    // stays within the tree of `this` cursor's root.
-    var selection = Fragment.between(this, anticursor);
+    // Find the lowest common ancestor (`lca`), and the ancestor of the cursor
+    // whose parent is the LCA (which'll be an end of the selection fragment).
+    for (var ancestor = this; ancestor.parent; ancestor = ancestor.parent) {
+      if (ancestor.parent.id in anticursor.ancestors) {
+        var lca = ancestor.parent;
+        break;
+      }
+    }
+    pray('cursor and anticursor in the same tree', lca);
+    // The cursor and the anticursor should be in the same tree, because the
+    // mousemove handler attached to the document, unlike the one attached to
+    // the root HTML DOM element, doesn't try to get the math tree node of the
+    // mousemove target, and Cursor::seek() based solely on coordinates stays
+    // within the tree of `this` cursor's root.
 
-    var leftEnd = selection.ends[L];
-    var rightEnd = selection.ends[R];
-    var lca = leftEnd.parent;
+    // The other end of the selection fragment, the ancestor of the anticursor
+    // whose parent is the LCA.
+    var antiAncestor = anticursor.ancestors[lca.id];
 
-    lca.selectChildren(this.hide(), leftEnd, rightEnd);
+    // Now we have two either Nodes or Points, guaranteed to have a common
+    // parent and guaranteed that if both are Points, they are not the same,
+    // and we have to figure out which is the left end and which the right end
+    // of the selection.
+    var leftEnd, rightEnd, dir = R;
+
+    // This is an extremely subtle algorithm.
+    // As a special case, `ancestor` could be a Point and `antiAncestor` a Node
+    // immediately to `ancestor`'s left.
+    // In all other cases,
+    // - both Nodes
+    // - `ancestor` a Point and `antiAncestor` a Node
+    // - `ancestor` a Node and `antiAncestor` a Point
+    // `antiAncestor[R] === rightward[R]` for some `rightward` that is
+    // `ancestor` or to its right, if and only if `antiAncestor` is to
+    // the right of `ancestor`.
+    if (ancestor[L] !== antiAncestor) {
+      for (var rightward = ancestor; rightward; rightward = rightward[R]) {
+        if (rightward[R] === antiAncestor[R]) {
+          dir = L;
+          leftEnd = ancestor;
+          rightEnd = antiAncestor;
+          break;
+        }
+      }
+    }
+    if (dir === R) {
+      leftEnd = antiAncestor;
+      rightEnd = ancestor;
+    }
+
+    // only want to select Nodes up to Points, can't select Points themselves
+    if (leftEnd instanceof Point) leftEnd = leftEnd[R];
+    if (rightEnd instanceof Point) rightEnd = rightEnd[L];
+
+    this.hide().selection = lca.selectChildren(leftEnd, rightEnd);
+    this.insDirOf(dir, this.selection.ends[dir]);
     this.selectionChanged();
     return true;
-  };
-  _.startSelection = function() {
-    this.anticursor = Point.copy(this);
-  };
-  _.endSelection = function() {
-    delete this.anticursor;
   };
 
   _.clearSelection = function() {
@@ -223,22 +257,15 @@ var Cursor = P(Point, function(_) {
   };
 });
 
-var Selection = P(Fragment, function(_, _super) {
-  _.init = function(leftEnd, rightEnd) {
-    var seln = this;
-
-    // just select one thing if only one argument
-    _super.init.call(seln, leftEnd, rightEnd || leftEnd);
-
-    seln.jQwrap(seln.jQ);
-  };
-  _.jQwrap = function(children) {
-    this.jQ = children.wrapAll('<span class="selection"></span>').parent();
+var Selection = P(Fragment, function(_, super_) {
+  _.init = function() {
+    super_.init.apply(this, arguments);
+    this.jQ = this.jQ.wrapAll('<span class="mq-selection"></span>').parent();
       //can't do wrapAll(this.jQ = $(...)) because wrapAll will clone it
   };
   _.adopt = function() {
     this.jQ.replaceWith(this.jQ = this.jQ.children());
-    return _super.adopt.apply(this, arguments);
+    return super_.adopt.apply(this, arguments);
   };
   _.clear = function() {
     // using the browser's native .childNodes property so that we

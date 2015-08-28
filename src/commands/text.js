@@ -8,7 +8,7 @@
  * opposed to hierchical, nested, tree-structured math.
  * Wraps a single HTMLSpanElement.
  */
-var TextBlock = P(Node, function(_, _super) {
+var TextBlock = P(Node, function(_, super_) {
   _.ctrlSeq = '\\text';
 
   _.replaces = function(replacedText) {
@@ -19,17 +19,17 @@ var TextBlock = P(Node, function(_, _super) {
   };
 
   _.jQadd = function(jQ) {
-    _super.jQadd.call(this, jQ);
+    super_.jQadd.call(this, jQ);
     if (this.ends[L]) this.ends[L].jQadd(this.jQ[0].firstChild);
   };
 
   _.createLeftOf = function(cursor) {
     var textBlock = this;
-    _super.createLeftOf.call(this, cursor);
+    super_.createLeftOf.call(this, cursor);
 
-    if (textBlock[R].siblingCreated) textBlock[R].siblingCreated(L);
-    if (textBlock[L].siblingCreated) textBlock[L].siblingCreated(R);
-    textBlock.bubble('edited');
+    if (textBlock[R].siblingCreated) textBlock[R].siblingCreated(cursor.options, L);
+    if (textBlock[L].siblingCreated) textBlock[L].siblingCreated(cursor.options, R);
+    textBlock.bubble('reflow');
 
     cursor.insAtRightEnd(textBlock);
 
@@ -67,7 +67,7 @@ var TextBlock = P(Node, function(_, _super) {
   _.latex = function() { return '\\text{' + this.textContents() + '}'; };
   _.html = function() {
     return (
-        '<span class="text" mathquill-command-id='+this.id+'>'
+        '<span class="mq-text-mode" mathquill-command-id='+this.id+'>'
       +   this.textContents()
       + '</span>'
     );
@@ -83,7 +83,6 @@ var TextBlock = P(Node, function(_, _super) {
   // TODO: make these methods part of a shared mixin or something.
   _.selectTowards = MathCommand.prototype.selectTowards;
   _.deleteTowards = MathCommand.prototype.deleteTowards;
-  _.selectChildren = MathBlock.prototype.selectChildren;
 
   _.selectOutOf = function(dir, cursor) {
     cursor.insDirOf(dir, this);
@@ -92,8 +91,8 @@ var TextBlock = P(Node, function(_, _super) {
     // backspace and delete at ends of block don't unwrap
     if (this.isEmpty()) cursor.insRightOf(this);
   };
-  _.write = function(cursor, ch, replacedFragment) {
-    if (replacedFragment) replacedFragment.remove();
+  _.write = function(cursor, ch) {
+    cursor.show().deleteSelection();
 
     if (ch !== '$') {
       if (!cursor[L]) TextPiece(ch).createLeftOf(cursor);
@@ -112,7 +111,7 @@ var TextBlock = P(Node, function(_, _super) {
       leftPc.adopt(leftBlock, 0, 0);
 
       cursor.insLeftOf(this);
-      _super.createLeftOf.call(leftBlock, cursor);
+      super_.createLeftOf.call(leftBlock, cursor);
     }
   };
 
@@ -189,9 +188,9 @@ var TextBlock = P(Node, function(_, _super) {
  * mirroring the text contents of the DOMTextNode.
  * Text contents must always be nonempty.
  */
-var TextPiece = P(Node, function(_, _super) {
+var TextPiece = P(Node, function(_, super_) {
   _.init = function(text) {
-    _super.init.call(this);
+    super_.init.call(this);
     this.text = text;
   };
   _.jQadd = function(dom) { this.dom = dom; this.jQ = $(dom); };
@@ -262,9 +261,9 @@ var TextPiece = P(Node, function(_, _super) {
 
     var ch = endChar(-dir, this.text)
 
-    if (!anticursor || anticursor[dir] === this) {
+    if (anticursor[dir] === this) {
       var newPc = TextPiece(ch).createDir(dir, cursor);
-      cursor.startSelection();
+      anticursor[dir] = newPc;
       cursor.insDirOf(dir, newPc);
     }
     else {
@@ -300,34 +299,34 @@ function makeTextBlock(latex, tagName, attrs) {
 
 LatexCmds.em = LatexCmds.italic = LatexCmds.italics =
 LatexCmds.emph = LatexCmds.textit = LatexCmds.textsl =
-  makeTextBlock('\\textit', 'i', 'class="text"');
+  makeTextBlock('\\textit', 'i', 'class="mq-text-mode"');
 LatexCmds.strong = LatexCmds.bold = LatexCmds.textbf =
-  makeTextBlock('\\textbf', 'b', 'class="text"');
+  makeTextBlock('\\textbf', 'b', 'class="mq-text-mode"');
 LatexCmds.sf = LatexCmds.textsf =
-  makeTextBlock('\\textsf', 'span', 'class="sans-serif text"');
+  makeTextBlock('\\textsf', 'span', 'class="mq-sans-serif mq-text-mode"');
 LatexCmds.tt = LatexCmds.texttt =
-  makeTextBlock('\\texttt', 'span', 'class="monospace text"');
+  makeTextBlock('\\texttt', 'span', 'class="mq-monospace mq-text-mode"');
 LatexCmds.textsc =
-  makeTextBlock('\\textsc', 'span', 'style="font-variant:small-caps" class="text"');
+  makeTextBlock('\\textsc', 'span', 'style="font-variant:small-caps" class="mq-text-mode"');
 LatexCmds.uppercase =
-  makeTextBlock('\\uppercase', 'span', 'style="text-transform:uppercase" class="text"');
+  makeTextBlock('\\uppercase', 'span', 'style="text-transform:uppercase" class="mq-text-mode"');
 LatexCmds.lowercase =
-  makeTextBlock('\\lowercase', 'span', 'style="text-transform:lowercase" class="text"');
+  makeTextBlock('\\lowercase', 'span', 'style="text-transform:lowercase" class="mq-text-mode"');
 
 
-var RootMathCommand = P(MathCommand, function(_, _super) {
+var RootMathCommand = P(MathCommand, function(_, super_) {
   _.init = function(cursor) {
-    _super.init.call(this, '$');
+    super_.init.call(this, '$');
     this.cursor = cursor;
   };
-  _.htmlTemplate = '<span class="mathquill-rendered-math">&0</span>';
+  _.htmlTemplate = '<span class="mq-math-mode">&0</span>';
   _.createBlocks = function() {
-    _super.createBlocks.call(this);
+    super_.createBlocks.call(this);
 
     this.ends[L].cursor = this.cursor;
-    this.ends[L].write = function(cursor, ch, replacedFragment) {
+    this.ends[L].write = function(cursor, ch) {
       if (ch !== '$')
-        MathBlock.prototype.write.call(this, cursor, ch, replacedFragment);
+        MathBlock.prototype.write.call(this, cursor, ch);
       else if (this.isEmpty()) {
         cursor.insRightOf(this.parent);
         this.parent.deleteTowards(dir, cursor);
@@ -338,7 +337,7 @@ var RootMathCommand = P(MathCommand, function(_, _super) {
       else if (!cursor[L])
         cursor.insLeftOf(this.parent);
       else
-        MathBlock.prototype.write.call(this, cursor, ch, replacedFragment);
+        MathBlock.prototype.write.call(this, cursor, ch);
     };
   };
   _.latex = function() {
@@ -346,13 +345,13 @@ var RootMathCommand = P(MathCommand, function(_, _super) {
   };
 });
 
-var RootTextBlock = P(RootMathBlock, function(_, _super) {
+var RootTextBlock = P(RootMathBlock, function(_, super_) {
   _.keystroke = function(key) {
     if (key === 'Spacebar' || key === 'Shift-Spacebar') return;
-    return _super.keystroke.apply(this, arguments);
+    return super_.keystroke.apply(this, arguments);
   };
-  _.write = function(cursor, ch, replacedFragment) {
-    if (replacedFragment) replacedFragment.remove();
+  _.write = function(cursor, ch) {
+    cursor.show().deleteSelection();
     if (ch === '$')
       RootMathCommand(cursor).createLeftOf(cursor);
     else {
@@ -363,3 +362,17 @@ var RootTextBlock = P(RootMathBlock, function(_, _super) {
     }
   };
 });
+MathQuill.TextField = APIFnFor(P(EditableField, function(_) {
+  _.init = function(el) {
+    el.addClass('mq-editable-field mq-text-mode');
+    this.initRootAndEvents(RootTextBlock(), el);
+  };
+  _.latex = function(latex) {
+    if (arguments.length > 0) {
+      this.__controller.renderLatexText(latex);
+      if (this.__controller.blurred) this.__controller.cursor.hide().parent.blur();
+      return this;
+    }
+    return this.__controller.exportLatex();
+  };
+}));

@@ -7,22 +7,24 @@
  * Some math-tree-specific extensions to Node.
  * Both MathBlock's and MathCommand's descend from it.
  */
-var MathElement = P(Node, function(_, _super) {
-  _.finalizeInsert = function(cursor) {
+var MathElement = P(Node, function(_, super_) {
+  _.finalizeInsert = function(options, cursor) { // `cursor` param is only for
+      // SupSub::contactWeld, and is deliberately only passed in by writeLatex,
+      // see ea7307eb4fac77c149a11ffdf9a831df85247693
     var self = this;
-    self.postOrder('finalizeTree');
+    self.postOrder('finalizeTree', options);
     self.postOrder('contactWeld', cursor);
 
     // note: this order is important.
     // empty elements need the empty box provided by blur to
     // be present in order for their dimensions to be measured
-    // correctly by 'edited' handlers.
+    // correctly by 'reflow' handlers.
     self.postOrder('blur');
 
-    self.postOrder('edited');
-    if (self[R].siblingCreated) self[R].siblingCreated(L);
-    if (self[L].siblingCreated) self[L].siblingCreated(R);
-    self.bubble('edited');
+    self.postOrder('reflow');
+    if (self[R].siblingCreated) self[R].siblingCreated(options, L);
+    if (self[L].siblingCreated) self[L].siblingCreated(options, R);
+    self.bubble('reflow');
   };
 });
 
@@ -30,10 +32,10 @@ var MathElement = P(Node, function(_, _super) {
  * Commands and operators, like subscripts, exponents, or fractions.
  * Descendant commands are organized into blocks.
  */
-var MathCommand = P(MathElement, function(_, _super) {
+var MathCommand = P(MathElement, function(_, super_) {
   _.init = function(ctrlSeq, htmlTemplate, textTemplate) {
     var cmd = this;
-    _super.init.call(cmd);
+    super_.init.call(cmd);
 
     if (!cmd.ctrlSeq) cmd.ctrlSeq = ctrlSeq;
     if (htmlTemplate) cmd.htmlTemplate = htmlTemplate;
@@ -72,12 +74,12 @@ var MathCommand = P(MathElement, function(_, _super) {
     var replacedFragment = cmd.replacedFragment;
 
     cmd.createBlocks();
-    _super.createLeftOf.call(cmd, cursor);
+    super_.createLeftOf.call(cmd, cursor);
     if (replacedFragment) {
       replacedFragment.adopt(cmd.ends[L], 0, 0);
       replacedFragment.jQ.appendTo(cmd.ends[L].jQ);
     }
-    cmd.finalizeInsert();
+    cmd.finalizeInsert(cursor.options);
     cmd.placeCursor(cursor);
   };
   _.createBlocks = function() {
@@ -101,22 +103,23 @@ var MathCommand = P(MathElement, function(_, _super) {
   // editability methods: called by the cursor for editing, cursor movements,
   // and selection of the MathQuill tree, these all take in a direction and
   // the cursor
-  _.moveTowards = function(dir, cursor) { cursor.insAtDirEnd(-dir, this.ends[-dir]); };
+  _.moveTowards = function(dir, cursor, updown) {
+    var updownInto = updown && this[updown+'Into'];
+    cursor.insAtDirEnd(-dir, updownInto || this.ends[-dir]);
+  };
   _.deleteTowards = function(dir, cursor) {
-    cursor.startSelection();
-    this.selectTowards(dir, cursor);
-    cursor.select();
+    if (this.isEmpty()) cursor[dir] = this.remove()[dir];
+    else cursor.insAtDirEnd(-dir, this.ends[-dir]);
   };
   _.selectTowards = function(dir, cursor) {
-    if (!cursor.anticursor) cursor.startSelection();
     cursor[-dir] = this;
     cursor[dir] = this[dir];
   };
-  _.selectChildren = function(cursor) {
-    cursor.selection = Selection(this);
+  _.selectChildren = function() {
+    return Selection(this, this);
   };
   _.unselectInto = function(dir, cursor) {
-    cursor.insAtDirEnd(-dir, this.selectedOutOf);
+    cursor.insAtDirEnd(-dir, cursor.anticursor.ancestors[this.id]);
   };
   _.seek = function(pageX, cursor) {
     function getBounds(node) {
@@ -290,11 +293,11 @@ var MathCommand = P(MathElement, function(_, _super) {
 /**
  * Lightweight command without blocks or children.
  */
-var Symbol = P(MathCommand, function(_, _super) {
+var Symbol = P(MathCommand, function(_, super_) {
   _.init = function(ctrlSeq, html, text) {
     if (!text) text = ctrlSeq && ctrlSeq.length > 1 ? ctrlSeq.slice(1) : ctrlSeq;
 
-    _super.init.call(this, ctrlSeq, html, [ text ]);
+    super_.init.call(this, ctrlSeq, html, [ text ]);
   };
 
   _.parser = function() { return Parser.succeed(this); };
@@ -326,13 +329,25 @@ var Symbol = P(MathCommand, function(_, _super) {
   _.placeCursor = noop;
   _.isEmpty = function(){ return true; };
 });
+var VanillaSymbol = P(Symbol, function(_, super_) {
+  _.init = function(ch, html) {
+    super_.init.call(this, ch, '<span>'+(html || ch)+'</span>');
+  };
+});
+var BinaryOperator = P(Symbol, function(_, super_) {
+  _.init = function(ctrlSeq, html, text) {
+    super_.init.call(this,
+      ctrlSeq, '<span class="mq-binary-operator">'+html+'</span>', text
+    );
+  };
+});
 
 /**
  * Children and parent of MathCommand's. Basically partitions all the
  * symbols and operators that descend (in the Math DOM tree) from
  * ancestor operators.
  */
-var MathBlock = P(MathElement, function(_, _super) {
+var MathBlock = P(MathElement, function(_, super_) {
   _.join = function(methodName) {
     return this.foldChildren('', function(fold, child) {
       return fold + child[methodName]();
@@ -341,38 +356,35 @@ var MathBlock = P(MathElement, function(_, _super) {
   _.html = function() { return this.join('html'); };
   _.latex = function() { return this.join('latex'); };
   _.text = function() {
-    return this.ends[L] === this.ends[R] ?
+    return (this.ends[L] === this.ends[R] && this.ends[L] !== 0) ?
       this.ends[L].text() :
-      '(' + this.join('text') + ')'
+      this.join('text')
     ;
   };
 
   _.keystroke = function(key, e, ctrlr) {
-    if (ctrlr.spaceBehavesLikeTab
+    if (ctrlr.API.__options.spaceBehavesLikeTab
         && (key === 'Spacebar' || key === 'Shift-Spacebar')) {
       e.preventDefault();
       ctrlr.escapeDir(key === 'Shift-Spacebar' ? L : R, key, e);
       return;
     }
-    return _super.keystroke.apply(this, arguments);
+    return super_.keystroke.apply(this, arguments);
   };
 
   // editability methods: called by the cursor for editing, cursor movements,
   // and selection of the MathQuill tree, these all take in a direction and
   // the cursor
-  _.moveOutOf = function(dir, cursor) {
-    if (this[dir]) cursor.insAtDirEnd(-dir, this[dir]);
+  _.moveOutOf = function(dir, cursor, updown) {
+    var updownInto = updown && this.parent[updown+'Into'];
+    if (!updownInto && this[dir]) cursor.insAtDirEnd(-dir, this[dir]);
     else cursor.insDirOf(dir, this.parent);
   };
   _.selectOutOf = function(dir, cursor) {
     cursor.insDirOf(dir, this.parent);
-    this.parent.selectedOutOf = this;
   };
   _.deleteOutOf = function(dir, cursor) {
     cursor.unwrapGramp();
-  };
-  _.selectChildren = function(cursor, leftEnd, rightEnd) {
-    cursor.selection = Selection(leftEnd, rightEnd);
   };
   _.seek = function(pageX, cursor) {
     var node = this.ends[R];
@@ -383,33 +395,43 @@ var MathBlock = P(MathElement, function(_, _super) {
     while (pageX < node.jQ.offset().left) node = node[L];
     return node.seek(pageX, cursor);
   };
-  _.write = function(cursor, ch, replacedFragment) {
-    var cmd;
-    if (ch.match(/^[a-eg-zA-Z]$/)) //exclude f because want florin
-      cmd = Letter(ch);
-    else if (cmd = CharCmds[ch] || LatexCmds[ch])
-      cmd = cmd(ch);
+  _.chToCmd = function(ch) {
+    var cons;
+    // exclude f because it gets a dedicated command with more spacing
+    if (ch.match(/^[a-eg-zA-Z]$/))
+      return Letter(ch);
+    else if (/^\d$/.test(ch))
+      return Digit(ch);
+    else if (cons = CharCmds[ch] || LatexCmds[ch])
+      return cons(ch);
     else
-      cmd = VanillaSymbol(ch);
-
-    if (replacedFragment) cmd.replaces(replacedFragment);
-
-    cmd.createLeftOf(cursor);
+      return VanillaSymbol(ch);
+  };
+  _.write = function(cursor, ch) {
+    var cmd = this.chToCmd(ch);
+    if (cursor.selection) cmd.replaces(cursor.replaceSelection());
+    cmd.createLeftOf(cursor.show());
   };
 
   _.focus = function() {
-    this.jQ.addClass('hasCursor');
-    this.jQ.removeClass('empty');
+    this.jQ.addClass('mq-hasCursor');
+    this.jQ.removeClass('mq-empty');
 
     return this;
   };
   _.blur = function() {
-    this.jQ.removeClass('hasCursor');
+    this.jQ.removeClass('mq-hasCursor');
     if (this.isEmpty())
-      this.jQ.addClass('empty');
+      this.jQ.addClass('mq-empty');
 
     return this;
   };
 });
 
 var RootMathBlock = P(MathBlock, RootBlockMixin);
+MathQuill.MathField = APIFnFor(P(EditableField, function(_, super_) {
+  _.init = function(el, opts) {
+    el.addClass('mq-editable-field mq-math-mode');
+    this.initRootAndEvents(RootMathBlock(), el, opts);
+  };
+}));

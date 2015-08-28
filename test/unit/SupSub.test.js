@@ -48,7 +48,7 @@ suite('SupSub', function() {
             doTo(mq, cmd);
             assert.equal(mq.latex().replace(/ /g, ''), expected);
 
-            prayWellFormedPoint(mq.controller.cursor);
+            prayWellFormedPoint(mq.__controller.cursor);
 
             mq.typedText('c');
             assert.equal(mq.latex().replace(/ /g, ''), expectedAfterC);
@@ -87,7 +87,7 @@ suite('SupSub', function() {
           doTo(mq);
           assert.equal(mq.latex().replace(/ /g, ''), expected);
 
-          prayWellFormedPoint(mq.controller.cursor);
+          prayWellFormedPoint(mq.__controller.cursor);
 
           mq.typedText('c');
           assert.equal(mq.latex().replace(/ /g, ''), expectedAfterC);
@@ -124,20 +124,44 @@ suite('SupSub', function() {
     assert.equal(mq.latex(), 'x_b^{ac}');
   });
 
-  test('backspace', function() {
-    mq.latex('x_a');
-    assert.equal(mq.latex(), 'x_a');
+  suite('deleting', function() {
+    test('backspacing out of and then re-typing subscript', function() {
+      mq.latex('x_a^b');
+      assert.equal(mq.latex(), 'x_a^b');
 
-    mq.write('^b');
-    assert.equal(mq.latex(), 'x_a^b');
+      mq.keystroke('Down Backspace');
+      assert.equal(mq.latex(), 'x_{ }^b');
 
-    mq.keystroke('Down').keystroke('Backspace');
-    assert.equal(mq.latex(), 'x_{ }^b');
+      mq.keystroke('Backspace');
+      assert.equal(mq.latex(), 'x^b');
 
-    mq.keystroke('Backspace');
-    assert.equal(mq.latex(), 'x^b');
+      mq.typedText('_a');
+      assert.equal(mq.latex(), 'x_a^b');
 
-    mq.write('_a');
-    assert.equal(mq.latex(), 'x_a^b');
+      mq.keystroke('Left Backspace');
+      assert.equal(mq.latex(), 'xa^b');
+
+      mq.typedText('c');
+      assert.equal(mq.latex(), 'xca^b');
+    });
+    test('backspacing out of and then re-typing superscript', function() {
+      mq.latex('x_a^b');
+      assert.equal(mq.latex(), 'x_a^b');
+
+      mq.keystroke('Up Backspace');
+      assert.equal(mq.latex(), 'x_a^{ }');
+
+      mq.keystroke('Backspace');
+      assert.equal(mq.latex(), 'x_a');
+
+      mq.typedText('^b');
+      assert.equal(mq.latex(), 'x_a^b');
+
+      mq.keystroke('Left Backspace');
+      assert.equal(mq.latex(), 'x_ab');
+
+      mq.typedText('c');
+      assert.equal(mq.latex(), 'x_acb');
+    });
   });
 });

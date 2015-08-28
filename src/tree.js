@@ -131,19 +131,23 @@ var Node = P(function(_) {
   };
   _.createLeftOf = function(el) { return this.createDir(L, el); };
 
-  _.bubble = iterator(function(yield) {
+  _.selectChildren = function(leftEnd, rightEnd) {
+    return Selection(leftEnd, rightEnd);
+  };
+
+  _.bubble = iterator(function(yield_) {
     for (var ancestor = this; ancestor; ancestor = ancestor.parent) {
-      var result = yield(ancestor);
+      var result = yield_(ancestor);
       if (result === false) break;
     }
 
     return this;
   });
 
-  _.postOrder = iterator(function(yield) {
+  _.postOrder = iterator(function(yield_) {
     (function recurse(descendant) {
       descendant.eachChild(recurse);
-      yield(descendant);
+      yield_(descendant);
     })(this);
 
     return this;
@@ -165,6 +169,11 @@ var Node = P(function(_) {
 
   _.foldChildren = function(fold, fn) {
     return this.children().fold(fold, fn);
+  };
+
+  _.withDirAdopt = function(dir, parent, withDir, oppDir) {
+    Fragment(this, this).withDirAdopt(dir, parent, withDir, oppDir);
+    return this;
   };
 
   _.adopt = function(parent, leftward, rightward) {
@@ -217,25 +226,45 @@ function prayWellFormed(parent, leftward, rightward) {
  * and have their 'parent' pointers set to the DocumentFragment).
  */
 var Fragment = P(function(_) {
-  _.init = function(leftEnd, rightEnd) {
-    pray('no half-empty fragments', !leftEnd === !rightEnd);
+  _.init = function(withDir, oppDir, dir) {
+    if (dir === undefined) dir = L;
+    prayDirection(dir);
+
+    pray('no half-empty fragments', !withDir === !oppDir);
 
     this.ends = {};
 
-    if (!leftEnd) return;
+    if (!withDir) return;
 
-    pray('left end node is passed to Fragment', leftEnd instanceof Node);
-    pray('right end node is passed to Fragment', rightEnd instanceof Node);
-    pray('leftEnd and rightEnd have the same parent',
-         leftEnd.parent === rightEnd.parent);
+    pray('withDir is passed to Fragment', withDir instanceof Node);
+    pray('oppDir is passed to Fragment', oppDir instanceof Node);
+    pray('withDir and oppDir have the same parent',
+         withDir.parent === oppDir.parent);
 
-    this.ends[L] = leftEnd;
-    this.ends[R] = rightEnd;
+    this.ends[dir] = withDir;
+    this.ends[-dir] = oppDir;
 
-    this.jQ = this.fold(this.jQ, function(jQ, el) { return jQ.add(el.jQ); });
+    // To build the jquery collection for a fragment, accumulate elements
+    // into an array and then call jQ.add once on the result. jQ.add sorts the
+    // collection according to document order each time it is called, so
+    // building a collection by folding jQ.add directly takes more than
+    // quadratic time in the number of elements.
+    //
+    // https://github.com/jquery/jquery/blob/2.1.4/src/traversing.js#L112
+    var accum = this.fold([], function (accum, el) {
+      accum.push.apply(accum, el.jQ.get());
+      return accum;
+    });
+
+    this.jQ = this.jQ.add(accum);
   };
   _.jQ = $();
 
+  // like Cursor::withDirInsertAt(dir, parent, withDir, oppDir)
+  _.withDirAdopt = function(dir, parent, withDir, oppDir) {
+    return (dir === L ? this.adopt(parent, withDir, oppDir)
+                      : this.adopt(parent, oppDir, withDir));
+  };
   _.adopt = function(parent, leftward, rightward) {
     prayWellFormed(parent, leftward, rightward);
 
@@ -309,13 +338,13 @@ var Fragment = P(function(_) {
     return this.disown();
   };
 
-  _.each = iterator(function(yield) {
+  _.each = iterator(function(yield_) {
     var self = this;
     var el = self.ends[L];
     if (!el) return self;
 
     for (; el !== self.ends[R][R]; el = el[R]) {
-      var result = yield(el);
+      var result = yield_(el);
       if (result === false) break;
     }
 
@@ -328,87 +357,6 @@ var Fragment = P(function(_) {
     });
 
     return fold;
-  };
-
-  // create and return the Fragment between Point A and Point B, or if they
-  // don't share a parent, between the ancestor of A and the ancestor of B
-  // who share a common parent (which would be the lowest common ancestor (LCA)
-  // of A and B)
-  // There must exist an LCA, i.e., A and B must be in the same tree, and A
-  // and B must not be the same Point.
-  this.between = function(A, B) {
-    pray('A and B are not the same Point',
-      A.parent !== B.parent || A[L] !== B[L] || A[R] !== B[R]
-    );
-
-    var ancA = A; // an ancestor of A
-    var ancB = B; // an ancestor of B
-    var ancMapA = {}; // a map from the id of each ancestor of A visited
-    // so far, to the child of that ancestor who is also an ancestor of B, e.g.
-    // the LCA's id maps to the ancestor of the cursor whose parent is the LCA
-    var ancMapB = {}; // a map of the castle and school grounds magically
-    // displaying the current location of everyone within the covered area,
-    // activated by pointing one's wand at it and saying "I solemnly swear
-    // that I am up to no good".
-    // What do you mean, you expected it to be the same as ancMapA, but
-    // ancestors of B instead? That's a complete non sequitur.
-
-    do {
-      ancMapA[ancA.parent.id] = ancA;
-      ancMapB[ancB.parent.id] = ancB;
-
-      if (ancB.parent.id in ancMapA) {
-        ancA = ancMapA[ancB.parent.id];
-        break;
-      }
-      if (ancA.parent.id in ancMapB) {
-        ancB = ancMapB[ancA.parent.id];
-        break;
-      }
-
-      if (ancA.parent) ancA = ancA.parent;
-      if (ancB.parent) ancB = ancB.parent;
-    } while (ancA.parent || ancB.parent);
-    // the only way for this condition to fail is if A and B are in separate
-    // trees, which should be impossible, but infinite loops must never happen,
-    // even under error conditions.
-
-    pray('A and B are in the same tree', ancA.parent || ancB.parent);
-
-    // Now we have two either Nodes or Points, guaranteed to have a common
-    // parent and guaranteed that if both are Points, they are not the same,
-    // and we have to figure out which is on the left and which on the right
-    // of the selection.
-    var left, right;
-
-    // This is an extremely subtle algorithm.
-    // As a special case, ancA could be a Point and ancB a Node immediately
-    // to ancA's left.
-    // In all other cases,
-    // - both Nodes
-    // - ancA a Point and ancB a Node
-    // - ancA a Node and ancB a Point
-    // ancB[R] === rightward[R] for some rightward that is ancA or to its
-    // right if and only if anticursorA is to the right of cursorA.
-    if (ancA[L] !== ancB) {
-      for (var rightward = ancA; rightward; rightward = rightward[R]) {
-        if (rightward[R] === ancB[R]) {
-          left = ancA;
-          right = ancB;
-          break;
-        }
-      }
-    }
-    if (!left) {
-      left = ancB;
-      right = ancA;
-    }
-
-    // only want to select Nodes up to Points, can't select Points themselves
-    if (left instanceof Point) left = left[R];
-    if (right instanceof Point) right = right[L];
-
-    return Fragment(left, right);
   };
 });
 
