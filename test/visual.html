@@ -31,6 +31,7 @@ td {
   overflow: visible;
 }
 .show-textareas .mq-textarea textarea {
+  font-size: inherit;
   clip: auto !important;
   resize: auto !important;
   height: auto !important;
@@ -90,7 +91,7 @@ td {
   $(function() {
     var count = 0;
     MathQuill.MathField($('#reflowing-test')[0], {
-      handlers: { reflow: function() { count += 1; } }, // also test 'reflow' hook
+      handlers: { edit: function() { count += 1; } }, // also test 'edit' hook
     }).focus().moveToLeftEnd().keystroke('Right');
     var textarea = $('#reflowing-test textarea');
     var oldcount = count;
@@ -254,9 +255,8 @@ window.onerror = function() {
 };
 </script>
 <script type="text/javascript" src="../build/mathquill.js"></script>
-<script type="text/javascript" src="../build/mathquill-basic.js"></script>
 <script type="text/javascript">
-window.MathQuillBasic = MathQuill.noConflict();
+MathQuill.interfaceVersion(1);
 
 $('#show-textareas-button').click(function() {
   $(document.body).toggleClass('show-textareas');

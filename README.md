@@ -15,17 +15,27 @@ Just load MathQuill and call our constructors on some HTML element DOM objects,
 for example:
 
 ```html
-<p>
-  Solve <span class="static-math">ax^2+bx+c=0</span>:
-  <span class="math-field">x=</span>
-</p>
 <link rel="stylesheet" href="/path/to/mathquill.css"/>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 <script src="/path/to/mathquill.js"></script>
 <script>
-  $('.static-math').each(function() { MathQuill.StaticMath(this); });
-  $('.math-field').each(function() { MathQuill.MathField(this); });
+  MathQuill.interfaceVersion(1);
+  $(function() {
+    MathQuill.StaticMath($('#problem')[0]);
+    var answer = MathQuill.MathField($('#answer')[0], {
+      handlers: {
+        edit: function() {
+          checkAnswer(answer.latex());
+        }
+      }
+    });
+  });
 </script>
+
+<p>
+  Solve <span id="problem">ax^2 + bx + c = 0</span>:
+  <span id="answer">x=</span>
+</p>
 ```
 
 To load MathQuill,
@@ -38,6 +48,12 @@ To load MathQuill,
 
 [Google CDN-hosted copy]: http://code.google.com/apis/libraries/devguide.html#jquery
 [the latest tarball]: http://mathquill.com/downloads.html
+
+To use the MathQuill API, first declare an interface version:
+
+```js
+MathQuill.interfaceVersion(1);
+```
 
 Now you can call `MathQuill.StaticMath()` or `MathQuill.MathField()`, which
 MathQuill-ify an HTML element and return an API object. If the element had
@@ -65,10 +81,6 @@ HTML element of a static math or math field, returns its API object (if not,
 MathQuill(mathFieldSpan) === mathField // => true
 MathQuill(mathFieldSpan) === MathQuill(mathFieldSpan) // => true
 ```
-
-`MathQuill.noConflict()` resets the global `MathQuill` variable to whatever it
-was before, and returns the `MathQuill` function to be used locally or set to
-some other variable, _a la_ [`jQuery.noConflict()`](http://api.jquery.com/jQuery.noConflict).
 
 Any element that has been MathQuill-ified can be reverted:
 
@@ -121,6 +133,19 @@ Additionally, descendants of `MathQuill.EditableField` (currently only
 [on `input`s]: http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-34677168
 [key values]: http://www.w3.org/TR/2012/WD-DOM-Level-3-Events-20120614/#fixed-virtual-key-codes
 
+MathQuill overwrites the global `MathQuill` variable when loaded. You can undo
+that with `.noConflict()` (similar to [`jQuery.noConflict()`]
+(http://api.jquery.com/jQuery.noConflict)):
+
+```html
+<script src="/path/to/first-mathquill.js"></script>
+<script src="/path/to/second-mathquill.js"></script>
+<script>
+var secondMathQuill = MathQuill.interfaceVersion(1).noConflict();
+secondMathQuill.StaticMath(...);
+</script>
+```
+
 #### Configuration Options
 
 `MathQuill.MathField()` can also take an options object:
@@ -142,7 +167,7 @@ var mathField = MathQuill.MathField(el[0], {
     return document.createElement('textarea');
   },
   handlers: {
-    reflow: function(mathField) { ... },
+    edit: function(mathField) { ... },
     upOutOf: function(mathField) { ... },
     moveOutOf: function(dir, mathField) { if (dir === L) ... else ... }
   }
@@ -232,7 +257,7 @@ keyboards just don't work in Desmos on iOS, the tradeoffs are up to you.
 Supported handlers:
 - `moveOutOf`, `deleteOutOf`, and `selectOutOf` are called with `dir` and the
   math field API object as arguments
-- `upOutOf`, `downOutOf`, `enter`, and `reflow` are called with just the API
+- `upOutOf`, `downOutOf`, `enter`, and `edit` are called with just the API
   object as the argument
 
 The `*OutOf` handlers are called when Left/Right/Up/Down/Backspace/Del/
@@ -245,8 +270,9 @@ arguments, and Backspace causes `deleteOutOf` (if provided) to be called with
 
 The `enter` handler is called whenever Enter is pressed.
 
-The `reflow` handler is called when the size of the field might have been
+The `edit` handler is called when the contents of the field might have been
 changed by stuff being typed, or deleted, or written with the API, etc.
+(Deprecated aliases: `edited`, `reflow`.)
 
 Handlers are always called directly on the `handlers` object passed in,
 preserving the `this` value, so you can do stuff like:
@@ -276,7 +302,7 @@ over the math field:
 var latex = '';
 var mathField = MathQuill.MathField($('#mathfield')[0], {
   handlers: {
-    reflow: function() { latex = mathField.latex(); },
+    edit: function() { latex = mathField.latex(); },
     enter: function() { submitLatex(latex); }
   }
 });
@@ -316,7 +342,7 @@ transforms, so MathQuill uses a matrix filter to stretch parens etc,
 which [anti-aliases wrongly without an opaque background][Transforms],
 so MathQuill defaults to white.)
 
-[Transforms]: http://github.com/laughinghan/mathquill/wiki/Transforms
+[Transforms]: http://github.com/mathquill/mathquill/wiki/Transforms
 
 ## Building and Testing
 
@@ -342,8 +368,8 @@ installing the necessary build tools.)
 
 All the CSS is in `src/css`. Most of it's pretty straightforward, the choice of
 font isn't settled, and fractions are somewhat arcane, see the Wiki pages
-["Fonts"](http://github.com/laughinghan/mathquill/wiki/Fonts) and
-["Fractions"](http://github.com/laughinghan/mathquill/wiki/Fractions).
+["Fonts"](http://github.com/mathquill/mathquill/wiki/Fonts) and
+["Fractions"](http://github.com/mathquill/mathquill/wiki/Fractions).
 
 All the JavaScript that you actually want to read is in `src/`, `build/` is
 created by `make` to contain the same JS cat'ed and minified.
