@@ -3,8 +3,8 @@
   width: 100%;
   padding: 2px;
   .box-sizing(border-box); // supported by IE8+: http://caniuse.com/css3-boxsizing
-  white-space: nowrap;
-  overflow: hidden;
+  white-space: normal;     // MaThSpaCE haCK: Text wrapping
+  overflow: visible;       // MaThSpaCE haCK: Text wrapping
   vertical-align: middle;
 }
 .mq-math-mode {
@@ -111,6 +111,7 @@
   .mq-binary-operator {
     padding: 0 @operator-padding;
     .inline-block;
+    white-space: pre-wrap;  // MaThSpaCE haCK: Text wrapping
   }
 
   ////
