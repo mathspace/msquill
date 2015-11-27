@@ -817,3 +817,9 @@ LatexCmds.MathQuillMathField = P(MathCommand, function(_, super_) {
   _.latex = function(){ return this.ends[L].latex(); };
   _.text = function(){ return this.ends[L].text(); };
 });
+
+/** MatHSPaCE HacK */
+// Add old editable support
+LatexCmds.editable = P(LatexCmds.MathQuillMathField, function(_, super_) {
+  _.ctrlSeq = '\\editable';
+});
