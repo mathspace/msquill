@@ -1,0 +1,78 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <title>math_components/latex_editor_with_toolbar</title>
+    <link type="text/css" rel="stylesheet"
+          href="../../../css/bootstrap3/bootstrap.css">
+
+</head>
+<body>
+
+<div class="container">
+    <h1>math_components/latex_editor_with_toolbar</h1>
+
+</div>
+
+<script type="text/mustache" id="exampleAppTemplate1">
+    <mc-latex-editor-with-toolbar toolbar='{toolbar}'></mc-latex-editor-with-toolbar>
+</script>
+
+
+<script type="text/mustache" id="exampleAppTemplate2">
+<mc-latex-editor-with-toolbar prefix='<span class="mathquill-embedded-latex">\frac{Sin}{Cos}</span>' toolbar='{toolbar}'></mc-latex-editor-with-toolbar>
+</script>
+
+
+<script type="text/mustache" id="exampleAppTemplate3">
+    <mc-latex-editor-with-toolbar prefix='Simple Word' toolbar='{toolbar}'></mc-latex-editor-with-toolbar>
+</script>
+
+
+<script type="text/mustache" id="exampleAppTemplate4">
+    <mc-latex-editor-with-toolbar prefix='$' suffix='cm' toolbar='{toolbar}'></mc-latex-editor-with-toolbar>
+</script>
+
+
+<script type="text/mustache" id="exampleAppTemplate5">
+    <mc-latex-editor-with-toolbar prefix='$' suffix='Super long suffix will not break placeholder' toolbar='{toolbar}'></mc-latex-editor-with-toolbar>
+</script>
+
+
+<script type="text/mustache" id="exampleAppTemplate6">
+    <mc-latex-editor-with-toolbar editable="true" latex='1 + \editable{} + \editable{} + 1' toolbar='{toolbar}'></mc-latex-editor-with-toolbar>
+</script>
+
+
+
+<script type="text/javascript" src="../../require-load.js"></script>
+<script type="text/javascript">
+require([
+    'jquery',
+    'can/util/jquery',
+    'math_components/latex_editor_with_toolbar/latex_editor_with_toolbar'],
+function($, can) {
+
+    $(document).ready(function() {
+        var getRenderDict = function() {
+            return new can.Map({
+                toolbar: [
+                    'AUTO_EQUATION'
+                ]
+            });
+        };
+
+
+        //var template = can.view('#exampleAppTemplate1', getRenderDict());
+          //  $('.container').append(template);
+
+        for (var i = 1; i <= 6; i++) {
+            var template = can.view('#exampleAppTemplate' + i, getRenderDict());
+            $('.container').append(template);
+        }
+
+    });
+});
+</script>
+
+</body>
+</html>

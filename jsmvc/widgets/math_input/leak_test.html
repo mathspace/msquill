@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Mathquill memory leak test page</title>
+    <script type='text/javascript' src='../../steal/steal.js'></script>
+
+    <script src="./resources/mathquill.js"></script>
+</head>
+<body>
+<div id="container">
+
+</div>
+<button type="button" id="test-start">reconstruct 1000 times</button>
+<script type="my-template" id="test-template">
+    <span id="mathquill-textbox">The Quadratic Equation is x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}</span>
+</script>
+
+<script type="text/javascript">
+    steal(
+        'jquery',
+        'widgets/math_input',
+    function($){
+        var $container = $('#container');
+
+        var reconstruct = function() {
+            $container.empty();
+            $($('#test-template').html()).appendTo('#container');
+            $('#mathquill-textbox').mathquill();
+        };
+        reconstruct();
+        $('#test-start').click(function(){
+            var i = 0;
+            for (; i!==1000; i++) {
+                reconstruct();
+            }
+            i = null;
+            alert('finished');
+        });
+    });
+</script>
+</body>
+</html>

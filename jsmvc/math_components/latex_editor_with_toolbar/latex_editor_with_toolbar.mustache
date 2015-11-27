@@ -1,0 +1,8 @@
+<div class="latex-input-with-prefix-suffix">
+    <div class="prefix {{^if prefix}}hidden{{/if}}">{{#if prefix}}{{{prefix}}}{{/if}}</div>
+    <mc-latex-editor inline="false" editable="{editable}" latex='{latex}' prefix='{prefix}' suffix='{suffix}'></mc-latex-editor>
+    <div class="suffix {{^if suffix}}hidden{{/if}}">{{#if suffix}}{{{suffix}}}{{/if}}</div>
+</div>
+{{#if editable}}
+<mc-latex-toolbar downwards="true" operators-used="{operatorsUsedHint}" toolbar="{toolbar}"></mc-latex-toolbar>
+{{/if}}

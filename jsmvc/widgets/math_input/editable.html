@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+	<head>
+		<title>math_input</title>
+        <style type='text/css'>
+            body {
+                font-family: verdana;
+            }
+
+            .textfield {
+                font-family: Courier, "Courier New", monospace;
+                min-width: 200px;
+                line-height: 3em;
+            }
+
+            ul.checks {
+                font-size: 9px;
+            }
+
+            .symbola {
+                font-family: Symbola;
+                font-size:18px;
+            }
+
+            .parentheses-examples {
+              color: white;
+              border-color: white;
+              background: black;
+            }
+            .parentheses-examples .matrixed {
+              background: black !important;
+            }
+            .parentheses-examples .matrixed-container {
+              filter: progid:DXImageTransform.Microsoft.Chroma(color='black') !important;
+            }
+
+        </style>
+	</head>
+	<body>
+        <h1>display</h1>
+        <div>
+            <span class="latex_display">y=\frac{1}{2}x^2-2x \left( \frac{a}{b \times c} \right) = \sqrt[n]{ \frac{a + b}{c} }</span>
+            <br>
+            <button class="to_editable">To editable</button>
+            <button class="to_readonly">To readonly</button>
+            <button class="write_expression">Write expression</button>
+            <button class="write_partial_editable">Write \editable</button>
+            <button class="get_latex">Get latex</button>
+        </div>
+
+        <h1>editable</h1>
+        <div>
+            <span class="latex_editable">y=\frac{1}{2}x^2-2x \left( \frac{a}{b \times c} \right) = \sqrt[n]{ \frac{a + b}{c} }</span>
+            <br>
+            <button class="to_editable">To editable</button>
+            <button class="to_readonly">To readonly</button>
+            <button class="write_expression">Write expression</button>
+            <button class="write_partial_editable">Write \editable</button>
+            <button class="get_latex">Get latex</button>
+        </div>
+
+        <h1>partialEditable</h1>
+        <div>
+            <span class="latex_partial_editable">\editable{a} + \editable{\frac{a}{2}} + \editable{}</span>
+            <br>
+            <button class="to_editable">To editable</button>
+            <button class="to_readonly">To readonly</button>
+            <button class="write_expression">Write expression</button>
+            <button class="write_partial_editable">Write \editable</button>
+            <button class="get_latex">Get latex</button>
+        </div>
+
+        <h1>display with \editable</h1>
+        <div>
+            <span class="latex_readonly_editable">\editable{a} + \editable{\frac{a}{2}} + \editable{}</span>
+            <br>
+            <button class="to_editable">To editable</button>
+            <button class="to_readonly">To readonly</button>
+            <button class="write_expression">Write expression</button>
+            <button class="write_partial_editable">Write \editable</button>
+            <button class="get_latex">Get latex</button>
+        </div>
+
+		<script type='text/javascript' src='../../require-load.js'></script>
+        <script type='text/javascript'>
+
+        require([
+            'jquery',
+            'widgets/math_input/math_input'
+        ], function($){
+
+            $(document).ready(function($) {
+
+                $('.latex_display').widgets_math_display();
+                $('.latex_editable').widgets_math_input();
+                $('.latex_partial_editable').widgets_math_input();
+                $('.latex_readonly_editable').widgets_math_display();
+
+                $('.to_editable').on('click', function() {
+                    var field = $(this).siblings('.mathquill-rendered-math');
+                    field.mathquill('editable');
+                });
+
+                $('.to_readonly').on('click', function() {
+                    var field = $(this).siblings('.mathquill-rendered-math');
+                    field.mathquill();
+                });
+
+                $('.write_expression').on('click', function() {
+                    var field = $(this).siblings('.mathquill-rendered-math');
+                    latex = 'y=\\frac{1}{2}x^2-2x \\left( \\frac{a}{b \\times c} \\right) = \\sqrt[n]{ \\frac{a + b}{c} }';
+                    field.mathquill('latex', latex);
+                });
+
+                $('.write_partial_editable').on('click', function() {
+                    var field = $(this).siblings('.mathquill-rendered-math');
+                    latex = '\\editable{a} + \\editable{\\frac{a}{2}} + \\editable{}';
+                    field.mathquill('latex', latex);
+                });
+
+                $('.get_latex').on('click', function() {
+                    var field = $(this).siblings('.mathquill-rendered-math');
+                    latex = field.mathquill('latex');
+                    alert(latex);
+                });
+
+            });
+        });
+        </script>
+	</body>
+</html>

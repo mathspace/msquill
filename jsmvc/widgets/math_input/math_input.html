@@ -1,0 +1,552 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+	<head>
+		<title>math_input</title>
+        <style type='text/css'>
+            body {
+                font-family: verdana;
+            }
+
+            .textfield {
+                font-family: Courier, "Courier New", monospace;
+                min-width: 200px;
+                line-height: 3em;
+            }
+
+            ul.checks {
+                font-size: 9px;
+            }
+
+            .symbola {
+                font-family: Symbola;
+                font-size:18px;
+            }
+
+            .parentheses-examples {
+              color: white;
+              border-color: white;
+              background: black;
+            }
+            .parentheses-examples .matrixed {
+              background: black !important;
+            }
+            .parentheses-examples .matrixed-container {
+              filter: progid:DXImageTransform.Microsoft.Chroma(color='black') !important;
+            }
+
+        </style>
+	</head>
+	<body>
+        <h1>widgets/math_display</h1>
+        
+        <div class="container">
+            <table>
+                <tr>
+                    <th width="300">Display Field</th>
+                    <th width="300">Checks</th>
+                </tr>
+                <tr>
+                    <td>
+                        <span class='latex_display'>y=\frac{1}{2}x^2-2x \left( \frac{a}{b \times c} \right) = \sqrt[n]{ \frac{a + b}{c} }</span>
+                    </td>
+                    <td>
+                        <ul class='checks'>
+                            <li>Denominator and numerator should be centre-balanced</li>
+                            <li>Parentheses should cover height of fraction</li>
+                            <li>Parentheses should appear OK at height larger than normal</li>
+                            <li>n-th root should display n</li>
+                            <li>n-th root symbol should display OK at height larger than normal</li>
+                            <li>Each term should be evenly centred vertically</li>
+                        </ul>
+                    </td>
+                </tr>
+            </table>
+        </div>
+               
+	    <h1>widgets/math_input</h1>
+
+        <div class="container">
+            <table>
+                <tr>
+                    <th width="300">Input Field</th>
+                    <th width="300">Output Field</th>
+                    <th>Checks</th>
+                </tr>
+                <tr>
+                    <td><span class='latex'>\left(x+\frac{1}{2}\right)^2=x^2+x+\frac{1}{4}</span></td>
+                    <td><input class='latexvalue textfield' name='latexvalue' value='' /></td>
+                    <td>
+                        <ul>
+                            <li>Clear button should delete rendered latex</li>
+                            <li>Test Blur should focus on the field first and then lose the cursor</li>
+                            <li>Disable button should turn editable field back to readonly field (StaticMath)</li>
+                            <li><b>latexupdate.mathquill</b> event should fire when there is a latex change</li>
+                        </ul>
+                    </td>
+                </tr>
+            </table>
+            <button id='getlatex'>Get latex</button>
+            <button id='selectall'>Select All</button>
+            <button id='clear'>Clear</button>
+            <button id='focus'>Focus</button>
+            <button id='blur' title="Input field get focusd, and should lose the focus after 1 second.">Test Blur</button>
+            <button id='showlatex'>Show Latex</button>
+            <button id='setDisable'>Disable</button>
+        </div>
+
+        <h2>test dogfood</h2>
+
+        <div class="container" id='mathquill_dogfood'>
+            <table>
+                <tr>
+                    <th width="300">Input Field</th>
+                    <th width="300">To Latex</th>
+                    <th width="300">And Back</th>
+                    <th width="">Checks</th>
+                </tr>
+                <tr>
+                    <td><span class='input-field'>A \times B \times 5 % + \sqrt[n]{\pi}</span></td>
+                    <td><input class='output-latex textfield' name='output-latex' value=''></td>
+                    <td><span class='input-field2'></span></td>
+                    <td>
+                        <ul class='checks'>
+                            <li>\times should be reparsed OK</li>
+                            <li>% should be reparsed OK</li>
+                            <li>\sqrt[n]{} should be reparsed OK</li>
+                        </ul>
+                    </td>
+                </tr>
+            </table>
+            <button id='dogfood_update'>Update</button>
+        </div>
+
+        <h2>test editable</h2>
+
+        <table>
+            <tr>
+                <th width="300">Display field</th>
+                <th width="">Checks</th>
+            </tr>
+            <tr>
+                <td>
+                    <span id='mathquill_editable'>\editable{a} + \editable{b} + \editable{}</span>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li>"a" and "b" should be contained by a light grey box</li>
+                        <li>The last term should be an empty light grey box</li>
+                        <li>The empty light grey box should be roughly the height and width of an average character</li>
+                        <li>Click on a light grey box and it should display the cursor, and allow editing</li>
+                        <li>Click on a light grey box, press TAB, and the focus should change. The blinking cursor that was within the grey box clicked, should disappear.</li>
+                        <li>Click "a", the focus should go to its containing light grey box.</li>
+                        <li>Click "a", press TAB. The focus should go to "b" and then to the empty light grey box.</li>
+                    </ul>
+                </td>
+            </tr>
+        </table>
+
+
+        <h2>test wrapping</h2>
+
+        <table>
+            <tr>
+                <th width="300">Display field</th>
+                <th width="">Checks</th>
+            </tr>
+            <tr>
+                <td>
+                    <div style='width:200px; border: 1px solid blue;'>
+                        <span class='wrap-examples'>123123+3+123+12+312+3+12+312+3+124+33333333333333+2,123123,3,123,12,312,3,12,312,3,124,33333333333333,2
+                        </span>
+                    </div>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li>Content should word wrap, staying within the blue box.</li>
+                        <li>Content should not break a number when wrapping; it should only break around "+" and ","</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div style='width:200px; border: 1px solid blue;'>
+                        <span class='wrap-examples'>\left(1a+2b+3c+4d+5e+6f+7g+8h+9i\right)
+                        </span>
+                    </div>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li>Parentheses should look okay when its content is wrapped.</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div style='width:200px; border: 1px solid blue;'>
+                        <span class='wrap-examples'>123</span>
+                    </div>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li>Content should appear on one line</li>
+                        <li>Blue box should not collapse to shorter than one line</li>
+                    </ul>
+                </td>
+            </tr>
+        </table>
+
+        <h2>test leading spaces</h2>
+
+        <table>
+            <tr>
+                <th width="300">Display field</th>
+                <th width="">Checks</th>
+            </tr>
+            <tr>
+                <td>
+                    <div style='width:200px; border: 1px solid blue;'>
+                        <span id='mathquill_leading'>
+                            123
+                        </span>
+                    </div>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li>Content should not have a leading space / gap on the left side of "123". (This is appearing in IE8 if original content has leading space)</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span style='display: inline-block; border: 1px solid blue;'>
+                        <span id='mathquill_trailing_space'>
+                            y
+                        </span>
+                    </span>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li>Content should not have a tailing space after char 'y'. this is appearing in IE8 and IE9. </li>
+                    </ul>
+                </td>
+            </tr>
+
+        </table>
+
+        <h2>test special symbols</h2>
+
+        <table>
+            <tr>
+                <th width="300">Display field</th>
+                <th width="">Checks</th>
+            </tr>
+            <tr>
+                <td>
+                    <span class='special-symbols'>2\times\nCr{2}{3}</span>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li><span class='symbola'>2 &times; <sup>2</sup>C<sub>3</sub></span></li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class='special-symbols'>\angle ABC = 90 \deg 0 ' 0 ", AB \parallel DE</span>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li><span class='symbola'>&ang;ABC = 90&deg; 0' 0", AB &#8741; DE</span></li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class='special-symbols'>\triangle ABC \cong \triangle DEF</span>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li><span class='symbola'>&#9651;ABC &equiv; &#9651;DEF</span></li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class='special-symbols'>\triangle ABC \simeq \triangle DEF</span>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li><span class='symbola'>&#9651;ABC &#11003; &#9651;DEF</span></li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class='special-symbols'>0 \lt 1 \le x \ne y \ge 2 \gt 3</span>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li><span class='symbola'>0 &lt; 1 &le; x &ne; y &ge; 2 &gt; 3</span></li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class='special-symbols'>\pm a \times b \div \sqrt{c}</span>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li><span class='symbola'>&pm; a &times; b &divide; &radic;<span style='text-decoration: overline;'>c</span></span></li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class='special-symbols'>\pi \alpha \beta \gamma \delta \theta \sigma \omega</span>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li><span class='symbola'>&pi; &alpha; &beta; &gamma; &delta; &theta; &sigma; &omega;</span></li>
+                    </ul>
+                </td>
+            </tr>
+        </table>
+
+        <h2>test latex error</h2>
+
+        <table>
+            <tr>
+                <th width="300">Input field</th>
+                <th width="">Checks</th>
+            </tr>
+            <tr>
+                <td>
+                    <span class='latex-error-field-1'></span>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li>Should say "1 + 2 &times; &times; 3 + 4"</li>
+                        <li>"&times; &times; 3 + 4" should be in red.</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class='latex-error-field-2'></span>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li>Should say "1 + 2 tan xy"</li>
+                        <li>"tan xy" should be in red.</li>
+                    </ul>
+                </td>
+            </tr>
+        </table>
+
+        <h2>test thousands separators</h2>
+
+        <table>
+            <tr>
+                <th width="300">Input field</th>
+                <th width="">Checks</th>
+            </tr>
+            <tr>
+                <td>
+                    <span class='thousands-examples'>1000 + 10000 + 100000 + 1000000</span>
+                </td>
+                <td rowspan="2">
+                    <ul class='checks'>
+                        <li>There should be a space separating each triple of
+                        digits.</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class='thousands-examples'>1.000 + 1.0000 + 1.00000 + 1.000000</span>
+                </td>
+            </tr>
+        </table>
+
+
+                <h2>test parentheses on dark background</h2>
+
+        <table>
+            <tr>
+                <th width="300">Input field</th>
+                <th width="">Checks</th>
+            </tr>
+            <tr>
+                <td>
+                    <span class='parentheses-examples'>tan\left(x\right)</span>
+                </td>
+                <td rowspan="2">
+                    <ul class='checks'>
+                        <li>Check the result in IE8, the parentheses should be displaying properly</li>
+                        <li>Check the result in IE8, there should be no outstanding space after the left parenthesis</li>
+                    </ul>
+                </td>
+            </tr>
+        </table>
+
+        <h2>Test bad wrapping in IE9/10</h2>
+        <table style="font-size: 15px;'">
+            <tr>
+                <th width="300">Input field</th>
+                <th width="">Checks</th>
+            </tr>
+            <tr>
+                <td>
+                    <span class='bad-wrapping'>\left(x + 2\right)^{2}</span>
+                </td>
+                <td rowspan="2">
+                    <ul class='checks'>
+                        <li>In IE9/10, the x+2 should not rendering into two lines</li>
+                    </ul>
+                </td>
+            </tr>
+
+        </table>
+
+        <h2>Grey box</h2>
+        <table style="font-size: 15px;'">
+            <tr>
+                <th width="300">Input field</th>
+                <th width="">Checks</th>
+            </tr>
+            <tr>
+                <td>
+                    <span class="grey-box">2^6^2</span>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li>There should be a grey box before 2</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class="grey-box">u^x^{+1}</span>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li>There should be a grey box after x</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class="grey-box">\frac{1}{u^x^{+1}}</span>
+                </td>
+                <td>
+                    <ul class='checks'>
+                        <li>There should be a grey box before 2</li>
+                    </ul>
+                </td>
+            </tr>
+
+        </table>
+
+
+		<script type='text/javascript' src='../../require-load.js'></script>
+        <script type='text/javascript'>
+
+        require([
+            'jquery',
+            'widgets/math_input/math_input'
+        ],
+        function($){
+
+
+            $(document).ready(function($){
+
+                $('.latex_display').widgets_math_display();
+
+                $('.latex').widgets_math_input();
+                $('#getlatex').click(function(e){
+                    $('.latexvalue').val($('.latex').control().latexForParser());
+                    return false;
+                });
+                $('#selectall').click(function(e){
+                    $('.latex').widgets_math_input('selectAll');
+                    return false;
+                });
+                $('#clear').click(function(e){
+                    $('.latex').widgets_math_input('clear');
+                    return false;
+                });
+                $('#focus').click(function(e){
+                    $('.latex').widgets_math_input('focusField');
+                    return false;
+                });
+                $('#blur').click(function(e){
+
+                    $('.latex').widgets_math_input('focusField');
+
+                    setTimeout(function() {
+                        $('.latex').widgets_math_input('blurField');
+                    }, 1000);
+
+                    return false;
+                });
+                $('#showlatex').click(function(e){
+                    alert($('.latex').controller().latex());
+                    return false;
+                });
+                $('#setDisable').click(function(e){
+                    $('.latex').widgets_math_input('disable');
+                    return false;
+                });
+                
+
+                $('#mathquill_special_math').widgets_math_display();
+
+                var updateDogfoodTest = function() {
+                    $('#mathquill_dogfood .input-field').widgets_math_input({'field': $('#mathquill_dogfood .output-latex')});
+                    $('#mathquill_dogfood .output-latex').show();
+                    var mathQuillAPI = MathQuill.MathField($('#mathquill_dogfood .input-field')[0]);
+                    var latex = mathQuillAPI.latex();
+                    $('#mathquill_dogfood .output-latex').val(latex);
+
+                    $('#mathquill_dogfood .input-field2').widgets_math_input();
+
+                    var mathQuillAPI2 = MathQuill.MathField($('#mathquill_dogfood .input-field2')[0]);
+                    mathQuillAPI2.latex(latex);
+
+                    
+                };
+                updateDogfoodTest();
+                $('#mathquill_dogfood #dogfood_update').bind('click', updateDogfoodTest);
+
+
+                $('#mathquill_editable').widgets_math_input();
+
+                $('#mathquill_leading').widgets_math_display();
+                $('#mathquill_trailing_space').widgets_math_display();
+                $('.wrap-examples').widgets_math_input();
+
+                $('.special-symbols').widgets_math_display();
+                $('.thousands-examples').widgets_math_input();
+                $('.parentheses-examples').widgets_math_display();
+                $('.bad-wrapping').widgets_math_display();
+                $('.grey-box').widgets_math_display();
+
+
+
+                $('.latex-error-field-1').widgets_math_input().widgets_math_input('writeLatexError', '1+2', '\\times \\times 3+4');
+                $('.latex-error-field-2').widgets_math_input().widgets_math_input('writeLatexError', '1+2', '\\tan _{ }xy');
+
+//                $.each($('table span'), function(){
+//                    var input = $(this).closest('input');
+//                    if (input){
+//                        $(this).widgets_math_display({field: input});
+//                    }
+//
+//                });
+                
+            });
+        });
+        </script>
+	</body>
+</html>
