@@ -329,9 +329,78 @@ var Symbol = P(MathCommand, function(_, super_) {
   _.placeCursor = noop;
   _.isEmpty = function(){ return true; };
 });
+
+
+var rSingleDigit = /^\d$/;
 var VanillaSymbol = P(Symbol, function(_, super_) {
   _.init = function(ch, html) {
-    super_.init.call(this, ch, '<span>'+(html || ch)+'</span>');
+    this.ch = ch; // MaThSpACe hacK - Thousand seperator
+    return super_.init.call(this, ch, '<span>'+(html || ch)+'</span>');
+  };
+  _.finalizeTree = _.siblingDeleted = _.siblingCreated = function(opts, dir) {
+    // MaThSpACe hacK
+    // Thousand seperator
+    if (rSingleDigit.test(this.ch)) {
+      var str = this.ch;
+      for (var l = this[L]; l instanceof VanillaSymbol; l = l[L]) {
+        str = l.ch + str;
+      }
+      for (var r = this[R]; r instanceof VanillaSymbol; r = r[R]) {
+        str += r.ch
+      }
+
+      // Remove any existing separators...
+      Fragment(l[R] || this.parent.ends[L], r[L] || this.parent.ends[R]).each(function(el) {
+        el.jQ.removeClass('thousands-separator-before thousands-separator-after');
+      });
+
+      // TODO: use single digit check...
+      // Let's find the longest sequence of numbers before the decimal point.
+      var firstDigitEl = null;
+      var lastDigitEl = null;
+      Fragment(l[R] || this.parent.ends[L], r[L] || this.parent.ends[R]).each(function(el) {
+        if (!firstDigitEl) {
+          firstDigitEl = el;
+        }
+        if (el.ch === '.') { // TODO: more efficient way...
+          return false; // break the loop
+        }
+        lastDigitEl = el;
+      });
+
+      // Count each digit, and add the thousands separator on every third digit.
+      for (var i = 0, digit = lastDigitEl; digit !== firstDigitEl; i += 1, digit = digit[L]) {
+        if (i !== 0 && i % 3 === 0) {
+          digit.jQ.addClass('thousands-separator-after');
+        }
+      }
+      if ((i !== 0) && (i % 3 === 0)) {
+        digit.jQ.addClass('thousands-separator-after');
+      }
+
+      firstDigitEl = null;
+      lastDigitEl = null;
+      var hasPassedDecimalPoint = false;
+      Fragment(l[R] || this.parent.ends[L], r[L] || this.parent.ends[R]).each(function(el) {
+        if (el.ch === '.') {
+          hasPassedDecimalPoint = true;
+        }
+        if (!hasPassedDecimalPoint) {
+          return true;  // continue the loop
+        }
+        lastDigitEl = el;
+        if (!firstDigitEl) {
+          firstDigitEl = el;
+          return true;
+        }
+      });
+
+      for (var j = 0, digit = lastDigitEl; digit !== firstDigitEl; j += 1, digit = digit[L]) {
+        if (j !== 0 && j % 3 === 0) {
+          digit.jQ.addClass('thousands-separator-after');
+        }
+      }
+    }
   };
 });
 var BinaryOperator = P(Symbol, function(_, super_) {
