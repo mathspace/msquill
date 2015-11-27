@@ -1,0 +1,8 @@
+.math_input_label {
+    position: absolute;
+    color: #888;
+    font-size: 17px;
+    font-family: "Museo Sans", Helvetica, Arial, sans-serif;
+    display: inline-block;
+    z-index: 1;      /* Fix the box-shadow  do not display in IE8 issue, CSS3 pie layer will interference it  */
+}

@@ -1,0 +1,45 @@
+@import "../../../../static/css/bootstrap3-flat/variables";
+
+
+mc-latex-editor {
+    display: inline-block;
+    position: relative;
+    .math-input-label {
+        position: absolute;
+        display: inline-block;
+        color: #888;
+        font-size: 17px;
+        white-space: nowrap;
+        font-family: "Museo Sans", Helvetica, Arial, sans-serif;
+    }
+    .mathquill-container {
+        display: inline-block;
+        margin: 0;
+        vertical-align: middle;
+        position: relative;
+        min-height: 26px;
+        min-width: 17px;
+        padding: 4px 3px 2px;
+        .mathquill-element {
+          border: 0;
+          width:100%;
+          height: 100%;
+          display: block;
+        }
+    }
+    .mathquill-container-border {
+      border: 2px solid $gray;
+    }
+    .mathquill-container-inline-editable {
+      border: 0 !important;
+    }
+    .prefix, .suffix {
+        padding: 0 4px 0;
+        display: inline-block;
+
+        vertical-align: middle;
+        font-family: "Cambria","Times New Roman",Times,serif;
+        position: relative;
+    }
+}
+

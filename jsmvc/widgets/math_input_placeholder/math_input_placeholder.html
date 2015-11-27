@@ -1,0 +1,114 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+  <title>math_input_placeholder</title>
+
+  <style>
+    #MathQuillAnswer{
+      width: 220px;
+    }
+    .short-input {
+      width: 160px !important;
+    }
+  </style>
+
+</head>
+<body>
+
+
+<h3> Test Math input placeholder widget </h3>
+<div class="subproblem-history">
+  <div class="instruction" data-toolbar-config="">
+  </div>
+</div>
+
+
+<div>
+  <div class="disabled">
+    <div class="">
+
+      <section>
+        <div class="toolbar-container light-keys clearfix" id="toolbar-container">
+        </div>
+      </section>
+
+      <section class="field-input input">
+
+        <input id="ProblemAnswer"  class='text' type="text" name="answer0" value="" />
+        <div class="prefix"></div>
+        <div id="MathQuillAnswer"  class="text"></div>
+        <div class="suffix"></div>
+        <button class="btn-enter enter" type="button" name="action" value="answer">
+          <span>ENTER</span>
+        </button>
+      </section>
+
+    </div>
+  </div>
+
+</div>
+
+
+<div>Checks</div>
+<ul>
+  <li>The placeholder should appear same position of the text after you type in</li>
+  <li>Click on the toolbar, the placeholder should disappear</li>
+  <li>Type in any letter, the placeholder should disappear</li>
+</ul>
+
+
+
+
+<div>
+  <div class="disabled">
+    <div class="">
+
+      <section>
+        <div class="toolbar-container light-keys clearfix" >
+        </div>
+
+      </section>
+
+      <section class="field-input input">
+
+        <input id="ProblemAnswer"  class='text' type="text" name="answer0" value="" />
+        <div class="prefix"></div>
+        <div id="MathQuillAnswer"  class="text short-input"></div>
+        <div class="suffix"></div>
+        <button class="btn-enter enter" type="button" name="action" value="answer">
+          <span>ENTER</span>
+        </button>
+      </section>
+
+    </div>
+  </div>
+
+</div>
+
+
+
+<div>Checks</div>
+<ul>
+  <li>The placeholder text do not exceeds the input</li>
+
+</ul>
+
+
+<script type='text/javascript' src='../../require-load.js'></script>
+<script>
+  require([
+      'jquery',
+      'widgets/math_input_placeholder/math_input_placeholder'
+      ], function($) {
+
+        $(document).ready(function(){
+          // todo: Add updated tests
+          //$('body').widgets_answer_bar();
+          //Widgets.AnswerBar.expand('worked-solution');
+
+        });
+
+      });
+</script>
+</body>
+</html>

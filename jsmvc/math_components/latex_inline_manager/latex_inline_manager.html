@@ -1,0 +1,84 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <title>math_components/latex_inline_manager</title>
+    <link type="text/css" rel="stylesheet"
+          href="../../../css/bootstrap3/bootstrap.css">
+    <link type="text/css" rel="stylesheet"
+          href="../../../css/bootstrap3-flat/flat-ui.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>math_components/latex_inline_manager</h1>
+
+</div>
+
+<script type="text/mustache" id="exampleAppTemplate">
+    <h2>Test case 2</h2>
+    <p>Only inlines</p>
+    <mc-latex-inline-manager values='{values}' layout='{template}'></mc-latex-inline-manager>
+
+</script>
+<script type="text/mustache" id="exampleAppTemplate2">
+    <h2>Test case 1</h2>
+    <p>Inline editalbes</p>
+    <mc-latex-inline-manager values='{datum.values}' layout='{template}'></mc-latex-inline-manager>
+    <p>The value for this is (one way bound)<textarea style="width: 580px;" type="text" readonly>{{resultAsString}}</textarea>
+    </p>
+</script>
+
+<script type="text/javascript" src="../../require-load.js"></script>
+<script type="text/javascript">
+require([
+    'jquery',
+    'can/util/jquery',
+    'can/map',
+    'can/map/define',
+    'math_components/latex_inline_manager/latex_inline_manager'],
+function($, can) {
+
+    $(document).ready(function() {
+
+
+         var data2 = new can.Map({
+            resultAsString: function() {
+                return JSON.stringify(this.attr('datum.values').attr());
+            },
+            datum: {
+                values: {
+                    "1": {"substatus": "correct", "value": "\\editable{}+10=\\frac{\\editable{}}{12}+1"},
+                    "2": {"substatus": "correct", "value": ""}
+                }
+            },
+            template: '<mc-answer data-key="1"></mc-answer><mc-answer data-key="2"></mc-answer>'
+        });
+        var template2 = can.view('#exampleAppTemplate2', data2);
+        $('.container').append(template2);
+
+
+        var data = new can.Map({
+            values: {
+                "1": {"substatus": "correct", "value": ""},
+                "3": {"substatus": "correct", "value": ""},
+                "2": {"substatus": "correct", "value": ""},
+                "5": {"substatus": "correct", "value": ""},
+                "4": {"substatus": "correct", "value": ""},
+                "6": {"substatus": "correct", "value": ""}
+            },
+            template: '<table border="1" cellpadding="1" cellspacing="1" class="calculation">\n<tbody>\n<tr>\n<td>&nbsp;</td>\n<td><mc-answer data-key="5"></mc-answer></td>\n<td>&nbsp;</td>\n<td><mc-answer data-key="3"></mc-answer></td>\n<td>&nbsp;</td>\n<td>&nbsp;</td>\n</tr>\n<tr>\n<td>&nbsp;</td>\n<td>0</td>\n<td>.</td>\n<td><span class="math-inline">2</span></td>\n<td>&nbsp;</td>\n<td>&nbsp;</td>\n</tr>\n<tr>\n<td>+</td>\n<td>0</td>\n<td>.</td>\n<td><span class="math-inline">2</span></td>\n<td><span class="math-inline">9</span></td>\n<td>&nbsp;</td>\n</tr>\n<tr>\n<td>+</td>\n<td>0</td>\n<td>.</td>\n<td><span class="math-inline">8</span></td>\n<td><span class="math-inline">9</span></td>\n<td><span class="math-inline">1</span></td>\n</tr>\n<tr class="total">\n<td>&nbsp;</td>\n<td><mc-answer data-key="6"></mc-answer></td>\n<td><font class="Apple-style-span" face="Courier New, courier, typewriter">.</font></td>\n<td><mc-answer data-key="4"></mc-answer></td>\n<td><mc-answer data-key="2"></mc-answer></td>\n<td><mc-answer data-key="1"></mc-answer></td>\n</tr>\n</tbody>\n</table>'
+        });
+
+        var template = can.view('#exampleAppTemplate', data);
+        $('.container').append(template);
+
+
+
+
+
+    });
+});
+</script>
+
+</body>
+</html>

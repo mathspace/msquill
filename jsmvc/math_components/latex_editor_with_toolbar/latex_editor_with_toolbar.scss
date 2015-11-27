@@ -1,0 +1,17 @@
+mc-latex-editor-with-toolbar {
+  .latex-input-with-prefix-suffix {
+    .prefix, .suffix {
+      display: inline-block;
+      vertical-align: middle;
+      position: relative;
+    }
+
+  }
+  > mc-latex-editor {
+      // On Desktop, MathInput will set the width to 266px,
+      // so no impact for the increase
+      // On mobile, this is the minimum width required for
+      // displaying placeholder text in one line.
+      min-width: 230px;
+  }
+}
