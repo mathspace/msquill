@@ -25,11 +25,15 @@ Controller.open(function(_) {
       function mouseup(e) {
         cursor.blink = blink;
         if (!cursor.selection) {
-          if (ctrlr.editable) {
+          /** MatHSPaCE HacK */
+          /** Lock the cursor inside the nested editable field */
+          var hasEditableLatex = ctrlr.API.latex().indexOf('\\editable{') > -1;
+          if (ctrlr.editable && !hasEditableLatex) {
             cursor.show();
           }
           else {
             textareaSpan.detach();
+            cursor.hide();
           }
         }
 
