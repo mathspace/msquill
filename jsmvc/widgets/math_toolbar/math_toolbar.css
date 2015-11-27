@@ -1,0 +1,240 @@
+
+.math_toolbar {
+	padding: 5px 0 0 5px;
+
+  /* Appear translucent, animate to full opacity on mouse hover */
+   opacity: 0.4;
+  -webkit-transition: opacity linear 0.2s;
+  -moz-transition: opacity linear 0.2s;
+  transition: opacity linear 0.2s;
+}
+/* This overrides the 'hidden' overflow from clearfix and keeps
+   dropdown toolbars visible */
+.math_toolbar.clearfix {
+    overflow: visible;
+}
+  .math_toolbar:hover {
+    opacity: 1.0;
+  }
+
+.math_toolbar_button_strip {
+    height: 80px;
+	list-style:none;
+	padding:0;
+	margin:0;
+}
+
+.math_toolbar .group {
+	position:absolute;
+	top: -51px;
+	left:-5px;
+
+	margin:0;
+	z-index:200;
+    display: none;
+    width: 165px;
+	overflow:visible;
+
+    border-radius: 3px 3px 3px 3px;
+
+    background:#d6dbdf;
+    border-top:1px solid #ddd;
+}
+.math_toolbar .group.top {
+    background:#d6dbdf;
+    border-top: none;
+    border-bottom: 1px solid #c0c0c0;
+}
+    .math_toolbar .group .button {
+        border: 0;
+        margin: 3px 0 1px;
+    }
+
+.math_toolbar .group_connector{
+	position:absolute;
+	bottom:-32px;
+	left:0px;
+	width:35px;
+	height:32px;
+	z-index:1000;
+
+	border-radius:0 0 3px 3px;
+	-moz-border-radius:0 0 3px 3px;
+	-webkit-border-radius:0 0 3px 3px;
+
+    background:#d6dbdf;
+}
+
+.math_toolbar .top .group_connector {
+	top: -30px;
+    height:30px;
+
+    background:#d6dbdf;
+
+	border-radius:3px 3px 0 0;
+	-moz-border-radius:3px 3px 0 0;
+	-webkit-border-radius:3px 3px 0 0;
+}
+
+.math_toolbar .gap{
+	width:6px;
+	list-style:none;
+
+	padding:0;
+	margin:0;
+	height:35px;
+	vertical-align:top;
+
+	display: -moz-inline-stack;
+	display: inline-block;
+	zoom: 1;
+	*display: inline;
+}
+.math_toolbar .button{
+	position:relative;
+	padding:0;
+	margin:5px -1px 5px 0px;
+	width:30px;      /* Reduced from 35px */
+	height:32px;      /* Reduced from 35px */
+	vertical-align: top;
+
+	display: -moz-inline-stack;
+	display: inline-block;
+	zoom: 1;
+	*display: inline;
+
+	text-decoration:none;
+	text-align:center;
+
+	border-radius:1px 1px 1px 1px;
+	-moz-border-radius:1px 1px 1px 1px;
+	-webkit-border-radius:1px 1px 1px 1px;
+
+	cursor:pointer;
+
+	color:#3A3D42;
+    background: #d6dbdf;
+    border-bottom: 1px solid #c0c0c0;
+}
+.math_toolbar .button.buttonset_first {
+	border-radius:3px 1px 1px 3px;
+	-moz-border-radius:3px 1px 1px 3px;
+	-webkit-border-radius:3px 1px 1px 3px;
+}
+.math_toolbar .button.buttonset_last {
+	border-radius:1px 3px 3px 1px;
+	-moz-border-radius:1px 3px 3px 1px;
+	-webkit-border-radius:1px 3px 3px 1px;
+}
+.math_toolbar .button.buttonset_first.buttonset_last {
+	border-radius:3px 3px 3px 3px;
+	-moz-border-radius:3px 3px 3px 3px;
+	-webkit-border-radius:3px 3px 3px 3px;
+}
+
+.math_toolbar .button.has_group {
+	padding-top:0;
+    height:33px;
+    border-bottom: 3px double #c0c0c0;
+}
+
+
+.math_toolbar .button:hover,
+.math_toolbar .button.active {
+    z-index:99;
+
+	cursor:pointer;
+}
+    .math_toolbar .button.has_group:hover,
+    .math_toolbar .button.has_group.active {
+
+    }
+
+
+.math_toolbar .invsin{ width:48px; }
+.math_toolbar .invsin > .button_text{ width:48px; }
+.math_toolbar .invcos{ width:48px; }
+.math_toolbar .invcos > .button_text{ width:48px; }
+.math_toolbar .invtan{ width:48px; }
+.math_toolbar .invtan > .button_text{ width:48px; }
+.math_toolbar .log{ width:48px; }
+.math_toolbar .log > .button_text{ width:48px; }
+.math_toolbar .sin, .math_toolbar .cos, .math_toolbar .tan{ width:36px; }
+.math_toolbar .mixedfrac{ width:36px; }
+.math_toolbar .sqrt, .math_toolbar .sqrt3{ width:36px; }
+.math_toolbar .parens, .math_toolbar .ln{ width:36px; }
+
+.math_toolbar .button_text {
+	width:100%;
+	height:100%;
+	margin:0;
+	padding:0;
+    opacity:0.8;
+    
+    /* so it is visible even when .group_connector is visible */
+    z-index:9999;
+    position:absolute;
+}
+
+/* button sprite can be switched based on language */
+.math_toolbar-lang-en .button_text, .math_toolbar-lang-undefined .button_text {
+	background:url(resources/images/locales/en/math_button_sprite.png) no-repeat 0 0 transparent;
+}
+.math_toolbar-lang-fr .button_text {
+	background:url(resources/images/locales/fr/math_button_sprite.png) no-repeat 0 0 transparent;
+}
+
+.math_toolbar .add > .button_text{ 		background-position:center 3px; }
+.math_toolbar .subtract > .button_text{ background-position:center -33px; }
+.math_toolbar .times > .button_text{ 	background-position:center -67px; }
+.math_toolbar .divide > .button_text{ 	background-position:center -102px; }
+.math_toolbar .equals > .button_text{ 	background-position:center -139px; }
+.math_toolbar .notequals > .button_text{background-position:center -175px; }
+.math_toolbar .lessthan > .button_text{ background-position:center -209px; }
+.math_toolbar .greaterthan > .button_text{ background-position:center -244px; }
+.math_toolbar .lessthaneq > .button_text{ background-position:center -278px; }
+.math_toolbar .parens > .button_text{ 	background-position:center -312px; }
+.math_toolbar .power > .button_text{ 	background-position:center -384px; }
+.math_toolbar .frac > .button_text{ 	background-position:center -416px; }
+.math_toolbar .mixedfrac > .button_text{ background-position:center -452px; }
+.math_toolbar .sqrt > .button_text{ 	background-position:center -488px; }
+.math_toolbar .sqrt3 > .button_text{ 	background-position:center -524px; }
+.math_toolbar .sin > .button_text{ 		background-position:center -560px; }
+.math_toolbar .cos > .button_text{ 		background-position:center -594px; }
+.math_toolbar .tan > .button_text{ 		background-position:center -630px; }
+.math_toolbar .invsin > .button_text{ 	background-position:center -664px; }
+.math_toolbar .invcos > .button_text{ 	background-position:center -699px; }
+.math_toolbar .invtan > .button_text{ 	background-position:center -734px; }
+.math_toolbar .log > .button_text{ 		background-position:center -769px; }
+.math_toolbar .ln > .button_text{ 		background-position:center -804px; }
+.math_toolbar .pi > .button_text{ 		background-position:center -839px; }
+.math_toolbar .alpha > .button_text{ 	background-position:center -874px; }
+.math_toolbar .beta > .button_text{ 	background-position:center -907px; }
+.math_toolbar .gamma > .button_text{ 	background-position:center -943px; }
+.math_toolbar .delta > .button_text{ 	background-position:center -980px; }
+.math_toolbar .theta > .button_text{ 	background-position:center -1014px; }
+.math_toolbar .Delta > .button_text{ 	background-position:center -1049px; }
+.math_toolbar .Sigma > .button_text{ 	background-position:center -1085px; }
+.math_toolbar .simeq > .button_text{ 	background-position:center -1120px; }
+.math_toolbar .approx > .button_text{ 	background-position:center -1154px; }
+.math_toolbar .cong > .button_text{ 	background-position:center -1187px; }
+.math_toolbar .parallel > .button_text{ background-position:center -1225px; }
+.math_toolbar .perp > .button_text{ 	background-position:center -1259px; }
+.math_toolbar .degrees > .button_text{ 	background-position:center -1293px; }
+.math_toolbar .angle > .button_text{ 	background-position:center -1329px; }
+.math_toolbar .triangle > .button_text{ background-position:center -1364px; }
+.math_toolbar .greaterthaneq > .button_text{ background-position:center -1398px; }
+.math_toolbar .mins > .button_text{ background-position:center -1441px; }
+.math_toolbar .secs > .button_text{ background-position:center -1474px; }
+.math_toolbar .pm > .button_text{ background-position:center -1507px; }
+.math_toolbar .iscommon > .button_text{ background-position:center -1546px; }
+.math_toolbar .binomial > .button_text{ background-position:center -1582px; }
+.math_toolbar .ncr > .button_text{ background-position:center -1612px; }
+.math_toolbar .factorial > .button_text{ background-position:center -1645px; }
+.math_toolbar .similar> .button_text{ background-position:center -1673px; }
+.math_toolbar .logb> .button_text{ background-position:center -1705px; }
+.math_toolbar .subscript> .button_text{ background-position:center -1738px; }
+.math_toolbar .abs> .button_text{ background-position:center -1768px; }
+.math_toolbar .omega > .button_text{ background-position:center -1806px; }
+.math_toolbar .iscommon { width: 52px; }
+

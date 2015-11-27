@@ -1,0 +1,46 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <title>math_components/latex_toolbar</title>
+    <link type="text/css" rel="stylesheet" href="../../../css/bootstrap3/bootstrap.css">
+    <link type="text/css" rel="stylesheet" href="../../../css/bootstrap3-flat/flat-ui.css">
+</head>
+<body>
+<div class="container">
+    <h1>math_components/latex_toolbar</h1>
+
+</div>
+<div id="log"></div>
+
+<script id="exampleTemplate1" type="text/mustache">
+    <mc-latex-toolbar toolbar='{toolbar}'></mc-latex-toolbar>
+</script>
+
+
+<script type="text/javascript" src="../../require-load.js"></script>
+<script type="text/javascript">
+require([
+    'jquery',
+    'can/util/jquery',
+    'can/component',
+    'math_components/latex_toolbar/latex_toolbar'],
+function($, can) {
+
+    var template1 = can.view('#exampleTemplate1');
+    var data = new can.Map({
+        toolbar: ['AUTO_EQUTION']
+    });
+
+    $('.container').append(template1(data));
+
+    $('body').on('buttonClick.mc-latex-toolbar', function(e, command){
+
+        var $logMessage = $('<p>').text('toolbar button clicked: ' + command.name + ' ' + command.args);
+        $('#log').prepend($logMessage);
+    });
+
+});
+
+</script>
+</body>
+</html>

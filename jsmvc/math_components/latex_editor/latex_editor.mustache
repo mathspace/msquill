@@ -1,0 +1,12 @@
+<div class="math-input-label {{^showPlaceholder}}invisible{{/showPlaceholder}}">
+    {{placeholderText}}
+</div>
+<div class="mathquill-container {{#if showBorder}}mathquill-container-border{{/if}} {{#if hasInlineEditable}}mathquill-container-inline-editable{{/if}}">
+    {{!The MathQuill element needs to be separated from the Mustache-bound
+    container element. Otherwise MathQuill changes to the class attribute
+    will be overriden when Mustache-bound changes occur.}}
+    <div class="mathquill-element">{{latex}}</div>
+</div>
+{{#if isInFocus}}
+    <uc-shortcut-keys keys='{keyCommandsList}'></uc-shortcut-keys>
+{{/if}}

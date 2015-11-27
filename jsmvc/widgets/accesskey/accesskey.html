@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+	<head>
+		<title>accesskey</title>
+        <style type='text/css'>
+            body {font-family: verdana}
+            .error {border: solid 1px red;}
+            .error_text { color: red; font-size: 10px;}
+            td {padding: 3px;}
+
+            .highlight {
+                background-color: #c0c0ff;
+            }
+            .ok {
+                background-color: #c0ffc0;
+            }
+            .fail {
+                background-color: #bb0000;
+            }
+        </style>
+	</head>
+	<body>
+	    <h1>widgets/accesskey</h1>
+        <ul>
+            <li>Include plugins and files in <i>widgets/accesskey/accesskey.js</i>.</li>
+            <li>Change to production mode by changing <i>development</i> to <i>production</i> in this file.</li>
+            <li>Test keys: see keyboard layout below</li>
+			<li>Tested in:
+			<ul>
+                <table>
+                    <tr><th>Browser</th><th>Status</th><th>Failures</th></tr>
+                    <tr><td>Mac/Safari 5.12</td><td class="ok">OK</td><td>`</td></tr>
+                    <tr><td>Mac/Chrome 16</td><td class="ok">OK</td><td>`</td></tr>
+                    <tr><td>Mac/Firefox 7.01</td><td class="ok">OK</td><td>??</td></tr>
+                    <tr><td>Mac/Firefox 8.01</td><td class="ok">OK</td><td>None</td></tr>
+                    <tr><td>Mac/Firefox 9.01</td><td class="ok">OK</td><td>None</td></tr>
+                    <tr><td>WinXP/Firefox 7.01</td><td class="ok">OK</td><td>??</td></tr>
+                    <tr><td>WinXP/Firefox 8.01</td><td class="ok">OK</td><td>??</td></tr>
+                    <tr><td>WinXP/Chrome 15</td><td class="ok">OK</td><td></td></tr>
+                    <tr><td>WinXP/MSIE 8</td><td class="ok">OK</td><td>D</td></tr>
+                    <tr><td>WinXP/Safari 5.12</td><td class="ok">OK</td><td>??</td></tr>
+                    <tr><td>WIN7/MSIE 8</td><td class="fail">Fail</td><td>D</td></tr>
+                    <tr><td>Win7/MSIE 9</td><td class="ok">OK</td><td>Shows Tooltip at bottom left of page</td></tr>
+                    <tr><td>Win7/Firefox 7.01</td><td class="ok">OK</td><td>None</td></tr>
+                    <tr><td>Win7/Firefox 8.01</td><td class="ok">OK</td><td>None</td></tr>
+                    <tr><td>Win7/Chrome 15</td><td class="ok">OK</td><td>EDF</td></tr>
+                    <tr><td>Win7/Chrome 16</td><td class="ok">OK</td><td>EDF</td></tr>
+                    <tr><td>Linux/Firefox 7.01</td><td class="ok">OK</td><td>??</td></tr>
+                    <tr><td>Mac/Opera 11.52</td><td class="ok">OK</td><td>Opera uses the same key code for C and M, Y and I. And ` is broken</td></tr>
+					<tr><td>WinXP/Opera 11.60</td><td class="ok">OK</td><td></td></tr>
+					<tr><td>Win7/Opera 11.61</td><td class="ok">OK</td><td></td></tr>
+                </table>
+                
+			</ul>
+			</li>
+        </ul>
+
+<div id="keys"></div>
+<div id="info"></div>
+<!--<a href="http://google.com/" accesskey="F">Google (F)</a> -->
+
+<div id="keytest"></div>
+
+<div id="controls">
+    <button id="addC">Enable C</button>
+    <button id="removeC">Disable C</button>
+</div>
+
+        <script type='text/javascript' src='../../require-load.js'></script>
+        <script type='text/javascript'>
+        require(['jquery', 'widgets/accesskey/accesskey' ], function($) {
+            $(document).ready(function() {
+
+                // alpha numeric keys that are typically available on a laptop keyboard
+                var kblayout = [
+                    ['`', '1','2','3','4','5','6','7','8','9','0','-','='],
+                    ['Q','W','E','R','T','Y','U','I','O','P','[',']','\\'],
+                    ['A','S','D','F','G','H','J','K','L',';','\''],
+                    ['Z','X','C','V','B','N','M',',','.','/']
+                ];
+                // keys to bind
+                var boundKeys = [];
+                $.each(kblayout, function(i,row){
+                    $.each(row, function(i,key){
+                        boundKeys.push(key);
+                    });
+                });
+
+                // initialise widgets_accesskey
+				var $accesskey = $('#keys')
+                    .widgets_accesskey({keys: boundKeys})
+                    .bind('key', function(e, key) {
+
+                        // MSIE crashes if you alert from here sometimes.
+                        // alert('pressed: ' + key);
+
+                        var code = key.toLowerCase().charCodeAt(0),
+                            cls = "key-"+code,
+                            $key = $("td."+cls);
+                        $key.css('background', '#c0c0ff');
+                        setTimeout(function(){
+                            $key.css('background', '#c0ffc0');
+                        },200);
+
+				    });
+
+                $("#addC").click(function(){
+                    $accesskey.widgets_accesskey('addKey', 'C');
+                });
+
+                $("#removeC").click(function(){
+                    $accesskey.widgets_accesskey('removeKey', 'C');
+                });
+
+				$('#keys').widgets_accesskey('modifier', function(m){
+					$('#info').text('Press '+m + ' + key');
+				});
+
+                // Build keyboard layout
+                var $keyb = $("<table></table>").appendTo($('#keytest'));
+                $.each(kblayout, function(i,row) {
+                    var $tr = $('<tr></tr>').appendTo($keyb);
+                    $.each(row, function(i,char) {
+                        var code = char.toLowerCase().charCodeAt(0);
+                        var cls = "key-"+code;
+                        $('<td class="'+cls+'">'+char+'</td>').appendTo($tr);
+                    });
+                });
+			});
+        });
+		</script>
+	</body>
+</html>

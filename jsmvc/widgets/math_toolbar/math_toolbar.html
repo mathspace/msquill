@@ -1,0 +1,290 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+	<head>
+		<title>math_toolbar</title>
+        <link type="text/css" rel="stylesheet" href="../../../css/bootstrap3/bootstrap.css">
+    <link type="text/css" rel="stylesheet" href="../../../css/bootstrap3-flat/flat-ui.css">
+        <style type='text/css'>
+            body {font-family: verdana}
+            .error {border: solid 1px red;}
+            .error_text { color: red; font-size: 10px;}
+            td {padding: 3px;}
+            p.note {
+                font-size:12px;
+                font-style:italic;
+                color:#999;
+            }
+
+            form.example {
+                padding:3px 10px;
+                width:800px;
+                background: #f0f0f0;
+                margin-bottom:20px;
+            }
+            
+            .math_input {
+                min-width:200px;
+                margin:5px;
+                clear:both;
+                background:#fff;
+            }
+
+            .form_input {
+                margin:5px;
+                height:20px;
+                width: 200px;
+                display:block;
+                float:left;
+                clear:both;
+            }
+            .submit {
+                float:left;
+            }
+            .clear {
+                clear:both;
+                height:1px;
+            }
+
+
+        kbd {
+            font-family: "Lucida Grande", "Lucida Sans", Arial, sans-serif;
+            font-size: 13px;
+            line-height: 13px;
+            border:1px solid #aaa;
+            padding: 3px 4px;
+            border-radius:3px;
+            -webkit-border-radius:3px;
+            color:#aaa;
+        }
+
+            h3 {
+                font-size:12px;
+            }
+
+        .font-show {
+            padding:3px 10px;
+            width:800px;
+            background: #f0f0f0;
+            margin-bottom:20px;
+        }
+        .font-show .math-symbol {
+            width: 555px;
+        }
+        </style>
+	</head>
+<body>
+
+	<form class="example" action="">
+		<div id="math_toolbar1" class="math_toolbar"></div>
+		<div>
+
+            <h3>Example: top menu avoid window edges</h3>
+            <p class='note'>Note: This toolbar does not have enough space at the top. So, hover will automatically determine and show at bottom instead.
+            </p>
+            <div id='math_input1' class='math_input'></div>
+            <div class="clear"></div>
+            <input id="form_input1" class="form_input">
+            <input type="submit" class="submit" value="submit form / output latex">
+        </div>
+        <div class="clear"></div>
+    </form>
+
+	<form class="example" action="">
+        <h3>Example: toolbar with bound input field</h3>
+		<div id="math_toolbar2" class="math_toolbar"></div>
+		<div>
+            <div id='math_input2' class='math_input'>+\times\times\frac{ }{ }</div>
+            <div class="clear"></div>
+            <input id="form_input2" class="form_input">
+            <input type="submit" class="submit" value="submit form / output latex">
+        </div>
+        <div class="clear"></div>
+	</form>
+
+
+	<form class="example" action="">
+        <h3>Example: display toolbar menus in French, tooltips are translated only when viewing through Django</h3>
+		<div id="math_toolbar3" class="math_toolbar"></div>
+        <div class="clear"></div>
+	</form>
+
+	<br />
+
+    <div class="font-show">
+        <div class="text-and-letters">
+            <h2>Text and letters</h2>
+            <div class="font-test">abcdefghijklmnopqrstuvwxyz</div>
+            <div class="font-test">ABCDEFGHIJKLMNOPQRSTUVWXYZ</div>
+        </div>
+        <div class="numbers">
+            <h2>Numbers</h2>
+            <div class="font-test">01234567890</div>
+        </div>
+        <div class="math-symbol">
+            <h2>Math symbols</h2>
+            <div class="font-test">+-\times\div \pm =\ne <>\le \ge </div>
+            <div class="font-test">\sqrt{1} \sqrt[3]{2} </div>
+            <div class="font-test">\sin \cos \tan \sin ^{-1}\cos ^{-1}\tan ^{-1}\log \ln </div>
+            <div class="font-test">\pi \alpha \beta \gamma \delta \theta \omega</div>
+            <div class="font-test">\simeq \approx \cong \text{is common}\deg '"\parallel \perp \angle \triangle </div>
+            <div class="font-test">a^b+ab\frac{d}{c}+\left(\frac{1}{2}\right)+2x\left(2\right) </div>
+        </div>
+    </div>
+
+
+	<div style="border:2px dashed blue; padding:5px;">
+		<h1>Purpose</h1>
+		This plugin will convert a simple div into a button strip clicking which will add latex code to the attached input text area. Example code:
+		<pre><code>
+	$("#math_toolbar").math_toolbar({
+		input: $("#math_input"),
+		buttons: [
+			"add",
+			"subtract",
+			"-",
+			"frac",
+            "mixedfrac",
+			"-",
+			["sin", "cos", "tan"]
+		],
+		onLoad: function(toolbar){},
+		beforeButtonClick: function(event, toolbar, button, latex){},
+		afterButtonClick: function(event, toolbar, button, latex){}
+	});
+		</code></pre>
+		<h3>Options</h3>
+		<p>
+			<ul>
+				<li><b>input</b> - an input textarea id or jquery element</li>
+				<li><b>buttons</b> - an array of button names, button groups (as sub array) or "-" to add gap</li>
+			</ul>
+		</p>
+		<h3>Events</h3>
+		<p>
+			<ul>
+				<li><b>onLoad</b> - event which is fired after initializaton
+					<ul>
+						<li>toolbar - the jquery element of the toolbar itself</li>
+					</ul>
+				</li>
+				<li><b>beforeButtonClick</b> - event which is fired when a button is clicked. Provides following params
+					<ul>
+						<li>event - the click event object</li>
+						<li>toolbar - the jquery toolbar element itself</li>
+						<li>button - the jquery button element</li>
+						<li>latex - th latext code attached with this button</li>
+					</ul>
+					Return false to cancel the event activity
+				</li>
+				<li><b>afterButtonClick</b> - event which is fired after a button is clicked. Provides following params
+					<ul>
+						<li>event - the click event object</li>
+						<li>toolbar - the jquery toolbar element itself</li>
+						<li>button - the jquery button element</li>
+						<li>latex - th latext code attached with this button</li>
+					</ul>
+				</li>
+			</ul>
+		</p>
+	</div>
+    <script type='text/javascript'
+            src='../../require-load.js'>
+    </script>
+    <script type='text/javascript'>
+
+    require([
+        'jquery',
+        'widgets/math_toolbar/math_toolbar'
+        ], function($){
+
+        $(document).ready(function(){
+
+            var $input1 = $('#math_input1').widgets_math_input({field: $('#form_input1')});
+            var $input2 = $('#math_input2').widgets_math_input({field: $('#form_input2')});
+
+            $("#math_toolbar1").widgets_math_toolbar({
+                input: $input1,
+                buttons: [
+                    ["add", "subtract", "times", "divide","pm"],
+                    ["equals", "notequals", "lessthan", "greaterthan", "lessthaneq", "greaterthaneq"],
+                    "-",
+                    "parens",
+                    "power",
+                    "frac",
+                    "mixedfrac",
+                    ["sqrt", "sqrt3"],
+                    "-",
+                    ["sin", "cos", "tan"],
+                    ["invsin", "invcos", "invtan"],
+                    ["log", "ln"],
+                    ["pi", "alpha", "beta", "gamma", "delta", "theta"],
+                    ["simeq", "approx", "cong", "iscommon"],
+                    ["degrees", "mins", "secs", "parallel", "perp", "angle", "triangle"]
+                ],
+                onLoad: undefined,
+                beforeButtonClick: undefined,
+                afterButtonClick: undefined
+            });
+            $("#math_toolbar2").widgets_math_toolbar({
+                input: $input2,
+                buttons: [
+                    ["add", "subtract", "times", "divide","pm"],
+                    ["equals", "notequals", "lessthan", "greaterthan", "lessthaneq", "greaterthaneq"],
+                    "-",
+                    "binomial",
+                    "ncr",
+                    "factorial",
+                    "parens",
+                    "power",
+                    "frac",
+                    "mixedfrac",
+                    "-",
+                    "sqrt",
+                    "sqrt3",
+                    "-",
+                    ["sin", "cos", "tan"],
+                    ["invsin", "invcos", "invtan"],
+                    ["log", "ln"],
+                    ["pi", "alpha", "beta", "gamma", "delta", "theta", "omega"],
+                    ["simeq", "approx", "cong", "iscommon"],
+                    ["degrees", "mins", "secs", "parallel", "perp", "angle", "triangle"]
+                ],
+                onLoad: undefined,
+                beforeButtonClick: undefined,
+                afterButtonClick: undefined
+            });
+
+            $("#math_toolbar3").widgets_math_toolbar({
+                input: undefined,
+                buttons: [
+                    ["add", "subtract", "times", "divide","pm"],
+                    ["equals", "notequals", "lessthan", "greaterthan", "lessthaneq", "greaterthaneq"],
+                    "-",
+                    ["iscommon", "simeq", "approx", "cong"]
+                ],
+                lang: 'fr',
+                onLoad: undefined,
+                beforeButtonClick: undefined,
+                afterButtonClick: undefined
+            });
+
+            // Undo the hiding of the form inputs
+            $('.form_input').show();
+
+            // Disable browser handling of form submit, so we can see
+            // latex output of math input
+            $('form.example').submit(function(e){
+                return false;
+            });
+
+            $('.font-test', '.font-show').each(function(i){
+                $(this).widgets_math_input();
+            });
+
+        });
+    });
+    </script>
+</body>
+
+</html>
