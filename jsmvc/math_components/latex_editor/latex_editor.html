@@ -1,0 +1,70 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <title>math_components/latex_editor</title>
+    <link type="text/css" rel="stylesheet"
+          href="../../../css/bootstrap3/bootstrap.css">
+    <link type="text/css" rel="stylesheet"
+          href="../../../css/bootstrap3-flat/flat-ui.css">
+</head>
+<body>
+
+<div class="container">
+    <div style="display:none;" class="js-my-expression">y=\frac{1}{2}x^2-2x \left( \frac{a}{b \times c} \right) = \sqrt[n]{ \frac{a + b}{c} }</div>
+    <h1>math_components/latex_editor</h1>
+
+</div>
+
+<script type="text/mustache" id="exampleAppTemplate">
+    <p>display math:
+        <mc-latex-editor latex="{myExpression}"></mc-latex-editor>
+    </p>
+    <p>editable math:
+        <mc-latex-editor latex="{myExpression}" editable="{myEditable}"></mc-latex-editor>
+    </p>
+    <p><input type="text" can-value="{myExpression}"> as latex: {{ myExpression }}</p>
+
+    <h3>Test editable</h3>
+    <div>
+        <mc-latex-editor latex="{testEditable}" editable="true"></mc-latex-editor>
+        <span>Latex output</span>
+        <input can-value="{testEditable}" />
+    </div>
+    <h3>test thousands separators</h3>
+    <div>
+        <mc-latex-editor latex="1000 + 10000 + 100000 + 1000000" editable="true"></mc-latex-editor>
+        <br />
+        <mc-latex-editor latex="1.000 + 1.0000 + 1.00000 + 1.000000" editable="true"></mc-latex-editor>
+    </div>
+    <h3>test text wrapping</h3>
+    <div>
+        <div style="border: 1px solid blue; width: 150px;">
+            <mc-latex-editor latex="123123+3+123+12+312+3+12+312+3+124+33333333333333" editable="false"></mc-latex-editor>
+        </div>
+    </div>
+</script>
+
+<script type='text/javascript' src='../../require-load.js'></script>
+<script type='text/javascript'>
+require([
+    'jquery',
+    'can/util/jquery',
+    'can/view/bindings',
+    'can/view',
+    'math_components/latex_editor/latex_editor'],
+function($, can) {
+    $(document).ready(function() {
+        var data = new can.Map({
+            myExpression: $('.js-my-expression').html(),
+            myEditable: true,
+            testEditable: '\\editable{ } + 10'
+        });
+
+        var template = can.view('#exampleAppTemplate', data);
+        $('.container').append(template);
+    });
+});
+</script>
+
+</body>
+</html>

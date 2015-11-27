@@ -1,0 +1,6 @@
+mc-latex-editor-with-toolbar .latex-input-with-prefix-suffix .prefix, mc-latex-editor-with-toolbar .latex-input-with-prefix-suffix .suffix {
+  display: inline-block;
+  vertical-align: middle;
+  position: relative; }
+mc-latex-editor-with-toolbar > mc-latex-editor {
+  min-width: 230px; }

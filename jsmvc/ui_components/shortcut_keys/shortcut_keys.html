@@ -1,0 +1,131 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <title>ui_components/shortcut_keys</title>
+    <link type="text/css" rel="stylesheet" href="../../../css/bootstrap3/bootstrap.css">
+    <link type="text/css" rel="stylesheet" href="../../../css/bootstrap3-flat/flat-ui.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>ui_components/shortcut_keys</h1>
+
+    <h3>Test keyboard:</h3>
+    <table>
+        <tr>
+            <td>
+                <div id="components"></div>
+                <div id="keyboard"></div>
+            </td>
+            <td>
+                <p>
+                    Chrome/Win: ALT + [key]<br>
+                    Firefox/Win: SHIFT + ALT + [key]<br>
+                    IE/Win: ALT + [key]<br>
+                    Chrome/Mac: CTRL + OPT + [key]<br>
+                    Firefox/Mac: CTRL + OPT + [key]<br>
+                    Safari/Mac: CTRL + OPT + [key]
+                </p>
+            </td>
+        </tr>
+    </table>
+
+    <div id="keylog"></div>
+
+
+    <h3>Test results:</h3>
+    <table class="table table-bordered">
+        <tr><th>Browser</th><th>Status</th><th>Failures</th></tr>
+        <tr><td>Mac/Safari 5.12</td><td class="ok">OK</td><td>`</td></tr>
+        <tr><td>Mac/Chrome 16</td><td class="ok">OK</td><td>`</td></tr>
+        <tr><td>Mac/Firefox 7.01</td><td class="ok">OK</td><td>??</td></tr>
+        <tr><td>Mac/Firefox 8.01</td><td class="ok">OK</td><td>None</td></tr>
+        <tr><td>Mac/Firefox 9.01</td><td class="ok">OK</td><td>None</td></tr>
+        <tr><td>WinXP/Firefox 7.01</td><td class="ok">OK</td><td>??</td></tr>
+        <tr><td>WinXP/Firefox 8.01</td><td class="ok">OK</td><td>??</td></tr>
+        <tr><td>WinXP/Chrome 15</td><td class="ok">OK</td><td></td></tr>
+        <tr><td>WinXP/MSIE 8</td><td class="ok">OK</td><td>D</td></tr>
+        <tr><td>WinXP/Safari 5.12</td><td class="ok">OK</td><td>??</td></tr>
+        <tr><td>WIN7/MSIE 8</td><td class="fail">Fail</td><td>D</td></tr>
+        <tr><td>Win7/MSIE 9</td><td class="ok">OK</td><td>Shows Tooltip at bottom left of page</td></tr>
+        <tr><td>Win7/Firefox 7.01</td><td class="ok">OK</td><td>None</td></tr>
+        <tr><td>Win7/Firefox 8.01</td><td class="ok">OK</td><td>None</td></tr>
+        <tr><td>Win7/Chrome 15</td><td class="ok">OK</td><td>EDF</td></tr>
+        <tr><td>Win7/Chrome 16</td><td class="ok">OK</td><td>EDF</td></tr>
+        <tr><td>Linux/Firefox 7.01</td><td class="ok">OK</td><td>??</td></tr>
+        <tr><td>Mac/Opera 11.52</td><td class="ok">OK</td><td>Opera uses the same key code for C and M, Y and I. And ` is broken</td></tr>
+        <tr><td>WinXP/Opera 11.60</td><td class="ok">OK</td><td></td></tr>
+        <tr><td>Win7/Opera 11.61</td><td class="ok">OK</td><td></td></tr>
+    </table>
+</div>
+
+<script type="text/mustache" id="exampleAppTemplate">
+    <uc-shortcut-keys keys='{activatedKeys}'></uc-shortcut-keys>
+</script>
+
+<script type="text/javascript" src="../../require-load.js"></script>
+<script type="text/javascript">
+require([
+    'jquery',
+    'can/util/jquery',
+    'ui_components/shortcut_keys/shortcut_keys'
+], function($, can) {
+
+    $(document).ready(function() {
+
+        // Keys that are typically available on a laptop keyboard.
+        var kblayout = [
+            ['`', '1','2','3','4','5','6','7','8','9','0','-','='],
+            ['Q','W','E','R','T','Y','U','I','O','P','[',']','\\'],
+            ['A','S','D','F','G','H','J','K','L',';','\''],
+            ['Z','X','C','V','B','N','M',',','.','/']
+        ];
+        // Transform into list of keys to bind.
+        var boundKeys = [];
+        $.each(kblayout, function(i,row){
+            $.each(row, function(i,key){
+                boundKeys.push(key);
+            });
+        });
+
+        // Add an instance of the component.
+        $('#components').append(can.view('#exampleAppTemplate')(new can.Map({
+            activatedKeys: boundKeys
+        })));
+
+        // A second instance to test behavior when shortcut keys overlap.
+        $('#components').append(can.view('#exampleAppTemplate')(new can.Map({
+            activatedKeys: ['a', 'b', 'c', 'd']
+        })));
+
+        // Build keyboard layout.
+        var $keyb = $("<table class='table table-bordered'></table>").appendTo($('#keyboard'));
+        $.each(kblayout, function(i,row) {
+            var $tr = $('<tr></tr>').appendTo($keyb);
+            $.each(row, function(i,char) {
+                var code = char.toLowerCase().charCodeAt(0);
+                var cls = "key-"+code;
+                $('<td class="'+cls+'">'+char+'</td>').appendTo($tr);
+            });
+        });
+
+        // Listens to shortcut keys being activated...
+        $('body').bind('key.uc-shortcut-keys', function(e, key) {
+            // Visually flash the key in #keyboard.
+            var code = key.toLowerCase().charCodeAt(0),
+                cls = "key-"+code,
+                $key = $("td."+cls);
+            $key.css('background', '#c0c0ff');
+            setTimeout(function(){
+                $key.css('background', '#c0ffc0');
+            },200);
+
+            // Add a line to #keylog.
+            $('#keylog').append($('<p>').text(key + ' pressed'));
+        });
+    });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,34 @@
+/*$brand-primary;*/
+mc-latex-editor {
+  display: inline-block;
+  position: relative; }
+  mc-latex-editor .math-input-label {
+    position: absolute;
+    display: inline-block;
+    color: #888;
+    font-size: 17px;
+    white-space: nowrap;
+    font-family: "Museo Sans", Helvetica, Arial, sans-serif; }
+  mc-latex-editor .mathquill-container {
+    display: inline-block;
+    margin: 0;
+    vertical-align: middle;
+    position: relative;
+    min-height: 26px;
+    min-width: 17px;
+    padding: 4px 3px 2px; }
+    mc-latex-editor .mathquill-container .mathquill-element {
+      border: 0;
+      width: 100%;
+      height: 100%;
+      display: block; }
+  mc-latex-editor .mathquill-container-border {
+    border: 2px solid #95a5a6; }
+  mc-latex-editor .mathquill-container-inline-editable {
+    border: 0 !important; }
+  mc-latex-editor .prefix, mc-latex-editor .suffix {
+    padding: 0 4px 0;
+    display: inline-block;
+    vertical-align: middle;
+    font-family: "Cambria","Times New Roman",Times,serif;
+    position: relative; }
