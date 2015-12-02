@@ -1,4 +1,4 @@
-suite('Mathspace Features', function() {
+suite('Mathspace Features: Thousand Separator', function() {
     var mq;
     var rootBlock;
     var controller;
@@ -38,10 +38,28 @@ suite('Mathspace Features: Nested inline editable', function() {
         $(mq.el()).remove();
     });
 
+    test('can create nested editable box using \\editable{}', function() {
+        mq.latex('x+\\editable{}');
+        assert.equal(rootBlock.jQ.children('.mq-inner-editable').length, 1);
+    });
+
+    test('nested ediable latex should contain \\editable{}', function() {
+        mq.latex('\\editable{1}');
+        assert.equal(mq.latex(), '\\editable{1}');
+    });
+
     test('delete nested editable box contents should not modify outside the box', function() {
         mq.latex('\\editable{1}+2');
         rootBlock.jQ.find('.mq-inner-editable').trigger('mousedown');
         mq.keystroke('Backspace');
         assert.equal(mq.latex(), '\\editable{}+2');
     });
+
+    test('mousedown outside editable area doesnt activate cursor', function() {
+      mq.latex('\\editable{}+\\editable{}');
+      rootBlock.jQ.find('.mq-binary-operator').trigger('mousedown').trigger('mouseup');
+      assert.equal(rootBlock.jQ.find('.mq-cursor').length, 0,
+        'Cursor was created outside editable areas');
+    });
+
 });
