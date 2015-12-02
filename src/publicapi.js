@@ -19,6 +19,15 @@ function MathQuill(el) {
   return blockId ? Node.byId[blockId].controller.API : null;
 };
 
+/** MatHSPaCE HacK */
+/* A helper method to get block by command id or block id */
+MathQuill.getBlock = function(el) {
+  if (!el || !el.nodeType) return null;
+  var blockId = $(el).attr(mqCmdId) ||$(el).attr(mqBlockId);
+  return blockId ? Node.byId[blockId]: null;
+};
+
+
 MathQuill.noConflict = function() {
   window.MathQuill = origMathQuill;
   return MathQuill;
