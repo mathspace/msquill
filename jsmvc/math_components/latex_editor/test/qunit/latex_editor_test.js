@@ -36,7 +36,7 @@ define([
         });
         $('#qunit-test-area').append(template(data));
 
-        equal($('.mathquill-rendered-math').length, 1);
+        equal($('.mq-math-mode').length, 1);
     });
 
 
@@ -69,7 +69,7 @@ define([
             .trigger('command.mc-latex-editor',commandObject);
 
         var plusSymbol = $('.mathquill-element > span:nth-child(2)');
-        equal(plusSymbol.text(), '+');
+        equal(plusSymbol.text().charCodeAt(0), 43);     // '+'
     });
 
     test('it receives keyboard event properly (write pi)', 2, function() {
@@ -81,10 +81,10 @@ define([
         $('#qunit-test-area').append(template(data));
         $('#qunit-test-area').find('mc-latex-editor')
             .trigger('key.uc-shortcut-keys', 'p');
-        var piSymbol = $('.mathquill-element > span:nth-child(2)');
+        var piSymbol = $('.mathquill-element .mq-nonSymbola');
 
-        ok(piSymbol.hasClass('nonSymbola'));
-        equal(piSymbol.text(), 'π');
+        equal(piSymbol.length, 1);
+        equal(piSymbol.text().charCodeAt(0), 960);      // 'π'
     });
 
     // this should not auto focus, we should do this consistently
@@ -143,7 +143,7 @@ define([
         S('.mathquill-container').exists(function(){
             $('mc-latex-editor').trigger('requestFocus');
             S.wait(0, function(){
-                ok($('.mathquill-nested-editable:last').hasClass('hasCursor'));
+                equal($('.mq-editable-field:last').find('.mq-hasCursor').length, 1);
             });
         });
     });
