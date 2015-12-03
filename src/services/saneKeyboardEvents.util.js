@@ -155,7 +155,7 @@ var saneKeyboardEvents = (function() {
       });
 
       handleKey();
-      e.stopPropagation();    // Stop events from bubbling up to cause double cursor in nested editable boxes
+      e.stopPropagation();    // Chrome:Stop events from bubbling up to cause double cursor in nested editable boxes
     }
 
     function onKeypress(e) {
@@ -168,6 +168,7 @@ var saneKeyboardEvents = (function() {
       keypress = e;
 
       checkTextareaFor(typedText);
+      e.stopPropagation();    // MSEdge: Stop events from bubbling up to cause double cursor in nested editable boxes
     }
     function typedText() {
       // If there is a selection, the contents of the textarea couldn't
