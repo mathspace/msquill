@@ -842,12 +842,6 @@ LatexCmds.MathQuillMathField = P(MathCommand, function(_, super_) {
       case 'Right':
         movedFocus = focusAdjacentEditable(R, this.parent, cursor);
         break;
-      case 'Up':
-        movedFocus = focusAdjacentEditable('upOutOf', this.parent, cursor);
-        break;
-      case 'Down':
-        movedFocus = focusAdjacentEditable('downOutOf', this.parent, cursor);
-        break;
       }
 
       if (!movedFocus && typeof superKeystroke === 'function') {
