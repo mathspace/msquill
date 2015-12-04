@@ -55,6 +55,30 @@ suite('Mathspace Features: Nested inline editable', function() {
         assert.equal(mq.latex(), '\\editable{}+2');
     });
 
+    test('write() should write within nested editable box', function() {
+        mq.latex('\\editable{}+\\editable{}');
+        mq.write('1');
+        assert.equal(mq.latex(), '\\editable{1}+\\editable{}');
+    });
+
+    test('cmd() should write within nested editable box', function() {
+        mq.latex('\\editable{}+\\editable{}');
+        mq.cmd('\\pi');
+        assert.equal(mq.latex(), '\\editable{\\pi}+\\editable{}');
+    });
+
+    test('typedText() should write within nested editable box', function() {
+        mq.latex('\\editable{}+\\editable{}');
+        mq.typedText('a');
+        assert.equal(mq.latex(), '\\editable{a}+\\editable{}');
+    });
+
+    test('keystroke() should write within nested editable box', function() {
+        mq.latex('\\editable{1}+\\editable{}');
+        mq.keystroke('Backspace');
+        assert.equal(mq.latex(), '\\editable{}+\\editable{}');
+    });
+
     test('mousedown outside editable area doesnt activate cursor', function() {
       mq.latex('\\editable{}+\\editable{}');
       rootBlock.jQ.find('.mq-binary-operator').trigger('mousedown').trigger('mouseup');
