@@ -126,15 +126,35 @@ var EditableField = MathQuill.EditableField = P(AbstractMathQuill, function(_) {
     this.__controller.delegateMouseEvents();
     this.__controller.editablesTextareaEvents();
   };
-  _.focus = function() { this.__controller.textarea.focus(); return this; };
-  _.blur = function() { this.__controller.textarea.blur(); return this; };
+  _.focus = function() { this.getActiveNode().__controller.textarea.focus(); return this; };
+  _.blur = function() { this.getActiveNode().__controller.textarea.blur(); return this; };
+  _.getActiveNode = function () {
+    /** MatHSPaCE HacK */
+    // If nested editable box exists, all commands should
+    // be executed against last focused editable box
+    var rootBlocks = this.__controller.container.find('.mq-inner-editable .mq-root-block');
+    if (rootBlocks.length) {
+      var lastFocused = rootBlocks.filter('.mq-last-focused');
+      // If there is no last focused box, focus on the first nested editable box
+      var activeRoot = lastFocused.length ? lastFocused.eq(0) : rootBlocks.eq(0),
+      activeNode =  Node.byId[activeRoot.attr(mqBlockId)];
+      if (activeNode) {
+        activeNode.__controller = activeNode.__controller || activeNode.controller;
+        return activeNode;
+      }
+    } else {
+      return this;
+    }
+  };
   _.write = function(latex) {
-    this.__controller.writeLatex(latex);
-    if (this.__controller.blurred) this.__controller.cursor.hide().parent.blur();
-    return this;
+    var activeNode = this.getActiveNode();
+    activeNode.__controller.writeLatex(latex);
+    if (activeNode.__controller.blurred) activeNode.__controller.cursor.hide().parent.blur();
+    return activeNode;
   };
   _.cmd = function(cmd) {
-    var ctrlr = this.__controller.notify(), cursor = ctrlr.cursor;
+    var activeNode = this.getActiveNode();
+    var ctrlr = activeNode.__controller.notify(), cursor = ctrlr.cursor;
     if (/^\\[a-z]+$/i.test(cmd)) {
       cmd = cmd.slice(1);
       var klass = LatexCmds[cmd];
@@ -168,14 +188,15 @@ var EditableField = MathQuill.EditableField = P(AbstractMathQuill, function(_) {
   _.moveToRightEnd = function() { return this.moveToDirEnd(R); };
 
   _.keystroke = function(keys) {
+    var activeNode = this.getActiveNode();
     var keys = keys.replace(/^\s+|\s+$/g, '').split(/\s+/);
     for (var i = 0; i < keys.length; i += 1) {
-      this.__controller.keystroke(keys[i], { preventDefault: noop });
+      activeNode.__controller.keystroke(keys[i], { preventDefault: noop });
     }
     return this;
   };
   _.typedText = function(text) {
-    for (var i = 0; i < text.length; i += 1) this.__controller.typedText(text.charAt(i));
+    for (var i = 0; i < text.length; i += 1) this.getActiveNode().__controller.typedText(text.charAt(i));
     return this;
   };
 });
