@@ -789,6 +789,8 @@ var InnerMathField = P(MathQuill.MathField, function(_) {
   _.init = function(root, ultimateRoot, container) {
     RootBlockMixin(root);
     this.__options = Options();
+    // copy autoCommands config to inner editable cursor options
+    this.__options.autoCommands = ultimateRoot.cursor.options.autoCommands;
     var ctrlr = Controller(this, root, container);
     ctrlr.editable = true;
     root.ultimateRoot = ultimateRoot;
