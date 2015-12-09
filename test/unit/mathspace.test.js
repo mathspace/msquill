@@ -30,7 +30,9 @@ suite('Mathspace Features: Nested inline editable', function() {
     var rootBlock;
     var controller;
     setup(function() {
-        mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0]);
+        mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0], {
+            autoCommands: 'pi sum'
+        });
         rootBlock = mq.__controller.root;
         controller = mq.__controller;
     });
@@ -84,6 +86,12 @@ suite('Mathspace Features: Nested inline editable', function() {
       rootBlock.jQ.find('.mq-binary-operator').trigger('mousedown').trigger('mouseup');
       assert.equal(rootBlock.jQ.find('.mq-cursor').length, 0,
         'Cursor was created outside editable areas');
+    });
+
+    test('autoCommands should work inside nested editable field', function(){
+        mq.latex('\\editable{}');
+        mq.typedText('pi');
+        assert.equal(mq.latex(), '\\editable{\\pi}');
     });
 
 });
