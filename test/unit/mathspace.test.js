@@ -122,3 +122,37 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
         assert.equal(rootBlock.jQ.children(':first').text(), '∠');
     });
 });
+
+
+suite('Mathspace Features: Inequality Shortcut Keys', function() {
+    var mq;
+    var rootBlock;
+    var controller;
+    setup(function() {
+        mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0]);
+        rootBlock = mq.__controller.root;
+        controller = mq.__controller;
+    });
+
+    teardown(function() {
+        $(mq.el()).remove();
+    });
+
+    test('less than or equal to', function() {
+        mq.typedText('<=');
+        mq.keystroke('Tab');
+        assert.equal(rootBlock.jQ.children(':first').text(), '≤');
+    });
+
+    test('greater than or equal to', function() {
+        mq.typedText('>=');
+        mq.keystroke('Tab');
+        assert.equal(rootBlock.jQ.children(':first').text(), '≥');
+    });
+
+    test('congruent', function() {
+        mq.typedText('==');
+        mq.keystroke('Tab');
+        assert.equal(rootBlock.jQ.children(':first').text(), '≡');
+    });
+});
