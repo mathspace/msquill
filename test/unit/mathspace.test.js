@@ -95,3 +95,30 @@ suite('Mathspace Features: Nested inline editable', function() {
     });
 
 });
+
+suite('Mathspace Features: Custom Latex Symbols', function() {
+    var mq;
+    var rootBlock;
+    var controller;
+    setup(function() {
+        mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0]);
+        rootBlock = mq.__controller.root;
+        controller = mq.__controller;
+    });
+
+    teardown(function() {
+        $(mq.el()).remove();
+    });
+
+    test('triangle', function() {
+        mq.typedText('\\triangle');
+        mq.keystroke('Tab');
+        assert.equal(rootBlock.jQ.children(':first').text(), '△');
+    });
+
+    test('congruent', function() {
+        mq.typedText('\\cong');
+        mq.keystroke('Tab');
+        assert.equal(rootBlock.jQ.children(':first').text(), '∠');
+    });
+});
