@@ -3,7 +3,6 @@
  ***********************************/
 
 LatexCmds.notin =
-LatexCmds.cong =
 LatexCmds.equiv =
 LatexCmds.oplus =
 LatexCmds.otimes = P(BinaryOperator, function(_, super_) {
@@ -11,6 +10,10 @@ LatexCmds.otimes = P(BinaryOperator, function(_, super_) {
     super_.init.call(this, '\\'+latex+' ', '&'+latex+';');
   };
 });
+
+// MaThSpACe hacK
+// Different congruent symbol
+LatexCmds.cong = bind(BinaryOperator,'\\cong ','&equiv;');
 
 LatexCmds['≠'] = LatexCmds.ne = LatexCmds.neq = bind(BinaryOperator,'\\ne ','&ne;');
 
@@ -179,7 +182,7 @@ LatexCmds.cdots = bind(VanillaSymbol, '\\cdots ', '&#8943;');
 LatexCmds.vdots = bind(VanillaSymbol, '\\vdots ', '&#8942;');
 LatexCmds.ddots = bind(VanillaSymbol, '\\ddots ', '&#8945;');
 LatexCmds.surd = bind(VanillaSymbol, '\\surd ', '&#8730;');
-LatexCmds.triangle = bind(VanillaSymbol, '\\triangle ', '&#9653;');
+LatexCmds.triangle = bind(VanillaSymbol, '\\triangle ', '&#9651;');   // MaThSpACe hacK: Larger triangle symbol
 LatexCmds.ell = bind(VanillaSymbol, '\\ell ', '&#8467;');
 LatexCmds.top = bind(VanillaSymbol, '\\top ', '&#8868;');
 LatexCmds.flat = bind(VanillaSymbol, '\\flat ', '&#9837;');
