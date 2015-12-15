@@ -124,6 +124,71 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
 });
 
 
+suite('Mathspace Features: Custom Latex Commands', function() {
+    var mq;
+    var rootBlock;
+    var controller;
+    setup(function () {
+        mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0]);
+        rootBlock = mq.__controller.root;
+        controller = mq.__controller;
+    });
+
+    teardown(function () {
+        $(mq.el()).remove();
+    });
+
+    test('nPr', function() {
+        // Test empty nPr
+        mq.typedText('\\nPr');
+        mq.keystroke('Tab');
+        assert.equal(mq.latex(), '\\nPr{}{}');
+
+        // Test filling up nPr
+        mq.typedText('1');
+        mq.keystroke('Right');
+        mq.typedText('2');
+        assert.equal(mq.latex(), '\\nPr{1}{2}');
+    });
+
+    test('nCr', function() {
+        mq.typedText('\\nCr');
+        mq.keystroke('Tab');
+        assert.equal(mq.latex(), '\\nCr{}{}');
+
+        // Test filling up nCr
+        mq.typedText('1');
+        mq.keystroke('Right');
+        mq.typedText('2');
+        assert.equal(mq.latex(), '\\nCr{1}{2}');
+    });
+});
+
+
+suite('Mathspace Features: Custom Binary Operators', function() {
+    var mq;
+    var rootBlock;
+    var controller;
+    setup(function () {
+        mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0]);
+        rootBlock = mq.__controller.root;
+        controller = mq.__controller;
+    });
+
+    teardown(function () {
+        $(mq.el()).remove();
+    });
+
+    test('comma should have mq-comma class', function() {
+        // comma needs to have mq-comma class
+        // so it will adds extra white space after it
+        mq.typedText(',');
+        assert.equal(mq.latex(), ',');
+        assert.equal(rootBlock.jQ.find('.mq-comma').length, 1);
+    });
+});
+
+
 suite('Mathspace Features: Inequality Shortcut Keys', function() {
     var mq;
     var rootBlock;
