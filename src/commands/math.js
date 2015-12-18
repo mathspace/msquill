@@ -368,14 +368,16 @@ var VanillaSymbol = P(Symbol, function(_, super_) {
         lastDigitEl = el;
       });
 
-      // Count each digit, and add the thousands separator on every third digit.
-      for (var i = 0, digit = lastDigitEl; digit !== firstDigitEl; i += 1, digit = digit[L]) {
-        if (i !== 0 && i % 3 === 0) {
+      if (lastDigitEl) {
+        // Count each digit, and add the thousands separator on every third digit.
+        for (var i = 0, digit = lastDigitEl; digit !== firstDigitEl; i += 1, digit = digit[L]) {
+          if (i !== 0 && i % 3 === 0) {
+            digit.jQ.addClass('thousands-separator-after');
+          }
+        }
+        if ((i !== 0) && (i % 3 === 0)) {
           digit.jQ.addClass('thousands-separator-after');
         }
-      }
-      if ((i !== 0) && (i % 3 === 0)) {
-        digit.jQ.addClass('thousands-separator-after');
       }
 
       firstDigitEl = null;
@@ -395,7 +397,7 @@ var VanillaSymbol = P(Symbol, function(_, super_) {
         }
       });
 
-      for (var j = 0, digit = lastDigitEl; digit !== firstDigitEl; j += 1, digit = digit[L]) {
+      for (var j = 0, digit = firstDigitEl; digit !== lastDigitEl; j += 1, digit = digit[R]) {
         if (j !== 0 && j % 3 === 0) {
           digit.jQ.addClass('thousands-separator-after');
         }
