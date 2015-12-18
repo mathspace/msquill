@@ -22,6 +22,18 @@ suite('Mathspace Features: Thousand Separator', function() {
         // Test no thousand seperator
         assert.equal(rootBlock.jQ.children('.thousands-separator-after').length, 0);
     });
+
+    test('thousand separators: 11.2345', function() {
+        mq.latex('11.2345');
+        assert.equal(rootBlock.jQ.children('.thousands-separator-after').length, 1);
+        assert.equal(rootBlock.jQ.find('.thousands-separator-after').text(), '4');
+    });
+
+    test('thousand separators: .1', function() {
+        mq.latex('.1');
+        // Code should not break
+        assert.equal(mq.latex(), '.1');
+    });
 });
 
 
