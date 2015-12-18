@@ -125,13 +125,13 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
     test('triangle', function() {
         mq.typedText('\\triangle');
         mq.keystroke('Tab');
-        assert.equal(rootBlock.jQ.children(':first').text().charCodeAt(0), 9651);
+        assert.equal(rootBlock.jQ.children(':first').text(), '△');
     });
 
     test('congruent', function() {
         mq.typedText('\\cong');
         mq.keystroke('Tab');
-        assert.equal(rootBlock.jQ.children(':first').text().charCodeAt(0), 8801);
+        assert.equal(rootBlock.jQ.children(':first').text(), '∠');
     });
 });
 
