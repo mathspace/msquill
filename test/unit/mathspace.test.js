@@ -218,18 +218,18 @@ suite('Mathspace Features: Inequality Shortcut Keys', function() {
     test('less than or equal to', function() {
         mq.typedText('<=');
         mq.keystroke('Tab');
-        assert.equal(rootBlock.jQ.children(':first').text().charCodeAt(0), 8804);
+        assert.equal(rootBlock.jQ.children(':first').text(), '≤');
     });
 
     test('greater than or equal to', function() {
         mq.typedText('>=');
         mq.keystroke('Tab');
-        assert.equal(rootBlock.jQ.children(':first').text().charCodeAt(0), 8805);
+        assert.equal(rootBlock.jQ.children(':first').text(), '≥');
     });
 
     test('congruent', function() {
         mq.typedText('==');
         mq.keystroke('Tab');
-        assert.equal(rootBlock.jQ.children(':first').text().charCodeAt(0), 8801);
+        assert.equal(rootBlock.jQ.children(':first').text(), '≡');
     });
 });
