@@ -142,6 +142,14 @@ var TwoWordOpNames = { limsup: 1, liminf: 1, projlim: 1, injlim: 1 };
   var autoOps = Options.p.autoOperatorNames = { _maxLength: 9 };
   var mostOps = ('arg deg det dim exp gcd hom inf ker lg lim ln log max min sup'
                  + ' limsup liminf injlim projlim Pr').split(' ');
+  // MatHSPaCE HacK
+  // deg should not be an auto operator, it is an latex command mapped to degree symbol
+  if (mostOps.indexOf('deg') > -1) {
+    // Add a block to remove the deg instead of modify mostOps
+    // so it is easy to deal with future update.
+    mostOps.splice(mostOps.indexOf('deg'), 1);
+  }
+
   for (var i = 0; i < mostOps.length; i += 1) {
     BuiltInOpNames[mostOps[i]] = autoOps[mostOps[i]] = 1;
   }
