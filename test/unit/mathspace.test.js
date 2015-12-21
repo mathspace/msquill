@@ -133,6 +133,12 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
         mq.keystroke('Tab');
         assert.equal(rootBlock.jQ.children(':first').text(), '≡');
     });
+
+    test('degree', function() {
+        mq.typedText('\\deg');
+        mq.keystroke('Tab');
+        assert.equal(rootBlock.jQ.children(':first').text(), '°');
+    });
 });
 
 
