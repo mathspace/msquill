@@ -411,40 +411,6 @@ var BinaryOperator = P(Symbol, function(_, super_) {
       ctrlSeq, '<span class="mq-binary-operator">'+html+'</span>', text
     );
   };
-  _.finalizeTree = _.siblingDeleted = _.siblingCreated = function(opts, dir) {
-    // MaThSpaCE haCK
-    // Shortcuts for ==, >=, <=
-    if (this[L]) {
-      var prevCmd = this[L].latex();
-      var cmd = prevCmd + this.latex();
-      var ctrl;
-      var p = this;
-      for (;;p = p.parent) {
-        ctrl = p.controller;
-        if (ctrl instanceof Controller || p.parent == undefined) {
-          break;
-        }
-      }
-      if (ctrl) {
-        var cursor = ctrl.cursor;
-        if (cmd === '==') {
-          // todo: use LatexCmds ??
-          ctrl.deleteDir(L).deleteDir(L);
-          var newOperator = new BinaryOperator('\\cong ','&equiv;');
-          newOperator.createLeftOf(cursor.show());
-        } else if (cmd === '>=') {
-          ctrl.deleteDir(L).deleteDir(L);
-          var newOperator = new BinaryOperator('\\ge ', '&ge;');
-          newOperator.createLeftOf(cursor.show());
-        } else if (cmd === '<=') {
-          ctrl.deleteDir(L).deleteDir(L);
-          var newOperator = new BinaryOperator('\\le ', '&le;');
-          newOperator.createLeftOf(cursor.show());
-        }
-      }
-    }
-    return this;
-  }
 });
 
 /**
