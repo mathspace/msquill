@@ -464,6 +464,11 @@ LatexCmds['>'] = LatexCmds.gt = bind(Inequality, greater, true);
 LatexCmds['≤'] = LatexCmds.le = LatexCmds.leq = bind(Inequality, less, false);
 LatexCmds['≥'] = LatexCmds.ge = LatexCmds.geq = bind(Inequality, greater, false);
 
+// MatHSPaCE HacK
+// Add compound commands to ≥ ≤
+CompoundCmds['<='] = LatexCmds.le;
+CompoundCmds['>='] = LatexCmds.ge;
+
 var Equality = P(BinaryOperator, function(_, super_) {
   _.init = function() {
     super_.init.call(this, '=', '=');
