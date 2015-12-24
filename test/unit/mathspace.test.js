@@ -221,21 +221,23 @@ suite('Mathspace Features: Inequality Shortcut Keys', function() {
         $(mq.el()).remove();
     });
 
-    test('less than or equal to', function() {
+    test('typing less than or equal to', function() {
         mq.typedText('<=');
-        mq.keystroke('Tab');
         assert.equal(rootBlock.jQ.children(':first').text(), '≤');
     });
 
-    test('greater than or equal to', function() {
+    test('typing greater than or equal to', function() {
         mq.typedText('>=');
-        mq.keystroke('Tab');
         assert.equal(rootBlock.jQ.children(':first').text(), '≥');
     });
 
-    test('congruent', function() {
+    test('typing congruent', function() {
         mq.typedText('==');
-        mq.keystroke('Tab');
+        assert.equal(rootBlock.jQ.children(':first').text(), '≡');
+    });
+
+    test('typing congruent', function() {
+        mq.typedText('==');
         assert.equal(rootBlock.jQ.children(':first').text(), '≡');
     });
 });
