@@ -473,9 +473,21 @@ var Equality = P(BinaryOperator, function(_, super_) {
   _.init = function() {
     super_.init.call(this, '=', '=');
   };
+  _.swap = function(command) {
+    this.ctrlSeq = command.latex();
+    this.jQ.html(command.htmlTemplate);
+    this.textTemplate = [ command.text() ];
+  };
   _.createLeftOf = function(cursor) {
     if (cursor[L] instanceof Inequality && cursor[L].strict) {
       cursor[L].swap(false);
+      cursor[L].bubble('reflow');
+      return;
+    } else if (cursor[L] instanceof Equality) {
+      // MatHSPaCE HacK
+      // == => congruent
+      var newOperator = new BinaryOperator('\\cong ','&equiv;');
+      cursor[L].swap(newOperator);
       cursor[L].bubble('reflow');
       return;
     }
