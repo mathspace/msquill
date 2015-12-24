@@ -889,6 +889,12 @@ suite('typing with auto-replaces', function() {
     test('command is a built-in operator name', function() {
       var cmds = ('Pr arg deg det dim exp gcd hom inf ker lg lim ln log max min sup'
                   + ' limsup liminf injlim projlim Pr').split(' ');
+
+      // MaThSpACe hacK
+      // deg should not be an auto operator, it is an latex command mapped to degree symbol
+      if (cmds.indexOf('deg') > -1) {
+        cmds.splice(cmds.indexOf('deg'), 1);
+      }
       for (var i = 0; i < cmds.length; i += 1) {
         assert.throws(function() { MathQuill.config({ autoCommands: cmds[i] }) },
                       'MathQuill.config({ autoCommands: "'+cmds[i]+'" })');
@@ -899,6 +905,13 @@ suite('typing with auto-replaces', function() {
       MathQuill.config({ autoOperatorNames: 'sin inf arcosh cosh cos cosec csc' });
         // ^ happen to be the ones required by autoOperatorNames.test.js
       var cmds = 'Pr arg deg det exp gcd inf lg lim ln log max min sup'.split(' ');
+
+      // MaThSpACe hacK
+      // deg should not be an auto operator, it is an latex command mapped to degree symbol
+      if (cmds.indexOf('deg') > -1) {
+        cmds.splice(cmds.indexOf('deg'), 1);
+      }
+
       for (var i = 0; i < cmds.length; i += 1) {
         assert.throws(function() { MathQuill.config({ autoCommands: cmds[i] }) },
                       'MathQuill.config({ autoCommands: "'+cmds[i]+'" })');
