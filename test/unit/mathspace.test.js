@@ -226,8 +226,18 @@ suite('Mathspace Features: Inequality Shortcut Keys', function() {
         assert.equal(rootBlock.jQ.children(':first').text(), '≤');
     });
 
+    test('rendering less than or equal to', function() {
+        mq.latex('<=');
+        assert.equal(rootBlock.jQ.children(':first').text(), '≤');
+    });
+
     test('typing greater than or equal to', function() {
         mq.typedText('>=');
+        assert.equal(rootBlock.jQ.children(':first').text(), '≥');
+    });
+
+    test('typing greater than or equal to', function() {
+        mq.latex('>=');
         assert.equal(rootBlock.jQ.children(':first').text(), '≥');
     });
 
@@ -236,8 +246,8 @@ suite('Mathspace Features: Inequality Shortcut Keys', function() {
         assert.equal(rootBlock.jQ.children(':first').text(), '≡');
     });
 
-    test('typing congruent', function() {
-        mq.typedText('==');
+    test('rendering congruent', function() {
+        mq.latex('==');
         assert.equal(rootBlock.jQ.children(':first').text(), '≡');
     });
 });
