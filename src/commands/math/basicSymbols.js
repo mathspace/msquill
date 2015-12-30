@@ -415,7 +415,7 @@ LatexCmds['±'] = LatexCmds.pm = LatexCmds.plusmn = LatexCmds.plusminus =
 LatexCmds.mp = LatexCmds.mnplus = LatexCmds.minusplus =
   bind(PlusMinus,'\\mp ','&#8723;');
 
-CharCmds['*'] = LatexCmds.sdot = LatexCmds.cdot =
+LatexCmds.sdot = LatexCmds.cdot =
   bind(BinaryOperator, '\\cdot ', '&middot;');
 //semantically should be &sdot;, but &middot; looks better
 
@@ -497,6 +497,10 @@ var Equality = P(BinaryOperator, function(_, super_) {
 LatexCmds['='] = Equality;
 
 LatexCmds.times = bind(BinaryOperator, '\\times ', '&times;', '[x]');
+
+// MatHSPaCE HacK
+// Map * to times instead of dot
+CharCmds['*'] = LatexCmds.times;
 
 LatexCmds['÷'] = LatexCmds.div = LatexCmds.divide = LatexCmds.divides =
   bind(BinaryOperator,'\\div ','&divide;', '[/]');
