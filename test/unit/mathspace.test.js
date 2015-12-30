@@ -139,6 +139,11 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
         mq.keystroke('Tab');
         assert.equal(rootBlock.jQ.children(':first').text(), '°');
     });
+
+    test('* should be times, not dot', function() {
+        mq.typedText('*');
+        assert.equal(rootBlock.jQ.children(':first').text(), '×');
+    });
 });
 
 
