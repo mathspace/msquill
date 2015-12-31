@@ -5,7 +5,10 @@
   .box-sizing(border-box); // supported by IE8+: http://caniuse.com/css3-boxsizing
   white-space: normal;     // MaThSpaCE haCK: Text wrapping
   overflow: visible;       // MaThSpaCE haCK: Text wrapping
-  vertical-align: middle;
+  // MaThSpaCE haCK: So it will align with the text around it
+  // Eg..
+  // Evaluate sqrt{4}^2  Evaluate and sqrt should be text-bottom baseline aligned
+  vertical-align: baseline;
 }
 .mq-math-mode {
   font-variant: normal;
