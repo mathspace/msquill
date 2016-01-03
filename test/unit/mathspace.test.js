@@ -140,6 +140,11 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
         assert.equal(rootBlock.jQ.children(':first').text(), '°');
     });
 
+    test('percent latex should not have backslash', function() {
+        mq.typedText('%');
+        assert.equal(mq.latex(), '%');
+    });
+
     test('* should be times, not dot', function() {
         mq.typedText('*');
         assert.equal(rootBlock.jQ.children(':first').text(), '×');
