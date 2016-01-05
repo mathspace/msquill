@@ -149,6 +149,12 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
         mq.typedText('*');
         assert.equal(rootBlock.jQ.children(':first').text(), '×');
     });
+
+    test('similar symbol', function() {
+        mq.typedText('\\simeq');
+        mq.keystroke('Tab');
+        assert.equal(rootBlock.jQ.children(':first').text(), '⫻');
+    });
 });
 
 
