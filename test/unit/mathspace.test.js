@@ -157,6 +157,46 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
     });
 });
 
+suite('Mathspace Features: Special key events', function() {
+
+    var mq;
+    var rootBlock;
+    var controller;
+    setup(function () {
+        mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0]);
+        rootBlock = mq.__controller.root;
+        controller = mq.__controller;
+    });
+
+    teardown(function () {
+        $(mq.el()).remove();
+    });
+
+    test('Disable $', function() {
+        var container = rootBlock.jQ.parent();
+        var textarea = container.find('textarea');
+        var event = jQuery.Event('keydown', {
+            which: 52, shiftKey:true
+        });
+        container.keydown(function(e) {
+            assert.fail('This keydown event should not trigger');
+        });
+        textarea.val('$').trigger(event);
+    });
+
+    test('4 should not be blocked', function() {
+        var container = rootBlock.jQ.parent();
+        var textarea = container.find('textarea');
+        var event = jQuery.Event('keydown', {
+            which: 52, shiftKey: false
+        });
+        container.keydown(function(e) {
+            assert.equal(e.which, 52);
+        });
+        textarea.val('4').trigger(event);
+    });
+});
+
 
 suite('Mathspace Features: Custom Latex Commands', function() {
     var mq;
