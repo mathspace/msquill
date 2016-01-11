@@ -307,3 +307,25 @@ suite('Mathspace Features: Inequality Shortcut Keys', function() {
         assert.equal(rootBlock.jQ.children(':first').text(), '≡');
     });
 });
+
+suite('Mathspace Patches: General MathQuill Bugs', function() {
+    var mq;
+    var rootBlock;
+    var controller;
+    setup(function () {
+        mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0]);
+        rootBlock = mq.__controller.root;
+        controller = mq.__controller;
+    });
+
+    teardown(function () {
+        $(mq.el()).remove();
+    });
+
+    test('Ctrl-Shift-Backspace error on Mac', function() {
+        mq.typedText('a');
+        mq.keystroke('Ctrl-Shift-Backspace');
+        assert.equal(mq.latex(), '');
+    });
+
+});
