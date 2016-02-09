@@ -4,6 +4,8 @@
 LatexCmds.cong = bind(BinaryOperator,'\\cong ','&equiv;');
 CompoundCmds['=='] = LatexCmds.cong
 
+LatexCmds.triangle = bind(VanillaSymbol, '\\triangle ', '&#9651;');
+
 var nCr = LatexCmds.nCr = P(MathCommand, function(_, super_) {
   _.ctrlSeq = '\\nCr';
   _.htmlTemplate =
