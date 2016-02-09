@@ -1,5 +1,9 @@
 /* Add custom commands  */
 
+// Add compound commands to ≥ ≤
+CompoundCmds['<='] = LatexCmds.le;
+CompoundCmds['>='] = LatexCmds.ge;
+
 // Different congruent symbol
 LatexCmds.cong = bind(BinaryOperator,'\\cong ','&equiv;');
 CompoundCmds['=='] = LatexCmds.cong
