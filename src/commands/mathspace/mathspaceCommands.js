@@ -1,5 +1,9 @@
 /* Add custom commands  */
 
+// Different congruent symbol
+LatexCmds.cong = bind(BinaryOperator,'\\cong ','&equiv;');
+CompoundCmds['=='] = LatexCmds.cong
+
 var nCr = LatexCmds.nCr = P(MathCommand, function(_, super_) {
   _.ctrlSeq = '\\nCr';
   _.htmlTemplate =

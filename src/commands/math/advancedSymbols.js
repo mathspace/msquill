@@ -11,11 +11,6 @@ LatexCmds.otimes = P(BinaryOperator, function(_, super_) {
   };
 });
 
-// MaThSpACe hacK
-// Different congruent symbol
-LatexCmds.cong = bind(BinaryOperator,'\\cong ','&equiv;');
-CompoundCmds['=='] = LatexCmds.cong
-
 LatexCmds['≠'] = LatexCmds.ne = LatexCmds.neq = bind(BinaryOperator,'\\ne ','&ne;');
 
 LatexCmds.ast = LatexCmds.star = LatexCmds.loast = LatexCmds.lowast =
