@@ -13,6 +13,9 @@ LatexCmds.triangle = bind(VanillaSymbol, '\\triangle ', '&#9651;');
 // Map * to times instead of dot
 CharCmds['*'] = LatexCmds.times;
 
+// Patched latex for % symbol, it should not contain \\ in the beginning.
+LatexCmds['%'] = bind(NonSymbolaSymbol, '%', '%');
+
 var nCr = LatexCmds.nCr = P(MathCommand, function(_, super_) {
   _.ctrlSeq = '\\nCr';
   _.htmlTemplate =
