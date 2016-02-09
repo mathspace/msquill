@@ -10,6 +10,9 @@ CompoundCmds['=='] = LatexCmds.cong
 
 LatexCmds.triangle = bind(VanillaSymbol, '\\triangle ', '&#9651;');
 
+// Map * to times instead of dot
+CharCmds['*'] = LatexCmds.times;
+
 var nCr = LatexCmds.nCr = P(MathCommand, function(_, super_) {
   _.ctrlSeq = '\\nCr';
   _.htmlTemplate =
