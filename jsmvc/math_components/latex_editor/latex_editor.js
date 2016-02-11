@@ -111,6 +111,8 @@ define([
 
                 if (this.scope.attr('editable')) {
                     this.mathFieldAPI = MathQuill.MathField(elm[0], {
+                        preventBackslash: true,
+                        spaceBehavesLikeTab: true,
                         handlers: {
                             edit: function(mathField) {
                                 self.scope.attr('latex', mathField.latex());
