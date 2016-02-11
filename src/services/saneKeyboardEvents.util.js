@@ -62,7 +62,9 @@ var saneKeyboardEvents = (function() {
 
     46: 'Del',
 
-    144: 'NumLock'
+    144: 'NumLock',
+
+    220: 'Backslash'
   };
 
   // To the extent possible, create a normalized string representation
