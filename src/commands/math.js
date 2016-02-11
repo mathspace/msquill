@@ -440,6 +440,11 @@ var MathBlock = P(MathElement, function(_, super_) {
       ctrlr.escapeDir(key === 'Shift-Spacebar' ? L : R, key, e);
       return;
     }
+    if (ctrlr.API.__options.preventBackslash
+        && (key === 'Backslash')) {
+      e.preventDefault();
+      return;
+    }
     return super_.keystroke.apply(this, arguments);
   };
 
