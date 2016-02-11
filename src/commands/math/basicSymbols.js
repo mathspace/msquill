@@ -419,16 +419,6 @@ LatexCmds.sdot = LatexCmds.cdot =
   bind(BinaryOperator, '\\cdot ', '&middot;');
 //semantically should be &sdot;, but &middot; looks better
 
-/** MatHSPaCE HacK
- * Add extra space after comma */
-LatexCmds.comma = LatexCmds[','] = P(Symbol, function(_, super_) {
-  _.init = function(ctrlSeq, html, text) {
-    super_.init.call(this,
-      ctrlSeq, '<span class="mq-comma">,</span>', text
-    );
-  };
-});
-
 var Inequality = P(BinaryOperator, function(_, super_) {
   _.init = function(data, strict) {
     this.data = data;
