@@ -1,6 +1,5 @@
 /* Add custom commands  */
 
-
 var nCr = LatexCmds.nCr = P(MathCommand, function(_, super_) {
   _.ctrlSeq = '\\nCr';
   _.htmlTemplate =
@@ -23,8 +22,6 @@ var nCr = LatexCmds.nCr = P(MathCommand, function(_, super_) {
     return '\\nCr{'+this.ends[L].latex()+'}{'+this.ends[R].latex()+'}';
   };
 });
-
-
 
 var nPr = LatexCmds.nPr = P(MathCommand, function(_, super_) {
   _.ctrlSeq = '\\nPr';
