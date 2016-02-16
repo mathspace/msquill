@@ -1,0 +1,65 @@
+/* Add custom commands  */
+
+// Add compound commands to ≥ ≤
+CompoundCmds['<='] = LatexCmds.le;
+CompoundCmds['>='] = LatexCmds.ge;
+
+// Different congruent symbol
+LatexCmds.cong = bind(BinaryOperator,'\\cong ','&equiv;');
+CompoundCmds['=='] = LatexCmds.cong
+
+LatexCmds.triangle = bind(VanillaSymbol, '\\triangle ', '&#9651;');
+
+LatexCmds.simeq = bind(VanillaSymbol, '\\simeq ', '&#11003;');
+
+// Map * to times instead of dot
+CharCmds['*'] = LatexCmds.times;
+
+// Patched latex for % symbol, it should not contain \\ in the beginning.
+LatexCmds['%'] = bind(NonSymbolaSymbol, '%', '%');
+
+var nCr = LatexCmds.nCr = P(MathCommand, function(_, super_) {
+  _.ctrlSeq = '\\nCr';
+  _.htmlTemplate =
+      '<span>'
+          + '<span class="mq-supsub mq-sup-only mq-non-leaf">'
+          +     '<span class="mq-sup">'
+          +         '<span>&0</span>'
+          +     '</span>'
+          + '</span>'
+          + '<var>C</var>'
+          + '<span class="mq-supsub mq-non-leaf">'
+          +     '<span class="mq-sub">'
+          +         '<span>&1</span>'
+          +     '</span>'
+          + '</span>'
+    + '</span>'
+  ;
+  _.text_template = ['nCr[', '](', ')'];
+  _.latex = function() {
+    return '\\nCr{'+this.ends[L].latex()+'}{'+this.ends[R].latex()+'}';
+  };
+});
+
+var nPr = LatexCmds.nPr = P(MathCommand, function(_, super_) {
+  _.ctrlSeq = '\\nPr';
+  _.htmlTemplate =
+      '<span>'
+          + '<span class="mq-supsub mq-sup-only mq-non-leaf">'
+          +     '<span class="mq-sup">'
+          +         '<span>&0</span>'
+          +     '</span>'
+          + '</span>'
+          + '<var>P</var>'
+          + '<span class="mq-supsub mq-non-leaf">'
+          +     '<span class="mq-sub">'
+          +         '<span>&1</span>'
+          +     '</span>'
+          + '</span>'
+    + '</span>'
+  ;
+  _.text_template = ['nPr[', '](', ')'];
+  _.latex = function() {
+    return '\\nPr{'+this.ends[L].latex()+'}{'+this.ends[R].latex()+'}';
+  };
+});

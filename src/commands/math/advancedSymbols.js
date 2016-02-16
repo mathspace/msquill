@@ -11,11 +11,6 @@ LatexCmds.otimes = P(BinaryOperator, function(_, super_) {
   };
 });
 
-// MaThSpACe hacK
-// Different congruent symbol
-LatexCmds.cong = bind(BinaryOperator,'\\cong ','&equiv;');
-CompoundCmds['=='] = LatexCmds.cong
-
 LatexCmds['≠'] = LatexCmds.ne = LatexCmds.neq = bind(BinaryOperator,'\\ne ','&ne;');
 
 LatexCmds.ast = LatexCmds.star = LatexCmds.loast = LatexCmds.lowast =
@@ -140,7 +135,7 @@ LatexCmds.prec = bind(VanillaSymbol, '\\prec ', '&#8826;');
 LatexCmds.succ = bind(VanillaSymbol, '\\succ ', '&#8827;');
 LatexCmds.preceq = bind(VanillaSymbol, '\\preceq ', '&#8828;');
 LatexCmds.succeq = bind(VanillaSymbol, '\\succeq ', '&#8829;');
-LatexCmds.simeq = bind(VanillaSymbol, '\\simeq ', '&#11003;');
+LatexCmds.simeq = bind(VanillaSymbol, '\\simeq ', '&#8771;');
 LatexCmds.mid = bind(VanillaSymbol, '\\mid ', '&#8739;');
 LatexCmds.ll = bind(VanillaSymbol, '\\ll ', '&#8810;');
 LatexCmds.gg = bind(VanillaSymbol, '\\gg ', '&#8811;');
@@ -183,7 +178,7 @@ LatexCmds.cdots = bind(VanillaSymbol, '\\cdots ', '&#8943;');
 LatexCmds.vdots = bind(VanillaSymbol, '\\vdots ', '&#8942;');
 LatexCmds.ddots = bind(VanillaSymbol, '\\ddots ', '&#8945;');
 LatexCmds.surd = bind(VanillaSymbol, '\\surd ', '&#8730;');
-LatexCmds.triangle = bind(VanillaSymbol, '\\triangle ', '&#9651;');   // MaThSpACe hacK: Larger triangle symbol
+LatexCmds.triangle = bind(VanillaSymbol, '\\triangle ', '&#9653;');
 LatexCmds.ell = bind(VanillaSymbol, '\\ell ', '&#8467;');
 LatexCmds.top = bind(VanillaSymbol, '\\top ', '&#8868;');
 LatexCmds.flat = bind(VanillaSymbol, '\\flat ', '&#9837;');

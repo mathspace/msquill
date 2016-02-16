@@ -242,7 +242,7 @@ var NonSymbolaSymbol = P(Symbol, function(_, super_) {
 
 LatexCmds['@'] = NonSymbolaSymbol;
 LatexCmds['&'] = bind(NonSymbolaSymbol, '\\&', '&amp;');
-LatexCmds['%'] = bind(NonSymbolaSymbol, '%', '%');
+LatexCmds['%'] = bind(NonSymbolaSymbol, '\\%', '%');
 
 //the following are all Greek to me, but this helped a lot: http://www.ams.org/STIX/ion/stixsig03.html
 
@@ -415,19 +415,9 @@ LatexCmds['±'] = LatexCmds.pm = LatexCmds.plusmn = LatexCmds.plusminus =
 LatexCmds.mp = LatexCmds.mnplus = LatexCmds.minusplus =
   bind(PlusMinus,'\\mp ','&#8723;');
 
-LatexCmds.sdot = LatexCmds.cdot =
+CharCmds['*'] = LatexCmds.sdot = LatexCmds.cdot =
   bind(BinaryOperator, '\\cdot ', '&middot;');
 //semantically should be &sdot;, but &middot; looks better
-
-/** MatHSPaCE HacK
- * Add extra space after comma */
-LatexCmds.comma = LatexCmds[','] = P(Symbol, function(_, super_) {
-  _.init = function(ctrlSeq, html, text) {
-    super_.init.call(this,
-      ctrlSeq, '<span class="mq-comma">,</span>', text
-    );
-  };
-});
 
 var Inequality = P(BinaryOperator, function(_, super_) {
   _.init = function(data, strict) {
@@ -464,11 +454,6 @@ LatexCmds['>'] = LatexCmds.gt = bind(Inequality, greater, true);
 LatexCmds['≤'] = LatexCmds.le = LatexCmds.leq = bind(Inequality, less, false);
 LatexCmds['≥'] = LatexCmds.ge = LatexCmds.geq = bind(Inequality, greater, false);
 
-// MatHSPaCE HacK
-// Add compound commands to ≥ ≤
-CompoundCmds['<='] = LatexCmds.le;
-CompoundCmds['>='] = LatexCmds.ge;
-
 var Equality = P(BinaryOperator, function(_, super_) {
   _.init = function() {
     super_.init.call(this, '=', '=');
@@ -497,10 +482,6 @@ var Equality = P(BinaryOperator, function(_, super_) {
 LatexCmds['='] = Equality;
 
 LatexCmds.times = bind(BinaryOperator, '\\times ', '&times;', '[x]');
-
-// MatHSPaCE HacK
-// Map * to times instead of dot
-CharCmds['*'] = LatexCmds.times;
 
 LatexCmds['÷'] = LatexCmds.div = LatexCmds.divide = LatexCmds.divides =
   bind(BinaryOperator,'\\div ','&divide;', '[/]');
