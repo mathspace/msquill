@@ -97,6 +97,58 @@
   .mq-monospace {
     font-family: monospace, Symbola, serif;
   }
+  .mq-overarrow {
+    margin-top: 0.35em;
+    position: relative;
+
+    .mq-overarrow-inner {
+      display: inline-block;
+      position: relative;
+      padding-top: 0.35em;
+      border-top: 0.1em solid #4d4d4d;
+      margin: 0 0.1em;
+      min-width: 1em;
+      text-align: center;
+
+      .mq-empty {
+        min-width: 1em;
+        margin-top: 0.1em;
+        display: inline-block;
+      }
+
+      .mq-overarrow-inner-right {
+        display: block;
+        position: absolute;
+        top: -0.85em;
+        right: -0.03em;
+        font-size: 1.2em;
+        font-family: @symbola;
+        line-height: 1.5em;
+        text-align: right;
+      }
+      .mq-overarrow-inner-left {
+        display: none;
+        position: absolute;
+        top: -0.562em;
+        left: -0.4em;
+        font-size: 0.75em;
+        font-family: @symbola;
+        line-height: 1em;
+        text-align: left;
+      }
+    }
+    &.mq-arrow-left {
+      .mq-overarrow-inner {
+        .mq-overarrow-inner-right {
+          display: none;
+        }
+        .mq-overarrow-inner-left {
+          display: block;
+        }
+      }
+    }
+  }
+
 
   .mq-overline {
     border-top: 1px solid black;
