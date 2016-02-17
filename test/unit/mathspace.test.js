@@ -155,6 +155,14 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
         mq.keystroke('Tab');
         assert.equal(rootBlock.jQ.children(':first').text(), '⫻');
     });
+
+    test('overrightarrow', function() {
+        mq.typedText('\\overrightarrow');
+        mq.keystroke('Tab');
+        mq.typedText('A');
+        assert.equal(mq.latex(), '\\overrightarrow{A}');
+        
+    });
 });
 
 suite('Mathspace Features: Special key events', function() {
