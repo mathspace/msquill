@@ -742,6 +742,37 @@ var InnerMathField = P(MathQuill.MathField, function(_) {
     ctrlr.cursor.insAtRightEnd(root);
   };
 });
+
+// MaThSpACe hacK
+var IntegralLimits = LatexCmds.integrallimits = P(MathCommand, function(_, super_) {
+  _.ctrlSeq = '\\integrallimits';
+  _.htmlTemplate =
+      '<span class="mq-integral-limits">'
+      +    '<span class="mq-non-leaf">'
+      +      '<span class="mq-scaled mq-paren">[</span>'
+      +      '<span class="mq-non-leaf">'
+      +          '<span>&0</span>'
+      +      '</span>'
+      +      '<span class="mq-scaled mq-paren mq-paren-close">]</span>'
+      +  '</span>'
+      +  '<span class="mq-supsub mq-non-leaf">'
+      +      '<span class="mq-sup">'
+      +          '<span>&1</span>'
+      +      '</span>'
+      +      '<span class="mq-sub">'
+      +          '<span>&2</span>'
+      +      '</span>'
+      +      '<span style="display:inline-block;width:0">&#8203;</span>'
+      +  '</span>'
+    + '</span>'
+  ;
+  _.text_template = ['integrallimits[', '](', ')(', ')'];
+  _.latex = function() {
+    var b = this.blocks;
+    return '\\integrallimits{'+ b[0].latex() +'}_{'+ b[1].latex()  +'}^{'+ b[2].latex() + '}';
+  };
+});
+
 LatexCmds.MathQuillMathField = P(MathCommand, function(_, super_) {
   _.ctrlSeq = '\\MathQuillMathField';
   _.htmlTemplate =
@@ -800,3 +831,4 @@ LatexCmds.MathQuillMathField = P(MathCommand, function(_, super_) {
   _.latex = function(){ return this.ends[L].latex(); };
   _.text = function(){ return this.ends[L].text(); };
 });
+
