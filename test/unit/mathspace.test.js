@@ -329,3 +329,51 @@ suite('Mathspace Patches: General MathQuill Bugs', function() {
     });
 
 });
+
+suite('Mathspace Features: AutoOperator "and" / "or" Support', function () {
+    var mq;
+    var rootBlock;
+    var controller;
+    var mqStatic;
+    setup(function () {
+        mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0], {
+            autoOperatorNames: [
+                'and', 'or'
+            ].join(' ')
+        });
+        rootBlock = mq.__controller.root;
+        controller = mq.__controller;
+
+        mqStatic = MathQuill.StaticMath($('<span></span>').appendTo('#mock')[0], {
+            autoOperatorNames: [
+                'and', 'or'
+            ].join(' ')
+        });
+        rootStatic = mqStatic.__controller.root;
+        controller = mqStatic.__controller;
+    });
+
+    teardown(function () {
+        $(mq.el()).remove();
+    });
+
+    test('display field rendering of "and"', function () {
+        mqStatic.latex('\\operatorname{and}');
+        assert.equal(rootStatic.jQ.find('.mq-operator-name').length, 3);
+    });
+
+    test('display field rendering of "or"', function () {
+        mqStatic.latex('\\operatorname{or}');
+        assert.equal(rootStatic.jQ.find('.mq-operator-name').length, 2);
+    });
+
+    test('editable field rendering of "and"', function () {
+        mq.typedText('and');
+        assert.equal(rootBlock.jQ.find('.mq-operator-name').length, 3);
+    });
+
+    test('editable field rendering of "or"', function () {
+        mq.typedText('or');
+        assert.equal(rootBlock.jQ.find('.mq-operator-name').length, 2);
+    });
+});
