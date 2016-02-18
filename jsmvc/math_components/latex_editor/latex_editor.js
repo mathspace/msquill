@@ -129,7 +129,12 @@ define([
                     });
                     this.buildPlaceholder();
                 } else {
-                    this.mathFieldAPI = MathQuill.StaticMath(elm[0], {});
+                    this.mathFieldAPI = MathQuill.StaticMath(elm[0], {
+                        autoOperatorNames: [
+                            'and', 'or', 'ln', 'log', 'sin', 'cos', 'tan', 'sec',
+                            'csc', 'cot'
+                        ].join(' ')
+                    });
                 }
             },
             '.math-input-label click': function() {
