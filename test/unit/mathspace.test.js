@@ -165,14 +165,14 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
     });
 
     test('integral limits', function() {
-        mq.typedText('\\integrallimits');
+        mq.typedText('\\definite');
         mq.keystroke('Tab');
         mq.typedText('1');
         mq.keystroke('Right');
         mq.typedText('2');
         mq.keystroke('Right');
         mq.typedText('3');
-        assert.equal(mq.latex(), '\\integrallimits{1}_{2}^{3}');
+        assert.equal(mq.latex(), '\\definite{1}_{2}^{3}');
         assert.equal(rootBlock.jQ.find('.mq-integral-limits').length, 1);
         assert.equal(rootBlock.jQ.find('.mq-paren-close').length, 1);
     });
