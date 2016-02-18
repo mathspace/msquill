@@ -79,6 +79,14 @@ var OverLineStyleGenerator = function (className) {
       };
     });
 };
+var HatStyleGenerator = function (className) {
+    var hat = '<span class="' + className + '">^</span>';
+    return P(MathCommand, function(_, super_) {
+      _.init = function(ctrlSeq, tagName, attrs) {
+        super_.init.call(this, ctrlSeq, '<'+tagName+' '+attrs+'><'+tagName+' class="' + className + '-inner">' + hat + '<span class="mq-empty-box">&0</span></'+tagName+'></'+tagName+'>');
+      };
+    });
+};
 
 //fonts
 LatexCmds.mathrm = bind(Style, '\\mathrm', 'span', 'class="mq-roman mq-font"');
@@ -93,6 +101,7 @@ LatexCmds.overline = LatexCmds.bar = bind(Style, '\\overline', 'span', 'class="m
 // MatHSPaCE HacK
 // Adds overrightarrow command
 LatexCmds.overrightarrow = bind(OverLineStyleGenerator('mq-overarrow'), '\\overrightarrow', 'span', 'class="mq-non-leaf mq-overarrow mq-arrow-right"');
+LatexCmds.hat = bind(HatStyleGenerator('mq-hat'), '\\hat', 'span', 'class="mq-non-leaf mq-hat"');
 
 // `\textcolor{color}{math}` will apply a color to the given math content, where
 // `color` is any valid CSS Color Value (see [SitePoint docs][] (recommended),
