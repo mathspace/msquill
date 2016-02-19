@@ -161,7 +161,15 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
         mq.keystroke('Tab');
         mq.typedText('A');
         assert.equal(mq.latex(), '\\overrightarrow{A}');
-        
+
+    });
+
+    test('hat symbol', function() {
+        mq.typedText('\\hat');
+        mq.keystroke('Tab');
+        mq.typedText('C');
+        assert.equal(mq.latex(), '\\hat{C}');
+        assert.equal(rootBlock.jQ.find('.mq-hat-inner').length, 1);
     });
 });
 
