@@ -63,3 +63,18 @@ var nPr = LatexCmds.nPr = P(MathCommand, function(_, super_) {
     return '\\nPr{'+this.ends[L].latex()+'}{'+this.ends[R].latex()+'}';
   };
 });
+
+
+// Define \overrightarrow{} for vectors
+
+// Define markup
+var OverLineStyleGenerator = function (className) {
+    var arrows = '<span class="' + className + '-inner-right">›</span><span class="' + className + '-inner-left">‹</span>';
+    return P(MathCommand, function(_, super_) {
+      _.init = function(ctrlSeq, tagName, attrs) {
+        super_.init.call(this, ctrlSeq, '<'+tagName+' '+attrs+'><'+tagName+' class="' + className + '-inner">' + arrows + '<span class="mq-empty-box">&0</span></'+tagName+'></'+tagName+'>');
+      };
+    });
+};
+// Add command
+LatexCmds.overrightarrow = bind(OverLineStyleGenerator('mq-overarrow'), '\\overrightarrow', 'span', 'class="mq-non-leaf mq-overarrow mq-arrow-right"');
