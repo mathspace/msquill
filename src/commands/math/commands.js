@@ -769,7 +769,7 @@ var Definite = LatexCmds.definite = P(MathCommand, function(_, super_) {
   _.text_template = ['definite[', '](', ')(', ')'];
   _.latex = function() {
     var b = this.blocks;
-    return '\\definite{'+ b[0].latex() +'}_{'+ b[1].latex()  +'}^{'+ b[2].latex() + '}';
+    return '\\definite{'+ b[0].latex() +'}{'+ b[1].latex() + '}{' + b[2].latex() + '}';
   };
 });
 
