@@ -369,6 +369,22 @@
       width: 100%;
     }
   }
+  // MaThSpaCE haCK
+  .mq-lim {
+    text-align: center;
+
+    span  {
+      display: block;
+    }
+    .mq-approaches  {
+      font-size: 80%;
+      float: right; /* take out of normal flow to manipulate baseline */
+      width: 100%;
+      span > span {
+          display: inline;
+      }
+    }
+  }
 
 
   &, .mq-editable-field {
