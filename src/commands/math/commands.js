@@ -771,6 +771,23 @@ var Definite = LatexCmds.definite = P(MathCommand, function(_, super_) {
     var b = this.blocks;
     return '\\definite{'+ b[0].latex() +'}{'+ b[1].latex() + '}{' + b[2].latex() + '}';
   };
+  _.jQadd = function () {
+    super_.jQadd.apply(this, arguments);
+    var p = this.jQ.children(':first');
+    this.delimjQs = p.children(':first').add(p.children(':last'));
+    this.contentjQ = p.children(':eq(1)');
+    this.supjQ = this.jQ.find('.integral-sup > span').children();
+    this.subjQ = this.jQ.find('.integral-sub > span').children();
+
+  };
+  _.reflow = function() {
+    var height = this.contentjQ.outerHeight()
+                 / parseFloat(this.contentjQ.css('fontSize'));
+    scale(this.delimjQs, min(1 + .2*(height - 1), 1.2), 1.2*height);
+    //  Fix the positioning... When there is a fraction
+    //this.supjQ.css({'vertical-align': height/3.9 + 'em'});
+    //this.subjQ.css({'vertical-align': height*0.55 / -1 + 'em'});
+  };
 });
 
 LatexCmds.MathQuillMathField = P(MathCommand, function(_, super_) {
