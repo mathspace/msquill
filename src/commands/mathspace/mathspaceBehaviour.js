@@ -42,7 +42,8 @@ LatexCmds.lim = P(MathCommand, function(_, super_) {
   };
 });
 
-
+// integral
+// We added placeholder support for integral 
 LatexCmds['∫'] =
 LatexCmds['int'] =
 LatexCmds.integral = P(MathCommand, function(_, super_) {
