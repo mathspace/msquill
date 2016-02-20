@@ -7,6 +7,17 @@ Controller.open(function(_) {
     var ultimateRootjQ = this.root.jQ;
     //drag-to-select event handling
     this.container.bind('mousedown.mathquill', function(e) {
+      var ultimateRoot = Node.byId[ultimateRootjQ.attr(mqBlockId)];
+      var ultimateRootAPI = ultimateRoot.controller.API;
+
+      if ($(e.target).parents('.mq-inner-editable').length &&
+          ultimateRootAPI instanceof MathQuill.StaticMath) {
+        // If the ultimate root is readonly (StaticMath)
+        // and you clicked inside the editable box
+        // ignore the event (no blinking cursor)
+        return;
+      }
+
       var rootjQ = $(e.target).closest('.mq-root-block');
       var root = Node.byId[rootjQ.attr(mqBlockId) || ultimateRootjQ.attr(mqBlockId)];
       var ctrlr = root.controller, cursor = ctrlr.cursor, blink = cursor.blink;
