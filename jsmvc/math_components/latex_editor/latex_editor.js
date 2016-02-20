@@ -142,10 +142,18 @@ define([
                 this.element.trigger('requestFocus');
             },
             '.mathquill-element textarea focus': function() {
-                this.scope.attr('isInFocus', true);
+                // This will trigger further events in MathQuill,
+                // they are not expected in read-only mode
+                if (this.scope.attr('editable')) {
+                    this.scope.attr('isInFocus', true);
+                }
             },
             '.mathquill-element textarea blur': function() {
-                this.scope.attr('isInFocus', false);
+                // This will trigger further events in MathQuill,
+                // they are not expected in read-only mode
+                if (this.scope.attr('editable')) {
+                    this.scope.attr('isInFocus', false);
+                }
             },
             'command.mc-latex-editor': function(elm, ev, commandObj) {
                 this.executeCommand(commandObj);
