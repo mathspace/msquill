@@ -194,6 +194,16 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
         assert.equal(rootBlock.jQ.find('.mq-integral-limits').length, 1);
         assert.equal(rootBlock.jQ.find('.mq-paren-close').length, 1);
     });
+
+    test('integral', function() {
+        mq.typedText('\\int');
+        mq.keystroke('Tab');
+        mq.typedText('A');
+        mq.keystroke('Right');
+        mq.typedText('B');
+        assert.equal(mq.latex(), '\\int{A}{B}');
+        assert.equal(rootBlock.jQ.find('.mq-int').length, 1);
+    })
 });
 
 suite('Mathspace Features: Special key events', function() {
