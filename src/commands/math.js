@@ -443,6 +443,8 @@ var MathBlock = P(MathElement, function(_, super_) {
     if (ctrlr.API.__options.preventBackslash
         && (key === 'Backslash')) {
       e.preventDefault();
+      e.stopImmediatePropagation();
+      e.stopPropagation();
       return;
     }
     return super_.keystroke.apply(this, arguments);
