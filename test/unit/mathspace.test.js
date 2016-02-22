@@ -345,3 +345,61 @@ suite('Mathspace Patches: General MathQuill Bugs', function() {
     });
 
 });
+
+
+suite('Mathspace Features: disableBackslash option', function() {
+    var mq, rootBlock, cursor;
+    test('backslash allows direct latex input by default', function () {
+        mq = MathQuill.MathField( $('<span></span>').appendTo('#mock')[0]);
+        rootBlock = mq.__controller.root;
+        cursor = mq.__controller.cursor;
+        var container = rootBlock.jQ.parent();
+        var textarea = container.find('textarea');
+
+        // check event firing
+        var event = jQuery.Event('keydown', { which: 220 });
+        container.keydown(function(e) {
+            assert.equal(e.which, 220);
+        });
+        textarea.val('\\').trigger(event);
+
+        $(mq.el()).remove();
+    })
+
+    test('backslash has no effect when disabled', function () {
+        var opts = { preventBackslash: true };
+        mq = MathQuill.MathField( $('<span></span>').appendTo('#mock')[0], opts);
+        rootBlock = mq.__controller.root;
+        cursor = mq.__controller.cursor;
+        var container = rootBlock.jQ.parent();
+        var textarea = container.find('textarea');
+
+        // check event firing
+        var event = jQuery.Event('keydown', { which: 220 });
+        container.keydown(function(e) {
+            assert.fail('This keydown event should not trigger: ' + e.which);
+        });
+        textarea.val('\\').trigger(event);
+
+        $(mq.el()).remove();
+    });
+
+    test('backslash has no effect when globally set to true', function () {
+        MathQuill.config({ preventBackslash: true });
+
+        mq = MathQuill.MathField( $('<span></span>').appendTo('#mock')[0]);
+        rootBlock = mq.__controller.root;
+        cursor = mq.__controller.cursor;
+        var container = rootBlock.jQ.parent();
+        var textarea = container.find('textarea');
+
+        // check event firing
+        var event = jQuery.Event('keydown', { which: 220 });
+        container.keydown(function(e) {
+            assert.fail('This keydown event should not trigger: ' + e.which);
+        });
+        textarea.val('\\').trigger(event);
+
+        $(mq.el()).remove();
+    });
+});
