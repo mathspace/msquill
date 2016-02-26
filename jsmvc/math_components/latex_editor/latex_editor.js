@@ -111,8 +111,16 @@ define([
 
                 if (this.scope.attr('editable')) {
                     this.mathFieldAPI = MathQuill.MathField(elm[0], {
+                        // todo: Options duplicated in widgets/math_input.js
+                        autoCommands: 'pi',
+                        autoOperatorNames: [
+                            'and', 'or', 'ln', 'log', 'sin', 'cos', 'tan', 'sec',
+                            'csc', 'cot'
+                        ].join(' '),
                         preventBackslash: true,
                         spaceBehavesLikeTab: true,
+                        supSubsRequireOperand: true,
+
                         handlers: {
                             edit: function(mathField) {
                                 self.scope.attr('latex', mathField.latex());
@@ -121,7 +129,12 @@ define([
                     });
                     this.buildPlaceholder();
                 } else {
-                    this.mathFieldAPI = MathQuill.StaticMath(elm[0], {});
+                    this.mathFieldAPI = MathQuill.StaticMath(elm[0], {
+                        autoOperatorNames: [
+                            'and', 'or', 'ln', 'log', 'sin', 'cos', 'tan', 'sec',
+                            'csc', 'cot'
+                        ].join(' ')
+                    });
                 }
             },
             '.math-input-label click': function() {
