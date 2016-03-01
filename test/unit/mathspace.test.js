@@ -179,7 +179,7 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
         mq.keystroke('Right');
         mq.typedText('B');
         assert.equal(mq.latex(), '\\lim{A}{B}');
-        assert.equal(rootBlock.jQ.find('.mq-lim').length, 1);
+        assert.equal(rootBlock.jQ.find('.mq-large-operator').length, 1);
     });
 });
 
