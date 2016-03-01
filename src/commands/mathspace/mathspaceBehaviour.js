@@ -17,26 +17,3 @@ LatexCmds.comma = LatexCmds[','] = P(Symbol, function(_, super_) {
   };
 });
 
-// limit symbol
-LatexCmds.lim = P(MathCommand, function(_, super_) {
-  _.ctrlSeq = '\\lim';
-  _.init = function() {
-    var htmlTemplate =
-        '<span class="mq-large-operator mq-non-leaf">'
-      +   '<span class="mq-un-italicized">lim</span>'
-      +   '<span style="display: block">'
-      +     '<span class="mq-from">'
-      +       '<span>&0</span>'
-      +       '<span style="padding: 0 .1em">→</span>'
-      +       '<span>&1</span>'
-      +     '</span>'
-      +   '</span>'
-      + '</span>'
-    ;
-    Symbol.prototype.init.call(this, '\\lim ', htmlTemplate);
-  };
-  _.latex = function() {
-    var b = this.blocks;
-    return this.ctrlSeq + '{' + b[0].latex() +'}{' + b[1].latex() + '}';
-  };
-});
