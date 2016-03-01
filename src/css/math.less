@@ -402,3 +402,20 @@
   padding-right: .5em;
   display: inline-block;  // Required for line break
 }
+
+// MaThSpaCE haCK
+// limit
+.mq-lim {
+  .mq-approach-container {
+    display: block;
+    .mq-approach {
+      font-size: 80%;
+      display: block;
+      float: right; /* take out of normal flow to manipulate baseline */
+      width: 100%;
+      .mq-approach-arrow {
+        padding: 0 .1em;
+      }
+    }
+  }
+}

@@ -70,12 +70,12 @@ LatexCmds.lim = P(MathCommand, function(_, super_) {
   _.ctrlSeq = '\\lim';
   _.init = function() {
     var htmlTemplate =
-        '<span class="mq-large-operator mq-non-leaf">'
+        '<span class="mq-large-operator mq-non-leaf mq-lim">'
       +   '<span class="mq-un-italicized">lim</span>'
-      +   '<span style="display: block">'
-      +     '<span class="mq-from">'
+      +   '<span class="mq-approach-container">'
+      +     '<span class="mq-approach">'
       +       '<span>&0</span>'
-      +       '<span style="padding: 0 .1em">→</span>'
+      +       '<span class="mq-approach-arrow">→</span>'
       +       '<span>&1</span>'
       +     '</span>'
       +   '</span>'
