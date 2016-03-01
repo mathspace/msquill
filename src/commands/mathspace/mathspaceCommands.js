@@ -68,8 +68,7 @@ var nPr = LatexCmds.nPr = P(MathCommand, function(_, super_) {
 // limit symbol
 LatexCmds.lim = P(MathCommand, function(_, super_) {
   _.ctrlSeq = '\\lim';
-  _.init = function() {
-    var htmlTemplate =
+  _.htmlTemplate =
         '<span class="mq-large-operator mq-non-leaf mq-lim">'
       +   '<span class="mq-un-italicized">lim</span>'
       +   '<span class="mq-approach-container">'
@@ -79,10 +78,7 @@ LatexCmds.lim = P(MathCommand, function(_, super_) {
       +       '<span>&1</span>'
       +     '</span>'
       +   '</span>'
-      + '</span>'
-    ;
-    Symbol.prototype.init.call(this, '\\lim ', htmlTemplate);
-  };
+      + '</span>';
   _.latex = function() {
     var b = this.blocks;
     return this.ctrlSeq + '{' + b[0].latex() +'}{' + b[1].latex() + '}';
