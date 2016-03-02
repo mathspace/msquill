@@ -895,6 +895,11 @@ suite('typing with auto-replaces', function() {
       if (cmds.indexOf('deg') > -1) {
         cmds.splice(cmds.indexOf('deg'), 1);
       }
+      // lim is a custom latex command (We added placeholders)
+      if (cmds.indexOf('lim') > -1) {
+        cmds.splice(cmds.indexOf('lim'), 1);
+      }
+
       for (var i = 0; i < cmds.length; i += 1) {
         assert.throws(function() { MathQuill.config({ autoCommands: cmds[i] }) },
                       'MathQuill.config({ autoCommands: "'+cmds[i]+'" })');
@@ -910,6 +915,10 @@ suite('typing with auto-replaces', function() {
       // deg should not be an auto operator, it is an latex command mapped to degree symbol
       if (cmds.indexOf('deg') > -1) {
         cmds.splice(cmds.indexOf('deg'), 1);
+      }
+      // lim is a custom latex command (We added placeholders)
+      if (cmds.indexOf('lim') > -1) {
+        cmds.splice(cmds.indexOf('lim'), 1);
       }
 
       for (var i = 0; i < cmds.length; i += 1) {
