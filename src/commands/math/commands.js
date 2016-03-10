@@ -743,53 +743,6 @@ var InnerMathField = P(MathQuill.MathField, function(_) {
   };
 });
 
-// MaThSpACe hacK
-var Definite = LatexCmds.definite = P(MathCommand, function(_, super_) {
-  _.ctrlSeq = '\\definite';
-  _.htmlTemplate =
-      '<span class="mq-integral-limits">'
-      +    '<span class="mq-non-leaf">'
-      +      '<span class="mq-scaled mq-paren">[</span>'
-      +      '<span class="mq-non-leaf">'
-      +          '<span>&0</span>'
-      +      '</span>'
-      +      '<span class="mq-scaled mq-paren mq-paren-close">]</span>'
-      +  '</span>'
-      +  '<span class="mq-supsub mq-non-leaf">'
-      +      '<span class="mq-sup">'
-      +          '<span>&1</span>'
-      +      '</span>'
-      +      '<span class="mq-sub">'
-      +          '<span>&2</span>'
-      +      '</span>'
-      +      '<span style="display:inline-block;width:0">&#8203;</span>'
-      +  '</span>'
-    + '</span>'
-  ;
-  _.text_template = ['definite[', '](', ')(', ')'];
-  _.latex = function() {
-    var b = this.blocks;
-    return '\\definite{'+ b[0].latex() +'}{'+ b[1].latex() + '}{' + b[2].latex() + '}';
-  };
-  _.jQadd = function () {
-    super_.jQadd.apply(this, arguments);
-    var p = this.jQ.children(':first');
-    this.delimjQs = p.children(':first').add(p.children(':last'));
-    this.contentjQ = p.children(':eq(1)');
-    this.supjQ = this.jQ.find('.integral-sup > span').children();
-    this.subjQ = this.jQ.find('.integral-sub > span').children();
-
-  };
-  _.reflow = function() {
-    var height = this.contentjQ.outerHeight()
-                 / parseFloat(this.contentjQ.css('fontSize'));
-    scale(this.delimjQs, min(1 + .2*(height - 1), 1.2), 1.2*height);
-    //  Fix the positioning... When there is a fraction
-    //this.supjQ.css({'vertical-align': height/3.9 + 'em'});
-    //this.subjQ.css({'vertical-align': height*0.55 / -1 + 'em'});
-  };
-});
-
 LatexCmds.MathQuillMathField = P(MathCommand, function(_, super_) {
   _.ctrlSeq = '\\MathQuillMathField';
   _.htmlTemplate =
