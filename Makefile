@@ -6,6 +6,8 @@
 SRC_DIR = ./src
 INTRO = $(SRC_DIR)/intro.js
 OUTRO = $(SRC_DIR)/outro.js
+AMD_OPEN = $(SRC_DIR)/amd-open.js
+AMD_CLOSE = $(SRC_DIR)/amd-close.js
 
 PJS_SRC = ./node_modules/pjs/src/p.js
 
@@ -55,6 +57,8 @@ DISTDIR = ./mathquill-$(VERSION)
 DIST = $(DISTDIR).tgz
 CLEAN += $(DIST)
 
+BUILD_MATHSPACE = $(BUILD_DIR)/mathquill-mathspace.js
+
 # programs and flags
 UGLIFY ?= ./node_modules/.bin/uglifyjs
 UGLIFY_OPTS ?= --mangle --compress hoist_vars=true
@@ -79,7 +83,7 @@ BUILD_DIR_EXISTS = $(BUILD_DIR)/.exists--used_by_Makefile
 # -*- Build tasks -*-
 #
 
-.PHONY: all basic dev js uglify css font dist clean
+.PHONY: all basic dev js uglify css font dist mathspace clean
 all: font css uglify
 basic: $(UGLY_BASIC_JS) $(BASIC_CSS)
 # dev is like all, but without minification
@@ -89,6 +93,7 @@ uglify: $(UGLY_JS)
 css: $(BUILD_CSS)
 font: $(FONT_TARGET)
 dist: $(DIST)
+mathspace: $(BUILD_MATHSPACE)
 clean:
 	rm -rf $(CLEAN)
 
@@ -129,6 +134,9 @@ $(DIST): $(UGLY_JS) $(BUILD_JS) $(BUILD_CSS) $(FONT_TARGET)
 	cp -r $(BUILD_DIR) $(DISTDIR)
 	tar -czf $(DIST) --exclude='\.gitkeep' $(DISTDIR)
 	rm -r $(DISTDIR)
+
+$(BUILD_MATHSPACE): $(AMD_OPEN) $(BUILD_JS) $(AMD_CLOSE)
+	cat $^ | ./script/escape-non-ascii > $@
 
 #
 # -*- Test tasks -*-
