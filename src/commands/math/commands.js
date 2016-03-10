@@ -742,6 +742,7 @@ var InnerMathField = P(MathQuill.MathField, function(_) {
     ctrlr.cursor.insAtRightEnd(root);
   };
 });
+
 LatexCmds.MathQuillMathField = P(MathCommand, function(_, super_) {
   _.ctrlSeq = '\\MathQuillMathField';
   _.htmlTemplate =
@@ -800,3 +801,4 @@ LatexCmds.MathQuillMathField = P(MathCommand, function(_, super_) {
   _.latex = function(){ return this.ends[L].latex(); };
   _.text = function(){ return this.ends[L].text(); };
 });
+
