@@ -17,27 +17,3 @@ LatexCmds.comma = LatexCmds[','] = P(Symbol, function(_, super_) {
   };
 });
 
-
-// integral
-// We added placeholder support for integral 
-LatexCmds['∫'] =
-LatexCmds['int'] =
-LatexCmds.integral = P(MathCommand, function(_, super_) {
-  _.ctrlSeq = '\\int';
-  _.init = function() {
-    var htmlTemplate =
-      '<span>' +
-        '<big>∫</big>' +
-        '<span class="mq-supsub mq-non-leaf mq-int">' +
-          '<span class="mq-sup">&0</span>' +
-          '<span class="mq-sub">&1</span>' +
-        '</span>' +
-      '</span>'
-    ;
-    Symbol.prototype.init.call(this, '\\int ', htmlTemplate);
-  };
-  _.latex = function() {
-    var b = this.blocks;
-    return this.ctrlSeq + '{' + b[0].latex() +'}{' + b[1].latex() + '}';
-  };
-});
