@@ -172,7 +172,7 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
         mq.typedText('2');
         mq.keystroke('Right');
         mq.typedText('3');
-        assert.equal(mq.latex(), '\\definite{1}_{2}^{3}');
+        assert.equal(mq.latex(), '\\definite{1}{2}{3}');
         assert.equal(rootBlock.jQ.find('.mq-integral-limits').length, 1);
         assert.equal(rootBlock.jQ.find('.mq-paren-close').length, 1);
     });
