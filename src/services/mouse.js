@@ -10,10 +10,18 @@ Controller.open(function(_) {
       var ultimateRoot = Node.byId[ultimateRootjQ.attr(mqBlockId)];
       var ultimateRootAPI = ultimateRoot.controller.API;
 
-      if ($(e.target).parents('.mq-inner-editable').length &&
-          ultimateRootAPI instanceof MathQuill.StaticMath) {
+      // MATHSPACE: Handle our inline-editable fields.
+      if (
+        (ultimateRootAPI instanceof MathQuill.StaticMath &&
+        $(e.target).parents('.mq-inner-editable').length)
         // If the ultimate root is readonly (StaticMath)
         // and you clicked inside the editable box
+        ||
+        ($(e.target).parents('.mathquill-container-inline-editable').length &&
+        !$(e.target).parents('.mq-inner-editable').length)
+        // or if the ultimate root is an inline editable container
+        // and you didn't click inside the editable box
+      ) {
         // ignore the event (no blinking cursor)
         return;
       }
