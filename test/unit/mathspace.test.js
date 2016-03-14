@@ -106,6 +106,20 @@ suite('Mathspace Features: Nested inline editable', function() {
         assert.equal(mq.latex(), '\\editable{\\pi}');
     });
 
+    test('readonly editalbe box should not activate cursor when tapped', function() {
+        $(mq.el()).remove();
+        mq = MathQuill.StaticMath($('<span>\\editable{} + 1</span>').appendTo('#mock')[0], {
+            autoCommands: 'pi sum'
+        });
+        rootBlock = mq.__controller.root;
+        var field = rootBlock.jQ.find('.mq-inner-editable .mq-root-block');
+        assert.equal(field.length, 1);
+
+        field.trigger('mousedown').trigger('mouseup');
+        // This indicates no element was focused
+        assert.equal(rootBlock.jQ.find('.mq-focused').length, 0);
+    });
+
 });
 
 suite('Mathspace Features: Custom Latex Symbols', function() {
