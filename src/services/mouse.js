@@ -10,20 +10,27 @@ Controller.open(function(_) {
       var ultimateRoot = Node.byId[ultimateRootjQ.attr(mqBlockId)];
       var ultimateRootAPI = ultimateRoot.controller.API;
 
-      if ($(e.target).parents('.mq-inner-editable').length &&
-          ultimateRootAPI instanceof MathQuill.StaticMath) {
-        // If the ultimate root is readonly (StaticMath)
-        // and you clicked inside the editable box
-        // ignore the event (no blinking cursor)
-        return;
-      }
-
       var rootjQ = $(e.target).closest('.mq-root-block');
       var root = Node.byId[rootjQ.attr(mqBlockId) || ultimateRootjQ.attr(mqBlockId)];
       var ctrlr = root.controller, cursor = ctrlr.cursor, blink = cursor.blink;
       var textareaSpan = ctrlr.textareaSpan, textarea = ctrlr.textarea;
 
       var target;
+
+      // MATHSPACE: Handle our inline-editable fields.
+      if (
+        (ultimateRootAPI instanceof MathQuill.StaticMath &&
+        $(e.target).parents('.mq-inner-editable').length)
+        // If the ultimate root is readonly (StaticMath)
+        // and you clicked inside the editable box
+        ||
+        ctrlr.API.latex().indexOf('\\editable{') > -1
+        // or if the selected element contains latex matching '\editable{'
+      ) {
+        // ignore the event (no blinking cursor)
+        return;
+      }
+
       function mousemove(e) { target = $(e.target); }
       function docmousemove(e) {
         if (!cursor.anticursor) cursor.startSelection();
@@ -36,15 +43,11 @@ Controller.open(function(_) {
       function mouseup(e) {
         cursor.blink = blink;
         if (!cursor.selection) {
-          /** MatHSPaCE HacK */
-          /** Lock the cursor inside the nested editable field */
-          var hasEditableLatex = ctrlr.API.latex().indexOf('\\editable{') > -1;
-          if (ctrlr.editable && !hasEditableLatex) {
+          if (ctrlr.editable) {
             cursor.show();
           }
           else {
             textareaSpan.detach();
-            cursor.hide();
           }
         }
 
