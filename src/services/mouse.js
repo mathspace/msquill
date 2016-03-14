@@ -10,6 +10,13 @@ Controller.open(function(_) {
       var ultimateRoot = Node.byId[ultimateRootjQ.attr(mqBlockId)];
       var ultimateRootAPI = ultimateRoot.controller.API;
 
+      var rootjQ = $(e.target).closest('.mq-root-block');
+      var root = Node.byId[rootjQ.attr(mqBlockId) || ultimateRootjQ.attr(mqBlockId)];
+      var ctrlr = root.controller, cursor = ctrlr.cursor, blink = cursor.blink;
+      var textareaSpan = ctrlr.textareaSpan, textarea = ctrlr.textarea;
+
+      var target;
+
       // MATHSPACE: Handle our inline-editable fields.
       if (
         (ultimateRootAPI instanceof MathQuill.StaticMath &&
@@ -17,21 +24,13 @@ Controller.open(function(_) {
         // If the ultimate root is readonly (StaticMath)
         // and you clicked inside the editable box
         ||
-        ($(e.target).parents('.mathquill-container-inline-editable').length &&
-        !$(e.target).parents('.mq-inner-editable').length)
-        // or if the ultimate root is an inline editable container
-        // and you didn't click inside the editable box
+        ctrlr.API.latex().indexOf('\\editable{') > -1
+        // or if the selected element contains latex matching '\editable{'
       ) {
         // ignore the event (no blinking cursor)
         return;
       }
 
-      var rootjQ = $(e.target).closest('.mq-root-block');
-      var root = Node.byId[rootjQ.attr(mqBlockId) || ultimateRootjQ.attr(mqBlockId)];
-      var ctrlr = root.controller, cursor = ctrlr.cursor, blink = cursor.blink;
-      var textareaSpan = ctrlr.textareaSpan, textarea = ctrlr.textarea;
-
-      var target;
       function mousemove(e) { target = $(e.target); }
       function docmousemove(e) {
         if (!cursor.anticursor) cursor.startSelection();
