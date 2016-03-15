@@ -186,16 +186,6 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
         assert.equal(rootBlock.jQ.find('.mq-hat-inner').length, 1);
     });
 
-    test('limit', function() {
-        mq.typedText('\\lim');
-        mq.keystroke('Tab');
-        mq.typedText('A');
-        mq.keystroke('Right');
-        mq.typedText('B');
-        assert.equal(mq.latex(), '\\lim{A}{B}');
-        assert.equal(rootBlock.jQ.find('.mq-large-operator').length, 1);
-    });
-
     test('integral limits', function() {
         mq.typedText('\\definite');
         mq.keystroke('Tab');

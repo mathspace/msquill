@@ -65,28 +65,6 @@ var nPr = LatexCmds.nPr = P(MathCommand, function(_, super_) {
 });
 
 
-// limit symbol
-LatexCmds.lim = P(MathCommand, function(_, super_) {
-  _.ctrlSeq = '\\lim';
-  _.htmlTemplate =
-        '<span class="mq-large-operator mq-non-leaf mq-lim">'
-      +   '<span class="mq-un-italicized">lim</span>'
-      +   '<span class="mq-approach-container">'
-      +     '<span class="mq-approach">'
-      +       '<span>&0</span>'
-      +       '<span class="mq-approach-arrow">→</span>'
-      +       '<span>&1</span>'
-      +     '</span>'
-      +   '</span>'
-      + '</span>';
-  _.latex = function() {
-    var b = this.blocks;
-    return this.ctrlSeq + '{' + b[0].latex() +'}{' + b[1].latex() + '}';
-  };
-});
-
-
-
 // Define \overrightarrow{} for vectors
 
 // Define markup
