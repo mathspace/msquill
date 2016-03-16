@@ -57,7 +57,10 @@ DISTDIR = ./mathquill-$(VERSION)
 DIST = $(DISTDIR).tgz
 CLEAN += $(DIST)
 
-BUILD_MATHSPACE = $(BUILD_DIR)/mathquill-mathspace.js
+MATHSPACE_JS = $(BUILD_DIR)/mathquill-mathspace.js
+MATHSPACE_CSS = $(BUILD_DIR)/mathquill-mathspace.css
+MATHSPACE_CSS_MAIN = $(CSS_DIR)/mathspace/main.less
+
 
 # programs and flags
 UGLIFY ?= ./node_modules/.bin/uglifyjs
@@ -93,7 +96,7 @@ uglify: $(UGLY_JS)
 css: $(BUILD_CSS)
 font: $(FONT_TARGET)
 dist: $(DIST)
-mathspace: $(BUILD_MATHSPACE)
+mathspace: $(MATHSPACE_JS) $(MATHSPACE_CSS)
 clean:
 	rm -rf $(CLEAN)
 
@@ -135,8 +138,11 @@ $(DIST): $(UGLY_JS) $(BUILD_JS) $(BUILD_CSS) $(FONT_TARGET)
 	tar -czf $(DIST) --exclude='\.gitkeep' $(DISTDIR)
 	rm -r $(DISTDIR)
 
-$(BUILD_MATHSPACE): $(AMD_OPEN) $(BUILD_JS) $(AMD_CLOSE)
+$(MATHSPACE_JS): $(AMD_OPEN) $(BUILD_JS) $(AMD_CLOSE)
 	cat $^ | ./script/escape-non-ascii > $@
+
+$(MATHSPACE_CSS): $(CSS_SOURCES) $(NODE_MODULES_INSTALLED) $(BUILD_DIR_EXISTS)
+	$(LESSC) $(LESS_OPTS) $(MATHSPACE_CSS_MAIN) > $@
 
 #
 # -*- Test tasks -*-
