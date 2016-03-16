@@ -65,6 +65,30 @@ var nPr = LatexCmds.nPr = P(MathCommand, function(_, super_) {
 });
 
 
+// Because \operatorname{} doesn't put enough surrounding whitespace
+LatexCmds.andword = P(Symbol, function(_, super_) {
+    _.init = function() {
+        super_.init.call(this,
+            '\\andword ',
+            '<span class="mq-binary-operator-word">and</span>',
+            ' and '
+        );
+    };
+});
+
+
+// Because \operatorname{} doesn't put enough surrounding whitespace
+LatexCmds.orword = P(Symbol, function(_, super_) {
+    _.init = function() {
+        super_.init.call(this,
+            '\\orword ',
+            '<span class="mq-binary-operator-word">or</span>',
+            ' or '
+        );
+    };
+});
+
+
 // Define \overrightarrow{} for vectors
 
 // Define markup

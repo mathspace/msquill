@@ -154,6 +154,18 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
         assert.equal(rootBlock.jQ.children(':first').text(), '°');
     });
 
+    test('and', function() {
+        mq.typedText('\\andword');
+        mq.keystroke('Tab');
+        assert.equal(rootBlock.jQ.children(':first').text(), 'and');
+    });
+
+    test('or', function() {
+        mq.typedText('\\orword');
+        mq.keystroke('Tab');
+        assert.equal(rootBlock.jQ.children(':first').text(), 'or');
+    });
+
     test('percent latex should not have backslash', function() {
         mq.typedText('%');
         assert.equal(mq.latex(), '%');
