@@ -362,7 +362,8 @@ var VanillaSymbol = P(Symbol, function(_, super_) {
         if (!firstDigitEl) {
           firstDigitEl = el;
         }
-        if (el.ch === '.' || el.ch === '^\\circ ') { // TODO: more efficient way...
+        // TODO: more efficient way...
+        if (el.ch === '.' || el.ch === '^\\circ ' || el.ch === '!') {
           return false; // break the loop
         }
         lastDigitEl = el;
