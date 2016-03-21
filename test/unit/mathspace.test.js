@@ -34,6 +34,11 @@ suite('Mathspace Features: Thousand Separator', function() {
         // Code should not break
         assert.equal(mq.latex(), '.1');
     });
+
+    test('thousand separators: 100°', function() {
+        mq.latex('100\\deg');
+        assert.equal(rootBlock.jQ.children('.thousands-separator-after').length, 0);
+    });
 });
 
 
