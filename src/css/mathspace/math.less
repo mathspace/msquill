@@ -1,0 +1,134 @@
+/**
+ * All Mathspace-specific Mathquill styles should live in this file.
+ */
+
+
+.mq-root-block, .mq-math-mode .mq-root-block {
+  white-space: normal;     // Text wrapping
+  overflow: visible;       // Text wrapping
+  // So it will align with the text around it
+  // Eg..
+  // Evaluate sqrt{4}^2  Evaluate and sqrt should be text-bottom baseline aligned
+  vertical-align: baseline;
+}
+
+
+.mq-math-mode {
+  .mq-binary-operator {
+    white-space: pre-wrap;  // MaThSpaCE haCK: Text wrapping
+  }
+
+
+  /* Undo styles from Bootstrap 3's _normalize.scss */
+  .mq-root-block sup {
+      top: 0;
+  }
+  .mq-root-block sub {
+      bottom: 0;
+  }
+
+
+  // Custom Overarrow Operator
+  .mq-overarrow {
+    margin-top: 0.35em;
+    position: relative;
+
+    .mq-overarrow-inner {
+      display: inline-block;
+      position: relative;
+      padding-top: 0.35em;
+      border-top: 0.1em solid #4d4d4d;
+      margin: 0 0.1em;
+      min-width: 1em;
+      text-align: center;
+
+      .mq-empty {
+        min-width: 1em;
+        margin-top: 0.1em;
+        display: inline-block;
+      }
+
+      .mq-overarrow-inner-right {
+        display: block;
+        position: absolute;
+        top: -0.85em;
+        right: -0.03em;
+        font-size: 1.2em;
+        font-family: @symbola;
+        line-height: 1.5em;
+        text-align: right;
+      }
+      .mq-overarrow-inner-left {
+        display: none;
+        position: absolute;
+        top: -0.562em;
+        left: -0.4em;
+        font-size: 0.75em;
+        font-family: @symbola;
+        line-height: 1em;
+        text-align: left;
+      }
+    }
+    &.mq-arrow-left {
+      .mq-overarrow-inner {
+        .mq-overarrow-inner-right {
+          display: none;
+        }
+        .mq-overarrow-inner-left {
+          display: block;
+        }
+      }
+    }
+
+  }
+
+
+  // hat operator
+  .mq-hat-inner {
+    display: inline-block;
+    position: relative;
+    padding-top: 0.35em;
+    margin: 0 0.1em;
+    min-width: 1em;
+    text-align: center;
+    .mq-hat {
+      position: absolute;
+      display: inline-block;
+      top: 0;
+      left: 0.325em;
+    }
+  }
+
+
+  // Integral limits
+  .mq-integral-limits {
+    .mq-paren-close {
+      margin-right: 0.15em;
+    }
+  }
+}
+
+
+// Thoudsand seperator
+.mq-root-block .thousands-separator-before {
+  padding-left: .2em;
+}
+.mq-root-block .thousands-separator-after {
+  padding-right: .2em;
+}
+
+
+// Add extra space after comma symbol
+.mq-root-block .mq-comma {
+  padding-right: .5em;
+  display: inline-block;  // Required for line break
+}
+
+
+// For \andword and \orword
+// Because \operatorname{} doesn't put enough surrounding whitespace
+.mq-binary-operator-word {
+  padding-left: .4em;
+  padding-right: .4em;
+  display: inline-block;  // Required for line break
+}
