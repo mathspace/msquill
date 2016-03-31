@@ -127,6 +127,28 @@ suite('Mathspace Features: Nested inline editable', function() {
 
 });
 
+suite('Mathspace Features: autoCommandsMapping', function() {
+    var mq;
+    var rootBlock;
+    var controller;
+    setup(function() {
+        mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0], {
+            autoCommands: 'and',
+            autoCommandsMapping: {'and': 'andword'}
+        });
+        rootBlock = mq.__controller.root;
+        controller = mq.__controller;
+    });
+    teardown(function() {
+        $(mq.el()).remove();
+    });
+
+    test('autoCommandMapping maps autoCommand to a different control sequence', function() {
+        mq.typedText('and');
+        assert.equal(mq.latex(), '\\andword');
+    });
+});
+
 suite('Mathspace Features: Custom Latex Symbols', function() {
     var mq;
     var rootBlock;

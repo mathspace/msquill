@@ -55,6 +55,9 @@ optionProcessors.autoCommands = function(cmds) {
   return dict;
 };
 
+// MaThSpaCE haCK
+Options.p.autoCommandsMapping = {};
+
 var Letter = P(Variable, function(_, super_) {
   _.init = function(ch) { return super_.init.call(this, this.letter = ch); };
   _.createLeftOf = function(cursor) {
@@ -72,6 +75,12 @@ var Letter = P(Variable, function(_, super_) {
           for (var i = 2, l = cursor[L]; i < str.length; i += 1, l = l[L]);
           Fragment(l, cursor[L]).remove();
           cursor[L] = l[L];
+          // MaThSpaCE haCK
+          // Because sometimes we want map typed letters to a different latex control sequence
+          // type 'and' => \andword (instead of \and)
+          if (cursor.options.autoCommandsMapping.hasOwnProperty(str)) {
+            return LatexCmds[cursor.options.autoCommandsMapping[str]](str).createLeftOf(cursor)
+          }
           return LatexCmds[str](str).createLeftOf(cursor);
         }
         str = str.slice(1);
