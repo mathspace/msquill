@@ -529,6 +529,11 @@ suite('Mathspace Features: \\lim', function() {
         rootBlock = mq.__controller.root;
         controller = mq.__controller;
     });
+    function prayWellFormedPoint(pt) { prayWellFormed(pt.parent, pt[L], pt[R]); }
+    function assertLatex(latex) {
+        prayWellFormedPoint(mq.__controller.cursor);
+        assert.equal(mq.latex(), latex);
+    }
 
     test('empty', function() {
         mq.latex('\\lim');
@@ -544,5 +549,10 @@ suite('Mathspace Features: \\lim', function() {
 
         mq.keystroke('Left').typedText('y');
         assert.equal(mq.latex(), '\\lim_{xy}');
+    });
+
+    test('automatically insert arrow', function() {
+        mq.typedText('limx').keystroke('Right').typedText('0').keystroke('Right').typedText('x^2');
+        assertLatex('\\lim_{x\\to0}x^2');
     });
 });
