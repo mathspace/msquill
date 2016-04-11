@@ -215,4 +215,10 @@ LatexCmds.limit = P(MathCommand, function(_, super_) {
       cursor.insLeftOf(cmd);
     };
   };
+  _.createLeftOf = function(cursor) {
+      super_.createLeftOf.apply(this, arguments);
+      var arrow = LatexCmds.to();
+      arrow.createLeftOf(cursor);
+      cursor.insLeftOf(arrow);
+  };
 });
