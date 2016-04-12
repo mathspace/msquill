@@ -149,8 +149,9 @@ $(function() {
   var overflowTest = $('#overflow-test');
   MathQuill.MathField(overflowTest[0]);
   var width = overflowTest.outerWidth(true);
-  if (width !== 102) {
-    throw 'math field '+width+'px wide instead of 102px';
+  // MaThSpACE HacK: Updated due to border style change in https://github.com/mathspace/msquill/commit/54f4266.
+  if (width !== 104) {
+    throw 'math field '+width+'px wide instead of 104px';
   }
 });
 </script>
