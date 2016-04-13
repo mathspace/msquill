@@ -516,3 +516,43 @@ suite('Mathspace Features: AutoOperator "and" / "or" Support', function () {
         assert.equal(rootBlock.jQ.find('.mq-operator-name').length, 2);
     });
 });
+
+suite('Mathspace Features: \\lim', function() {
+    var mq;
+    var rootBlock;
+    var controller;
+    setup(function () {
+        mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0], {
+            autoCommands: "lim",
+            autoOperatorNames: "sin cos tan"
+        });
+        rootBlock = mq.__controller.root;
+        controller = mq.__controller;
+    });
+    function prayWellFormedPoint(pt) { prayWellFormed(pt.parent, pt[L], pt[R]); }
+    function assertLatex(latex) {
+        prayWellFormedPoint(mq.__controller.cursor);
+        assert.equal(mq.latex(), latex);
+    }
+
+    test('empty', function() {
+        mq.latex('\\lim');
+        assert.equal(mq.latex(), '\\lim_{ }');
+
+        mq.keystroke('Left').typedText('x');
+        assert.equal(mq.latex(), '\\lim_x');
+    });
+
+    test('nonempty', function() {
+        mq.latex('\\lim_x');
+        assert.equal(mq.latex(), '\\lim_x');
+
+        mq.keystroke('Left').typedText('y');
+        assert.equal(mq.latex(), '\\lim_{xy}');
+    });
+
+    test('automatically insert arrow', function() {
+        mq.typedText('limx').keystroke('Right').typedText('0').keystroke('Right').typedText('x^2');
+        assertLatex('\\lim_{x\\to0}x^2');
+    });
+});

@@ -112,7 +112,7 @@ define([
                 if (this.scope.attr('editable')) {
                     this.mathFieldAPI = MathQuill.MathField(elm[0], {
                         // todo: Options duplicated in widgets/math_input.js
-                        autoCommands: 'pi and or',
+                        autoCommands: 'pi and or lim',
                         autoCommandsMapping: {'and': 'andword', 'or': 'orword'},
                         autoOperatorNames: [
                             'and', 'or', 'ln', 'log', 'sin', 'cos', 'tan', 'sec',
