@@ -540,6 +540,7 @@ var Bracket = P(P(MathCommand, DelimsMixin), function(_, super_) {
     brack.sides[this.side] = this.sides[this.side]; // copy over my info (may be
     brack.delimjQs.eq(this.side === L ? 0 : 1) // mismatched, like [a, b))
       .removeClass('mq-ghost').html(this.sides[this.side].ch);
+    brack.bubble('reflow');
   };
   _.createLeftOf = function(cursor) {
     if (!this.replacedFragment) { // unless wrapping seln in brackets,
