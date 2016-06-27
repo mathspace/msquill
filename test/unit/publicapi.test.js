@@ -97,7 +97,7 @@ suite('Public API', function() {
       mq.latex('x+y');
       assert.equal(mq.html(), '<var>x</var><span class="mq-binary-operator">+</span><var>y</var>');
     });
-    
+
     test('.text() with incomplete commands', function() {
       assert.equal(mq.text(), '');
       mq.typedText('\\');
@@ -107,7 +107,7 @@ suite('Public API', function() {
       mq.typedText('qrt');
       assert.equal(mq.text(), '\\sqrt');
     });
-    
+
     test('.text() with complete commands', function() {
       mq.latex('\\sqrt{}');
       assert.equal(mq.text(), 'sqrt()');
@@ -246,11 +246,11 @@ suite('Public API', function() {
       });
     }
   });
-  
+
   suite('edit handler', function() {
     test('fires when closing a bracket expression', function() {
       var count = 0;
-      var mq = MQ.MathField($('<span>').appendTo('#mock')[0], {
+      var mq = MathQuill.MathField($('<span>').appendTo('#mock')[0], {
         handlers: {
           edit: function() {
             count += 1;
