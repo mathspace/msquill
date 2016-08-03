@@ -6,7 +6,7 @@ CompoundCmds['>='] = LatexCmds.ge;
 
 // Different congruent symbol
 LatexCmds.cong = bind(BinaryOperator,'\\cong ','&equiv;');
-CompoundCmds['=='] = LatexCmds.cong
+CompoundCmds['=='] = bind(LatexCmds.equiv, 'equiv');
 
 LatexCmds.triangle = bind(VanillaSymbol, '\\triangle ', '&#9651;');
 
