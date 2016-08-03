@@ -345,7 +345,7 @@ suite('Mathspace Features: Custom Binary Operators', function() {
 });
 
 
-suite('Mathspace Features: Inequality Shortcut Keys', function() {
+suite('Mathspace Features: Compound Commands Shortcut Keys', function() {
     var mq;
     var rootBlock;
     var controller;
