@@ -480,7 +480,7 @@ var Equality = P(BinaryOperator, function(_, super_) {
     } else if (cursor[L] instanceof Equality) {
       // MatHSPaCE HacK
       // == => congruent
-      var newOperator = new BinaryOperator('\\cong ','&equiv;');
+      var newOperator = LatexCmds.equiv('equiv');
       cursor[L].swap(newOperator);
       cursor[L].bubble('reflow');
       return;

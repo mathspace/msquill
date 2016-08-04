@@ -345,7 +345,7 @@ suite('Mathspace Features: Custom Binary Operators', function() {
 });
 
 
-suite('Mathspace Features: Inequality Shortcut Keys', function() {
+suite('Mathspace Features: Compound Commands Shortcut Keys', function() {
     var mq;
     var rootBlock;
     var controller;
@@ -382,11 +382,13 @@ suite('Mathspace Features: Inequality Shortcut Keys', function() {
     test('typing congruent', function() {
         mq.typedText('==');
         assert.equal(rootBlock.jQ.children(':first').text(), '≡');
+        assert.equal(mq.latex(), '\\equiv');
     });
 
     test('rendering congruent', function() {
         mq.latex('==');
         assert.equal(rootBlock.jQ.children(':first').text(), '≡');
+        assert.equal(mq.latex(), '\\equiv');
     });
 });
 
