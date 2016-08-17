@@ -3,6 +3,7 @@
  ***********************************/
 
 LatexCmds.notin =
+LatexCmds.cong =
 LatexCmds.equiv =
 LatexCmds.oplus =
 LatexCmds.otimes = P(BinaryOperator, function(_, super_) {
