@@ -172,7 +172,7 @@ suite('Mathspace Features: Custom Latex Symbols', function() {
     test('congruent', function() {
         mq.typedText('\\cong');
         mq.keystroke('Tab');
-        assert.equal(rootBlock.jQ.children(':first').text(), '≡');
+        assert.equal(rootBlock.jQ.children(':first').text(), '≅');
     });
 
     test('degree', function() {
