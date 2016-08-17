@@ -379,13 +379,13 @@ suite('Mathspace Features: Compound Commands Shortcut Keys', function() {
         assert.equal(rootBlock.jQ.children(':first').text(), '≥');
     });
 
-    test('typing congruent', function() {
+    test('typing equivalent', function() {
         mq.typedText('==');
         assert.equal(rootBlock.jQ.children(':first').text(), '≡');
         assert.equal(mq.latex(), '\\equiv');
     });
 
-    test('rendering congruent', function() {
+    test('rendering equivalent', function() {
         mq.latex('==');
         assert.equal(rootBlock.jQ.children(':first').text(), '≡');
         assert.equal(mq.latex(), '\\equiv');
