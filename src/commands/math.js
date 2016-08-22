@@ -363,7 +363,7 @@ var VanillaSymbol = P(Symbol, function(_, super_) {
           firstDigitEl = el;
         }
         // TODO: more efficient way...
-        if (el.ch === '.' || el.ch === '^\\circ ' || el.ch === '!') {
+        if (!el.ch.match(rSingleDigit)) {
           return false; // break the loop
         }
         lastDigitEl = el;
