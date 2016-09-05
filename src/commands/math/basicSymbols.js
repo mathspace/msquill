@@ -479,8 +479,15 @@ var Equality = P(BinaryOperator, function(_, super_) {
       return;
     } else if (cursor[L] instanceof Equality) {
       // MatHSPaCE HacK
-      // == => congruent
+      // == => equivalent
       var newOperator = LatexCmds.equiv('equiv');
+      cursor[L].swap(newOperator);
+      cursor[L].bubble('reflow');
+      return;
+    } else if (cursor[L].ctrlSeq === '~' || cursor[L].ctrlSeq === '\\sim ') {
+      // MatHSPaCE HacK
+      // ~= => congruent
+      var newOperator = LatexCmds.cong('cong');
       cursor[L].swap(newOperator);
       cursor[L].bubble('reflow');
       return;
@@ -495,4 +502,18 @@ LatexCmds.times = bind(BinaryOperator, '\\times ', '&times;', '[x]');
 LatexCmds['÷'] = LatexCmds.div = LatexCmds.divide = LatexCmds.divides =
   bind(BinaryOperator,'\\div ','&divide;', '[/]');
 
-CharCmds['~'] = LatexCmds.sim = bind(BinaryOperator, '\\sim ', '~', '~');
+// MatHSPaCE HacK
+// supports: ~= => congruent
+var Similar = P(BinaryOperator, function (_, super_) {
+  _.init = function() {
+    super_.init.call(this, '\\sim ', '~', '~');
+  };
+  _.swap = function(command) {
+    this.ctrlSeq = command.latex();
+    this.jQ.html(command.htmlTemplate);
+    this.textTemplate = [ command.text() ];
+  };
+});
+
+CharCmds['~'] = LatexCmds.sim = Similar;
+// End: MatHSPaCE HacK
