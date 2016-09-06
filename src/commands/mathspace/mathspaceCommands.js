@@ -1,10 +1,5 @@
 /* Add custom commands  */
 
-// Add compound commands to ≥ ≤
-CompoundCmds['<='] = LatexCmds.le;
-CompoundCmds['>='] = LatexCmds.ge;
-CompoundCmds['=='] = bind(LatexCmds.equiv, 'equiv');
-
 LatexCmds.triangle = bind(VanillaSymbol, '\\triangle ', '&#9651;');
 
 LatexCmds.simeq = bind(VanillaSymbol, '\\simeq ', '&#11003;');
