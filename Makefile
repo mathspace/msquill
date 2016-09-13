@@ -33,7 +33,8 @@ SOURCES_BASIC = \
 
 CSS_DIR = $(SRC_DIR)/css
 CSS_MAIN = $(CSS_DIR)/main.less
-CSS_SOURCES = $(shell find $(CSS_DIR) -name '*.less')
+CSS_SOURCES = $(shell find $(CSS_DIR) -name '*.less' -not -name 'font.less')
+FONT_CSS_SOURCES = $(shell find $(CSS_DIR) -name 'font.less')
 
 FONT_SOURCE = $(SRC_DIR)/font
 FONT_TARGET = $(BUILD_DIR)/font
@@ -59,7 +60,9 @@ CLEAN += $(DIST)
 
 MATHSPACE_JS = $(BUILD_DIR)/mathquill-mathspace.js
 MATHSPACE_CSS = $(BUILD_DIR)/mathquill-mathspace.css
+MATHSPACE_FONT_CSS = $(BUILD_DIR)/mathquill-font-mathspace.css
 MATHSPACE_CSS_MAIN = $(CSS_DIR)/mathspace/main.less
+MATHSPACE_FONT_CSS_MAIN = $(CSS_DIR)/mathspace/font.less
 
 
 # programs and flags
@@ -96,7 +99,7 @@ uglify: $(UGLY_JS)
 css: $(BUILD_CSS)
 font: $(FONT_TARGET)
 dist: $(DIST)
-mathspace: $(MATHSPACE_JS) $(MATHSPACE_CSS)
+mathspace: $(MATHSPACE_JS) $(MATHSPACE_CSS) $(MATHSPACE_FONT_CSS)
 clean:
 	rm -rf $(CLEAN)
 
@@ -143,6 +146,9 @@ $(MATHSPACE_JS): $(AMD_OPEN) $(BUILD_JS) $(AMD_CLOSE)
 
 $(MATHSPACE_CSS): $(CSS_SOURCES) $(NODE_MODULES_INSTALLED) $(BUILD_DIR_EXISTS)
 	$(LESSC) $(LESS_OPTS) $(MATHSPACE_CSS_MAIN) > $@
+
+$(MATHSPACE_FONT_CSS): $(FONT_CSS_SOURCES) $(NODE_MODULES_INSTALLED) $(BUILD_DIR_EXISTS)
+	$(LESSC) $(LESS_OPTS) $(MATHSPACE_FONT_CSS_MAIN) > $@
 
 #
 # -*- Test tasks -*-
