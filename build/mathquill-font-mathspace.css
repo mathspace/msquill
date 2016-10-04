@@ -1,0 +1,5 @@
+@font-face {
+  font-family: 'Symbola';
+  src: url('/permalink/fonts/symbola/symbola-webfont.eot');
+  src: url('/permalink/fonts/symbola/symbola-webfont.eot?#iefix') format('embedded-opentype'), url('/permalink/fonts/symbola/symbola-webfont.woff') format('woff'), url('/permalink/fonts/symbola/symbola-webfont.ttf') format('truetype'), url('/permalink/fonts/symbola/symbola-webfont.svg#SymbolaRegular') format('svg');
+}
