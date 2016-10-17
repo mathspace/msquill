@@ -1,7 +1,7 @@
 {
   "name": "mathquill",
   "version": "0.9.4",
-  "main": "build/mathquill-mathspace.js",
+  "main": "build/mathquill.js",
   "dependencies": {
     "pjs": "3.x"
   },

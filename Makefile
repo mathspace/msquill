@@ -99,7 +99,7 @@ uglify: $(UGLY_JS)
 css: $(BUILD_CSS)
 font: $(FONT_TARGET)
 dist: $(DIST)
-mathspace: $(MATHSPACE_JS) $(MATHSPACE_CSS) $(MATHSPACE_FONT_CSS)
+mathspace: $(BUILD_JS) $(MATHSPACE_CSS) $(MATHSPACE_FONT_CSS)
 clean:
 	rm -rf $(CLEAN)
 
@@ -140,9 +140,6 @@ $(DIST): $(UGLY_JS) $(BUILD_JS) $(BUILD_CSS) $(FONT_TARGET)
 	cp -r $(BUILD_DIR) $(DISTDIR)
 	tar -czf $(DIST) --exclude='\.gitkeep' $(DISTDIR)
 	rm -r $(DISTDIR)
-
-$(MATHSPACE_JS): $(AMD_OPEN) $(BUILD_JS) $(AMD_CLOSE)
-	cat $^ | ./script/escape-non-ascii > $@
 
 $(MATHSPACE_CSS): $(CSS_SOURCES) $(NODE_MODULES_INSTALLED) $(BUILD_DIR_EXISTS)
 	$(LESSC) $(LESS_OPTS) $(MATHSPACE_CSS_MAIN) > $@
