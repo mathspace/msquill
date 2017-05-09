@@ -420,6 +420,17 @@
   width: 100%;
   display: block;
 }
+.mq-math-mode .mq-supsub + .mq-supsub:before {
+  position: relative;
+  top: -0.5em;
+  float: left;
+  background: #ccc;
+  color: #ccc;
+  content: 'c';
+}
+.mq-math-mode .mq-supsub + .mq-supsub.mq-sup-only:before {
+  top: 0.5em;
+}
 .mq-math-mode .mq-selection,
 .mq-editable-field .mq-selection,
 .mq-math-mode .mq-selection .mq-non-leaf,
