@@ -146,4 +146,21 @@
       display: block;
     }
   }
+
+  // Insert a grey block between subscripts in 1_a_b
+  .mq-supsub + .mq-supsub:before {
+    // To realign with baseline
+    position: relative;
+    top: -0.5em;
+    float: left; // To keep left of the super/sub script element
+    background: #ccc;
+    color: #ccc;
+    content: 'c';
+  }
+  // Insert a grey block between superscripts in 1^a^b
+  .mq-supsub + .mq-supsub.mq-sup-only:before {
+    // To realign with baseline
+    top: 0.5em;
+  }
+
 }
