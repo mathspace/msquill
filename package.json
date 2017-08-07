@@ -1,7 +1,8 @@
 {
-  "name": "mathquill",
-  "version": "0.9.4",
+  "name": "msquill",
+  "version": "0.0.1",
   "main": "build/mathquill.js",
+  "private": true,
   "dependencies": {
     "pjs": "3.x"
   },
