@@ -85,6 +85,24 @@ suite('latex', function() {
     assert.equal(tree.join('latex'), '\\left(123\\right)');
   });
 
+  test('langle/rangle (issue #508)', function() {
+    var tree = latexMathParser.parse('\\left\\langle 123\\right\\rangle)');
+
+    assert.ok(tree.ends[L] instanceof Bracket);
+    var contents = tree.ends[L].ends[L].join('latex');
+    assert.equal(contents, '123');
+    assert.equal(tree.join('latex'), '\\left\\langle 123\\right\\rangle )');
+  });
+
+  test('lVert/rVert', function() {
+    var tree = latexMathParser.parse('\\left\\lVert 123\\right\\rVert)');
+
+    assert.ok(tree.ends[L] instanceof Bracket);
+    var contents = tree.ends[L].ends[L].join('latex');
+    assert.equal(contents, '123');
+    assert.equal(tree.join('latex'), '\\left\\lVert 123\\right\\rVert )');
+  });
+
   test('parens with whitespace', function() {
     assertParsesLatex('\\left ( 123 \\right ) ', '\\left(123\\right)');
   });
@@ -100,15 +118,29 @@ suite('latex', function() {
     assertParsesLatex('\\text { lol! } ', '\\text{ lol! }');
     assertParsesLatex('\\text{apples} \\ne \\text{oranges}',
                       '\\text{apples}\\ne \\text{oranges}');
+    assertParsesLatex('\\text{}', '');
+  });
+
+  test('\\textcolor', function() {
+    assertParsesLatex('\\textcolor{blue}{8}', '\\textcolor{blue}{8}');
+  });
+
+  test('\\class', function() {
+    assertParsesLatex('\\class{name}{8}', '\\class{name}{8}');
+    assertParsesLatex('\\class{name}{8-4}', '\\class{name}{8-4}');
+  });
+
+  test('not real LaTex commands, but valid symbols', function() {
+    assertParsesLatex('\\parallelogram ');
+    assertParsesLatex('\\circledot ', '\\odot ');
+    assertParsesLatex('\\degree ');
+    assertParsesLatex('\\square ');
   });
 
   suite('public API', function() {
     var mq;
     setup(function() {
-      mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0]);
-    });
-    teardown(function() {
-      $(mq.el()).remove();
+      mq = MQ.MathField($('<span></span>').appendTo('#mock')[0]);
     });
 
     suite('.latex(...)', function() {
@@ -162,6 +194,34 @@ suite('latex', function() {
         assertParsesLatex('   {}{} {{{}}  }', '');
       });
 
+      test('overflow triggers automatic horizontal scroll', function(done) {
+        var mqEl = mq.el();
+        var rootEl = mq.__controller.root.jQ[0];
+        var cursor = mq.__controller.cursor;
+
+        $(mqEl).width(10);
+        var previousScrollLeft = rootEl.scrollLeft;
+
+        mq.write("abc");
+        setTimeout(afterScroll, 150);
+
+        function afterScroll() {
+          cursor.show();
+
+          try {
+            assert.ok(rootEl.scrollLeft > previousScrollLeft, "scrolls on write");
+            assert.ok(mqEl.getBoundingClientRect().right > cursor.jQ[0].getBoundingClientRect().right,
+              "cursor right end is inside the field");
+          }
+          catch(error) {
+            done(error);
+            return;
+          }
+
+          done();
+        }
+      });
+
       suite('\\sum', function() {
         test('basic', function() {
           mq.write('\\sum_{n=0}^5');
@@ -190,15 +250,12 @@ suite('latex', function() {
   suite('\\MathQuillMathField', function() {
     var outer, inner1, inner2;
     setup(function() {
-      outer = MathQuill.StaticMath(
+      outer = MQ.StaticMath(
         $('<span>\\frac{\\MathQuillMathField{x_0 + x_1 + x_2}}{\\MathQuillMathField{3}}</span>')
         .appendTo('#mock')[0]
       );
       inner1 = outer.innerFields[0];
       inner2 = outer.innerFields[1];
-    });
-    teardown(function() {
-      $(outer.el()).remove();
     });
 
     test('initial latex', function() {
@@ -240,15 +297,19 @@ suite('latex', function() {
       exp.latex('8');
       assert.equal(outer.latex(), '1.2345\\cdot10^8');
     });
+
+    test('separate API object', function() {
+      var outer2 = MQ(outer.el());
+      assert.equal(outer2.innerFields.length, 2);
+      assert.equal(outer2.innerFields[0].id, inner1.id);
+      assert.equal(outer2.innerFields[1].id, inner2.id);
+    });
   });
 
   suite('error handling', function() {
     var mq;
     setup(function() {
-      mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0]);
-    });
-    teardown(function() {
-      $(mq.el()).remove();
+      mq = MQ.MathField($('<span></span>').appendTo('#mock')[0]);
     });
 
     function testCantParse(title /*, latex...*/) {
@@ -265,5 +326,21 @@ suite('latex', function() {
     testCantParse('unmatched close brace', '}', ' 1 + 2 } ', '1 - {2 + 3} }', '\\sqrt{ x }} + \\sqrt{y}');
     testCantParse('unmatched open brace', '{', '1 * { 2 + 3', '\\frac{ \\sqrt x }{{ \\sqrt y}');
     testCantParse('unmatched \\left/\\right', '\\left ( 1 + 2 )', ' [ 1, 2 \\right ]');
+    testCantParse('langlerfish/ranglerfish (checking for confusion with langle/rangle)',
+		    '\\left\\langlerfish 123\\right\\ranglerfish)');
+  });
+
+  suite('selectable span', function() {
+    setup(function() {
+      MQ.StaticMath($('<span>2&lt;x</span>').appendTo('#mock')[0]);
+    });
+
+    function selectableContent() {
+      return document.querySelector('#mock .mq-selectable').textContent;
+    }
+
+    test('escapes < in textContent', function () {
+      assert.equal(selectableContent(), '$2<x$');
+    });
   });
 });

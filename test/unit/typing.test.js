@@ -1,10 +1,7 @@
 suite('typing with auto-replaces', function() {
   var mq;
   setup(function() {
-    mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0]);
-  });
-  teardown(function() {
-    $(mq.el()).remove();
+    mq = MQ.MathField($('<span></span>').appendTo('#mock')[0]);
   });
 
   function prayWellFormedPoint(pt) { prayWellFormed(pt.parent, pt[L], pt[R]); }
@@ -23,11 +20,10 @@ suite('typing with auto-replaces', function() {
       assertLatex('1\\ \\frac{2}{3}');
     });
 
-    test('MathQuill-basic', function() {
-      var mq_basic = MathQuillBasic.MathField($('<span></span>').appendTo('#mock')[0]);
+    test('mathquill-basic', function() {
+      var mq_basic = MQBasic.MathField($('<span></span>').appendTo('#mock')[0]);
       mq_basic.typedText('1/2');
       assert.equal(mq_basic.latex(), '\\frac{1}{2}');
-      $(mq_basic.el()).remove();
     });
   });
 
@@ -55,6 +51,16 @@ suite('typing with auto-replaces', function() {
     test('nonexistent LaTeX command', function() {
       mq.typedText('\\asdf+');
       assertLatex('\\text{asdf}+');
+    });
+
+    test('dollar sign', function() {
+      mq.typedText('$');
+      assertLatex('\\$');
+    });
+
+    test('\\text followed by command', function() {
+      mq.typedText('\\text{');
+      assertLatex('\\text{\\{}');
     });
   });
 
@@ -471,6 +477,26 @@ suite('typing with auto-replaces', function() {
         assertLatex('\\left(1+2\\right)+3+4+5');
       });
 
+      test('typing Ctrl-Backspace deletes everything to the left of the cursor', function () {
+        mq.typedText('12345');
+        assertLatex('12345');
+        mq.keystroke('Left Left');
+        mq.keystroke('Ctrl-Backspace');
+        assertLatex('45');
+        mq.keystroke('Ctrl-Backspace');
+        assertLatex('45');
+      });
+
+      test('typing Ctrl-Del deletes everything to the right of the cursor', function () {
+        mq.typedText('12345');
+        assertLatex('12345');
+        mq.keystroke('Left Left');
+        mq.keystroke('Ctrl-Del');
+        assertLatex('123');
+        mq.keystroke('Ctrl-Del');
+        assertLatex('123');
+      });
+
       suite('pipes', function() {
         test('typing then backspacing a pipe in the middle of 1+2+3+4', function() {
           mq.typedText('1+2+3+4');
@@ -811,8 +837,11 @@ suite('typing with auto-replaces', function() {
   });
 
   suite('autoCommands', function() {
-    MathQuill.config({
-      autoCommands: 'pi tau phi theta Gamma sum prod sqrt nthroot'
+    setup(function() {
+      mq.config({
+        autoOperatorNames: 'sin pp',
+        autoCommands: 'pi tau phi theta Gamma sum prod sqrt nthroot'
+      });
     });
 
     test('individual commands', function(){
@@ -878,67 +907,51 @@ suite('typing with auto-replaces', function() {
       assertLatex('\\sin\\pi');
     });
 
+    test('has lower "precedence" than operator names', function() {
+      mq.typedText('ppi');
+      assertLatex('\\operatorname{pp}i');
+      mq.keystroke('Left Left').typedText('i');
+      assertLatex('\\pi pi');
+    });
+
     test('command contains non-letters', function() {
-      assert.throws(function() { MathQuill.config({ autoCommands: 'e1' }); });
+      assert.throws(function() { MQ.config({ autoCommands: 'e1' }); });
     });
 
     test('command length less than 2', function() {
-      assert.throws(function() { MathQuill.config({ autoCommands: 'e' }); });
+      assert.throws(function() { MQ.config({ autoCommands: 'e' }); });
     });
 
     test('command is a built-in operator name', function() {
       var cmds = ('Pr arg deg det dim exp gcd hom inf ker lg lim ln log max min sup'
                   + ' limsup liminf injlim projlim Pr').split(' ');
-
-      // MaThSpACe hacK
-      // deg should not be an auto operator, it is an latex command mapped to degree symbol
-      if (cmds.indexOf('deg') > -1) {
-        cmds.splice(cmds.indexOf('deg'), 1);
-      }
-      // MaThSpACe hacK
-      // We made our own custom \lim command so remove it from auto operator list
-      if (cmds.indexOf('lim') > -1) {
-        cmds.splice(cmds.indexOf('lim'), 1);
-      }
       for (var i = 0; i < cmds.length; i += 1) {
-        assert.throws(function() { MathQuill.config({ autoCommands: cmds[i] }) },
-                      'MathQuill.config({ autoCommands: "'+cmds[i]+'" })');
+        assert.throws(function() { MQ.config({ autoCommands: cmds[i] }) },
+                      'MQ.config({ autoCommands: "'+cmds[i]+'" })');
       }
     });
 
     test('built-in operator names even after auto-operator names overridden', function() {
-      MathQuill.config({ autoOperatorNames: 'sin inf arcosh cosh cos cosec csc' });
+      MQ.config({ autoOperatorNames: 'sin inf arcosh cosh cos cosec csc' });
         // ^ happen to be the ones required by autoOperatorNames.test.js
       var cmds = 'Pr arg deg det exp gcd inf lg lim ln log max min sup'.split(' ');
-
-      // MaThSpACe hacK
-      // deg should not be an auto operator, it is an latex command mapped to degree symbol
-      if (cmds.indexOf('deg') > -1) {
-        cmds.splice(cmds.indexOf('deg'), 1);
-      }
-      // MaThSpACe hacK
-      // We made our own custom \lim command so remove it from auto operator list
-      if (cmds.indexOf('lim') > -1) {
-        cmds.splice(cmds.indexOf('lim'), 1);
-      }
-
       for (var i = 0; i < cmds.length; i += 1) {
-        assert.throws(function() { MathQuill.config({ autoCommands: cmds[i] }) },
-                      'MathQuill.config({ autoCommands: "'+cmds[i]+'" })');
+        assert.throws(function() { MQ.config({ autoCommands: cmds[i] }) },
+                      'MQ.config({ autoCommands: "'+cmds[i]+'" })');
       }
     });
 
     suite('command list not perfectly space-delimited', function() {
       test('double space', function() {
-        assert.throws(function() { MathQuill.config({ autoCommands: 'pi  theta' }); });
+        assert.throws(function() { MQ.config({ autoCommands: 'pi  theta' }); });
       });
 
       test('leading space', function() {
-        assert.throws(function() { MathQuill.config({ autoCommands: ' pi' }); });
+        assert.throws(function() { MQ.config({ autoCommands: ' pi' }); });
       });
 
       test('trailing space', function() {
-        assert.throws(function() { MathQuill.config({ autoCommands: 'pi ' }); });
+        assert.throws(function() { MQ.config({ autoCommands: 'pi ' }); });
       });
     });
   });
@@ -1013,7 +1026,7 @@ suite('typing with auto-replaces', function() {
       assert.equal(mq.typedText('x^=2n').latex(), 'x^{=2n}');
       mq.latex('');
 
-      MathQuill.config({ charsThatBreakOutOfSupSub: '+-=<>' });
+      MQ.config({ charsThatBreakOutOfSupSub: '+-=<>' });
 
       assert.equal(mq.typedText('x^2n+y').latex(), 'x^{2n}+y');
       mq.latex('');
@@ -1047,9 +1060,12 @@ suite('typing with auto-replaces', function() {
       assert.equal(mq.typedText('^').latex(), 'x^{^{ }}');
       assert.equal(mq.typedText('2').latex(), 'x^{^2}');
       assert.equal(mq.typedText('n').latex(), 'x^{^{2n}}');
+      mq.latex('');
+      assert.equal(mq.typedText('2').latex(), '2');
+      assert.equal(mq.keystroke('Shift-Left').typedText('^').latex(), '^2');
 
       mq.latex('');
-      MathQuill.config({ supSubsRequireOperand: true });
+      MQ.config({ supSubsRequireOperand: true });
 
       assert.equal(mq.typedText('^').latex(), '');
       assert.equal(mq.typedText('2').latex(), '2');
@@ -1065,6 +1081,30 @@ suite('typing with auto-replaces', function() {
       assert.equal(mq.typedText('^').latex(), 'x^{ }');
       assert.equal(mq.typedText('2').latex(), 'x^2');
       assert.equal(mq.typedText('n').latex(), 'x^{2n}');
+      mq.latex('');
+      assert.equal(mq.typedText('2').latex(), '2');
+      assert.equal(mq.keystroke('Shift-Left').typedText('^').latex(), '^2');
+    });
+  });
+
+  suite('alternative symbols when typing / and *', function() {
+    test('typingSlashWritesDivisionSymbol', function() {
+      mq.typedText('/');
+      assertLatex('\\frac{ }{ }');
+
+      mq.config({ typingSlashWritesDivisionSymbol: true });
+
+      mq.keystroke('Backspace').typedText('/');
+      assertLatex('\\div');
+    });
+    test('typingAsteriskWritesTimesSymbol', function() {
+      mq.typedText('*');
+      assertLatex('\\cdot');
+
+      mq.config({ typingAsteriskWritesTimesSymbol: true });
+
+      mq.keystroke('Backspace').typedText('*');
+      assertLatex('\\times');
     });
   });
 });

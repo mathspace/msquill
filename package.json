@@ -3,11 +3,19 @@
   "version": "0.1.0",
   "main": "build/mathquill.js",
   "private": true,
-  "dependencies": {
-    "pjs": "3.x"
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mathspace/msquill.git"
   },
+  "files": [
+    "build/mathquill.{css,js,min.js}",
+    "build/fonts/Symbola.*",
+    "quickstart.html"
+  ],
   "devDependencies": {
-    "mocha": "*",
+    "pjs": ">=3.1.0 <5.0.0",
+    "mocha": ">=2.4.1",
     "uglify-js": "2.x",
     "less": ">=1.5.1"
   }

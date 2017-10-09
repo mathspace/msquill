@@ -1,10 +1,7 @@
 suite('SupSub', function() {
   var mq;
   setup(function() {
-    mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0]);
-  });
-  teardown(function() {
-    $(mq.el()).remove();
+    mq = MQ.MathField($('<span></span>').appendTo('#mock')[0]);
   });
 
   function prayWellFormedPoint(pt) { prayWellFormed(pt.parent, pt[L], pt[R]); }

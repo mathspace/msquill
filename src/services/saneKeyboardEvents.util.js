@@ -97,8 +97,8 @@ var saneKeyboardEvents = (function() {
     var textarea = jQuery(el);
     var target = jQuery(handlers.container || textarea);
 
-    // checkTextareaFor() is called after keypress or paste events to
-    // say "Hey, I think something was just typed" or "pasted" (resp.),
+    // checkTextareaFor() is called after key or clipboard events to
+    // say "Hey, I think something was just typed" or "pasted" etc,
     // so that at all subsequent opportune times (next event or timeout),
     // will check for expected typed or pasted text.
     // Need to check repeatedly because #135: in Safari 5.1 (at least),
@@ -111,7 +111,14 @@ var saneKeyboardEvents = (function() {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(checker);
     }
-    target.bind('keydown keypress input keyup focusout paste', function() { checkTextarea(); });
+    function checkTextareaOnce(checker) {
+      checkTextareaFor(function(e) {
+        checkTextarea = noop;
+        clearTimeout(timeoutId);
+        checker(e);
+      });
+    }
+    target.bind('keydown keypress input keyup focusout paste', function(e) { checkTextarea(e); });
 
 
     // -*- public methods -*- //
@@ -163,10 +170,12 @@ var saneKeyboardEvents = (function() {
       keydown = e;
       keypress = null;
 
-      if (shouldBeSelected) checkTextareaFor(function() {
-        if (textarea[0].select) textarea[0].select(); // re-select textarea in case it's an unrecognized
-        checkTextarea = noop; // key that clears the selection, then never
-        clearTimeout(timeoutId); // again, 'cos next thing might be blur
+      if (shouldBeSelected) checkTextareaOnce(function(e) {
+        if (!(e && e.type === 'focusout') && textarea[0].select) {
+          // re-select textarea in case it's an unrecognized key that clears
+          // the selection, then never again, 'cos next thing might be blur
+          textarea[0].select();
+        }
       });
 
       handleKey();
@@ -184,6 +193,10 @@ var saneKeyboardEvents = (function() {
 
       checkTextareaFor(typedText);
       e.stopPropagation();    // MSEdge: Stop events from bubbling up to cause double cursor in nested editable boxes
+    }
+    function onKeyup(e) {
+      // Handle case of no keypress event being sent
+      if (!!keydown && !keypress) checkTextareaFor(typedText);
     }
     function typedText() {
       // If there is a selection, the contents of the textarea couldn't
@@ -243,7 +256,10 @@ var saneKeyboardEvents = (function() {
     target.bind({
       keydown: onKeydown,
       keypress: onKeypress,
+      keyup: onKeyup,
       focusout: onBlur,
+      cut: function() { checkTextareaOnce(function() { handlers.cut(); }); },
+      copy: function() { checkTextareaOnce(function() { handlers.copy(); }); },
       paste: onPaste
     });
 

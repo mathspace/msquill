@@ -3,6 +3,7 @@
  *******************************************************/
 
 Controller.open(function(_) {
+  Options.p.ignoreNextMousedown = noop;
   _.delegateMouseEvents = function() {
     var ultimateRootjQ = this.root.jQ;
     //drag-to-select event handling
@@ -14,8 +15,6 @@ Controller.open(function(_) {
       var root = Node.byId[rootjQ.attr(mqBlockId) || ultimateRootjQ.attr(mqBlockId)];
       var ctrlr = root.controller, cursor = ctrlr.cursor, blink = cursor.blink;
       var textareaSpan = ctrlr.textareaSpan, textarea = ctrlr.textarea;
-
-      var target;
 
       // MATHSPACE: Handle our inline-editable fields.
       if (
@@ -31,6 +30,13 @@ Controller.open(function(_) {
         return;
       }
 
+      e.preventDefault(); // doesn't work in IE≤8, but it's a one-line fix:
+      e.target.unselectable = true; // http://jsbin.com/yagekiji/1
+
+      if (cursor.options.ignoreNextMousedown(e)) return;
+      else cursor.options.ignoreNextMousedown = noop;
+
+      var target;
       function mousemove(e) { target = $(e.target); }
       function docmousemove(e) {
         if (!cursor.anticursor) cursor.startSelection();
@@ -60,8 +66,6 @@ Controller.open(function(_) {
         if (!ctrlr.editable) rootjQ.prepend(textareaSpan);
         textarea.focus();
       }
-      e.preventDefault(); // doesn't work in IE≤8, but it's a one-line fix:
-      e.target.unselectable = true; // http://jsbin.com/yagekiji/1
 
       cursor.blink = noop;
       ctrlr.seek($(e.target), e.pageX, e.pageY).cursor.startSelection();

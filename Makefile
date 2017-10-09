@@ -1,4 +1,29 @@
 #
+# -*- Prerequisites -*-
+#
+
+# the fact that 'I am Node.js' is unquoted here looks wrong to me but it
+# CAN'T be quoted, I tried. Apparently in GNU Makefiles, in the paren+comma
+# syntax for conditionals, quotes are literal; and because the $(shell...)
+# call has parentheses and single and double quotes, the quoted syntaxes
+# don't work (I tried), we HAVE to use the paren+comma syntax
+ifneq ($(shell node -e 'console.log("I am Node.js")'), I am Node.js)
+  ifeq ($(shell nodejs -e 'console.log("I am Node.js")' 2>/dev/null), I am Node.js)
+    $(error You have /usr/bin/nodejs but no /usr/bin/node, please 'sudo apt-get install nodejs-legacy' (see http://stackoverflow.com/a/21171188/362030 ))
+  endif
+
+  $(error Please install Node.js: https://nodejs.org/ )
+endif
+
+# stupid GNU vs BSD https://github.com/mathquill/mathquill/pull/653/commits/4332b0e97a92fb1362123a06b68fa49d9efb6f38#r68305423
+ifeq (x, $(shell echo xy | sed -r 's/(x)y/\1/' 2>/dev/null))
+  SED_IN_PLACE = sed -i    # GNU
+else
+  SED_IN_PLACE = sed -i '' # BSD
+endif
+
+
+#
 # -*- Configuration -*-
 #
 
@@ -22,8 +47,12 @@ BASE_SOURCES = \
 
 SOURCES_FULL = \
   $(BASE_SOURCES) \
-  $(SRC_DIR)/commands/*.js \
-  $(SRC_DIR)/commands/*/*.js
+  $(SRC_DIR)/commands/math.js \
+  $(SRC_DIR)/commands/text.js \
+  $(SRC_DIR)/commands/math/*.js
+# FIXME text.js currently depends on math.js (#435), restore these when fixed:
+# $(SRC_DIR)/commands/*.js \
+# $(SRC_DIR)/commands/*/*.js
 
 SOURCES_BASIC = \
   $(BASE_SOURCES) \
@@ -36,8 +65,8 @@ CSS_MAIN = $(CSS_DIR)/main.less
 CSS_SOURCES = $(shell find $(CSS_DIR) -name '*.less' -not -name 'font.less')
 FONT_CSS_SOURCES = $(shell find $(CSS_DIR) -name 'font.less')
 
-FONT_SOURCE = $(SRC_DIR)/font
-FONT_TARGET = $(BUILD_DIR)/font
+FONT_SOURCE = $(SRC_DIR)/fonts
+FONT_TARGET = $(BUILD_DIR)/fonts
 
 UNIT_TESTS = ./test/unit/*.test.js
 
@@ -67,7 +96,7 @@ MATHSPACE_FONT_CSS_MAIN = $(CSS_DIR)/mathspace/font.less
 
 # programs and flags
 UGLIFY ?= ./node_modules/.bin/uglifyjs
-UGLIFY_OPTS ?= --mangle --compress hoist_vars=true
+UGLIFY_OPTS ?= --mangle --compress hoist_vars=true --comments /maintainers@mathquill.com/
 
 LESSC ?= ./node_modules/.bin/lessc
 LESS_OPTS ?=
@@ -101,30 +130,38 @@ font: $(FONT_TARGET)
 dist: $(DIST)
 mathspace: $(BUILD_JS) $(MATHSPACE_CSS) $(MATHSPACE_FONT_CSS)
 clean:
-	rm -rf $(CLEAN)
+	rm -rf $(BUILD_DIR)
 
 $(PJS_SRC): $(NODE_MODULES_INSTALLED)
 
 $(BUILD_JS): $(INTRO) $(SOURCES_FULL) $(OUTRO) $(BUILD_DIR_EXISTS)
 	cat $^ | ./script/escape-non-ascii > $@
+	$(SED_IN_PLACE) s/{VERSION}/v$(VERSION)/ $@
 
 $(UGLY_JS): $(BUILD_JS) $(NODE_MODULES_INSTALLED)
 	$(UGLIFY) $(UGLIFY_OPTS) < $< > $@
 
 $(BASIC_JS): $(INTRO) $(SOURCES_BASIC) $(OUTRO) $(BUILD_DIR_EXISTS)
 	cat $^ | ./script/escape-non-ascii > $@
+	$(SED_IN_PLACE) s/{VERSION}/v$(VERSION)/ $@
 
 $(UGLY_BASIC_JS): $(BASIC_JS) $(NODE_MODULES_INSTALLED)
 	$(UGLIFY) $(UGLIFY_OPTS) < $< > $@
 
 $(BUILD_CSS): $(CSS_SOURCES) $(NODE_MODULES_INSTALLED) $(BUILD_DIR_EXISTS)
 	$(LESSC) $(LESS_OPTS) $(CSS_MAIN) > $@
+	$(SED_IN_PLACE) s/{VERSION}/v$(VERSION)/ $@
+
+$(BASIC_CSS): $(CSS_SOURCES) $(NODE_MODULES_INSTALLED) $(BUILD_DIR_EXISTS)
+	$(LESSC) --modify-var="basic=true" $(LESS_OPTS) $(CSS_MAIN) > $@
+	$(SED_IN_PLACE) s/{VERSION}/v$(VERSION)/ $@
 
 $(BASIC_CSS): $(CSS_SOURCES) $(NODE_MODULES_INSTALLED) $(BUILD_DIR_EXISTS)
 	$(LESSC) --modify-var="basic=true" $(LESS_OPTS) $(CSS_MAIN) > $@
 
 $(NODE_MODULES_INSTALLED): package.json
-	npm install
+	test -e $(NODE_MODULES_INSTALLED) || rm -rf ./node_modules/ # robust against previous botched npm install
+	NODE_ENV=development npm install
 	touch $(NODE_MODULES_INSTALLED)
 
 $(BUILD_DIR_EXISTS):
@@ -160,83 +197,4 @@ test: dev $(BUILD_TEST) $(BASIC_JS) $(BASIC_CSS)
 
 $(BUILD_TEST): $(INTRO) $(SOURCES_FULL) $(UNIT_TESTS) $(OUTRO) $(BUILD_DIR_EXISTS)
 	cat $^ > $@
-
-#
-# -*- site (mathquill.github.com) tasks
-#
-
-.PHONY: site publish site-pull
-
-SITE = mathquill.github.com
-SITE_CLONE_URL = git@github.com:mathquill/mathquill.github.com
-SITE_COMMITMSG = 'updating mathquill to $(VERSION)'
-
-DOWNLOADS_PAGE = $(SITE)/downloads.html
-DIST_DOWNLOAD = $(SITE)/downloads/$(DIST)
-
-site: $(SITE) $(SITE)/mathquill $(SITE)/demo.html $(SITE)/support $(DOWNLOADS_PAGE)
-
-publish: site-pull site
-	pwd
-	cd $(SITE) \
-	&& git add -- mathquill demo.html support downloads downloads.html \
-	&& git commit -m $(SITE_COMMITMSG) \
-	&& git push
-
-$(SITE)/mathquill: $(DIST)
-	mkdir -p $@
-	tar -xzf $(DIST) \
-		--directory $@ \
-		--strip-components=2
-
-$(DIST_DOWNLOAD): $(DIST)
-	mkdir -p $(dir $@)
-	cp $^ $@
-
-# freaking bsd, i swear
-# adapted from https://developer.apple.com/library/mac/documentation/opensource/Conceptual/ShellScripting/PortingScriptstoMacOSX/PortingScriptstoMacOSX.html#//apple_ref/doc/uid/TP40004268-TP40003517-SW21
-ifeq (x, $(shell echo xy | sed -r 's/(x)y/\1/' 2>/dev/null))
-  # gnu
-  SED = sed -r
-  SED_I = $(SED) -i
-else
-  # bsd
-  SED = sed -E
-  SED_I = $(SED) -i ''
-endif
-
-$(DOWNLOADS_PAGE): $(DIST_DOWNLOAD)
-	@echo Using $(SED)
-	@echo -n updating downloads page...
-	@$(SED_I) \
-		-e '/Latest version:/ s/[0-9]+[.][0-9]+[.][0-9]+/$(VERSION)/g' \
-		$(DOWNLOADS_PAGE)
-	@mkdir -p tmp
-	@ls $(SITE)/downloads/*.tgz \
-		| egrep -o '[0-9]+[.][0-9]+[.][0-9]+' \
-		| fgrep -v $(VERSION) \
-		| sort -rn -t. -k 1,1 -k 2,2 -k 3,3 \
-		| sed 's|.*|<li><a class="prev" href="downloads/mathquill-&.tgz">v&</a></li>|' \
-		> tmp/versions-list.html
-	@$(SED_I) \
-		-e '/<a class="prev"/d' \
-		-e '/<ul id="prev-versions">/ r tmp/versions-list.html' \
-		$(DOWNLOADS_PAGE)
-	@rm tmp/versions-list.html
-	@echo done.
-
-$(SITE)/demo.html: test/demo.html
-	cat $^ \
-	| $(SED) 's:../build/:mathquill/:' \
-	| $(SED) 's:local test page:live demo:' \
-	> $@
-
-$(SITE)/support: test/support
-	rm -rf $@
-	cp -r $^ $@
-
-$(SITE):
-	git clone $(SITE_CLONE_URL) $@
-
-site-pull: $(SITE)
-	cd $(SITE) && git pull
+	$(SED_IN_PLACE) s/{VERSION}/v$(VERSION)/ $@

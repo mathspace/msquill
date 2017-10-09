@@ -1,13 +1,10 @@
 suite('backspace', function() {
   var mq, rootBlock, controller, cursor;
   setup(function() {
-    mq = MathQuill.MathField($('<span></span>').appendTo('#mock')[0]);
+    mq = MQ.MathField($('<span></span>').appendTo('#mock')[0]);
     rootBlock = mq.__controller.root;
     controller = mq.__controller;
     cursor = controller.cursor;
-  });
-  teardown(function() {
-    $(mq.el()).remove();
   });
 
   function prayWellFormedPoint(pt) { prayWellFormed(pt.parent, pt[L], pt[R]); }
@@ -197,7 +194,7 @@ suite('backspace', function() {
     assert.equal(mq.latex(),'n=1');
   });
 
-  test('backspace into text block', function() {
+  test('backspace through text block', function() {
     mq.latex('\\text{x}');
 
     mq.keystroke('Backspace');
@@ -206,6 +203,18 @@ suite('backspace', function() {
     assert.equal(cursor.parent, textBlock, 'cursor is in text block');
     assert.equal(cursor[R], 0, 'cursor is at the end of text block');
     assert.equal(cursor[L].text, 'x', 'cursor is rightward of the x');
+    assert.equal(mq.latex(), '\\text{x}', 'the x has been deleted');
+
+    mq.keystroke('Backspace');
+    assert.equal(cursor.parent, textBlock, 'cursor is still in text block');
+    assert.equal(cursor[R], 0, 'cursor is at the right end of the text block');
+    assert.equal(cursor[L], 0, 'cursor is at the left end of the text block');
+    assert.equal(mq.latex(), '', 'the x has been deleted');
+
+    mq.keystroke('Backspace');
+    assert.equal(cursor[R], 0, 'cursor is at the right end of the root block');
+    assert.equal(cursor[L], 0, 'cursor is at the left end of the root block');
+    assert.equal(mq.latex(), '');
   });
 
   suite('empties', function() {

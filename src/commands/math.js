@@ -329,6 +329,18 @@ var Symbol = P(MathCommand, function(_, super_) {
   _.placeCursor = noop;
   _.isEmpty = function(){ return true; };
 });
+var VanillaSymbol = P(Symbol, function(_, super_) {
+  _.init = function(ch, html) {
+    super_.init.call(this, ch, '<span>'+(html || ch)+'</span>');
+  };
+});
+var BinaryOperator = P(Symbol, function(_, super_) {
+  _.init = function(ctrlSeq, html, text) {
+    super_.init.call(this,
+      ctrlSeq, '<span class="mq-binary-operator">'+html+'</span>', text
+    );
+  };
+});
 
 
 var rSingleDigit = /^\d$/;
@@ -435,13 +447,13 @@ var MathBlock = P(MathElement, function(_, super_) {
   };
 
   _.keystroke = function(key, e, ctrlr) {
-    if (ctrlr.API.__options.spaceBehavesLikeTab
+    if (ctrlr.c.spaceBehavesLikeTab
         && (key === 'Spacebar' || key === 'Shift-Spacebar')) {
       e.preventDefault();
       ctrlr.escapeDir(key === 'Shift-Spacebar' ? L : R, key, e);
       return;
     }
-    if (ctrlr.API.__options.preventBackslash
+    if (ctrlr.options.preventBackslash
         && (key === 'Backslash')) {
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -474,20 +486,24 @@ var MathBlock = P(MathElement, function(_, super_) {
     while (pageX < node.jQ.offset().left) node = node[L];
     return node.seek(pageX, cursor);
   };
-  _.chToCmd = function(ch) {
+  _.chToCmd = function(ch, options) {
     var cons;
     // exclude f because it gets a dedicated command with more spacing
     if (ch.match(/^[a-eg-zA-Z]$/))
       return Letter(ch);
     else if (/^\d$/.test(ch))
       return Digit(ch);
+    else if (options && options.typingSlashWritesDivisionSymbol && ch === '/')
+      return LatexCmds['÷'](ch);
+    else if (options && options.typingAsteriskWritesTimesSymbol && ch === '*')
+      return LatexCmds['×'](ch);
     else if (cons = CharCmds[ch] || LatexCmds[ch])
       return cons(ch);
     else
       return VanillaSymbol(ch);
   };
   _.write = function(cursor, ch) {
-    var cmd = this.chToCmd(ch);
+    var cmd = this.chToCmd(ch, cursor.options);
     if (cursor.selection) cmd.replaces(cursor.replaceSelection());
     cmd.createLeftOf(cursor.show());
   };
@@ -507,10 +523,42 @@ var MathBlock = P(MathElement, function(_, super_) {
   };
 });
 
+API.StaticMath = function(APIClasses) {
+  return P(APIClasses.AbstractMathQuill, function(_, super_) {
+    this.RootBlock = MathBlock;
+    _.__mathquillify = function(opts, interfaceVersion) {
+      this.config(opts);
+      super_.__mathquillify.call(this, 'mq-math-mode');
+      this.__controller.delegateMouseEvents();
+      this.__controller.staticMathTextareaEvents();
+      return this;
+    };
+    _.init = function() {
+      super_.init.apply(this, arguments);
+      this.__controller.root.postOrder(
+        'registerInnerField', this.innerFields = [], APIClasses.MathField);
+    };
+    _.latex = function() {
+      var returned = super_.latex.apply(this, arguments);
+      if (arguments.length > 0) {
+        this.__controller.root.postOrder(
+          'registerInnerField', this.innerFields = [], APIClasses.MathField);
+      }
+      return returned;
+    };
+  });
+};
+
 var RootMathBlock = P(MathBlock, RootBlockMixin);
-MathQuill.MathField = APIFnFor(P(EditableField, function(_, super_) {
-  _.init = function(el, opts) {
-    el.addClass('mq-editable-field mq-math-mode');
-    this.initRootAndEvents(RootMathBlock(), el, opts);
-  };
-}));
+API.MathField = function(APIClasses) {
+  return P(APIClasses.EditableField, function(_, super_) {
+    this.RootBlock = RootMathBlock;
+    _.__mathquillify = function(opts, interfaceVersion) {
+      this.config(opts);
+      if (interfaceVersion > 1) this.__controller.root.reflow = noop;
+      super_.__mathquillify.call(this, 'mq-editable-field mq-math-mode');
+      delete this.__controller.root.reflow;
+      return this;
+    };
+  });
+};
