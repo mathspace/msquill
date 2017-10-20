@@ -523,3 +523,7 @@
   box-shadow: none;
   border-color: #2077b2;
 }
+.mathquill-element:not(.mq-editable-field).inner-editable,
+.mq-math-mode .mathquill-element:not(.mq-editable-field).inner-editable {
+  background: #f9fafb;
+}
