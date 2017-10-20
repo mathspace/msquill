@@ -9,7 +9,7 @@ requirejs.config({
             // Always load these Mustache plugins, part 1/2.
             'can/view/mustache': 'canjs-plugins/mustache',
             'widgets/math_input/resources/mathquill': '/build/mathquill.js',
-            'widgets/math_input/resources/mathquill.css': '/build/mathquill.css'
+            'widgets/math_input/resources/mathquill.css': '/build/mathquill-mathspace.css'
         },
         'canjs-plugins': {
             // Always load these Mustache plugins, part 2/2.
