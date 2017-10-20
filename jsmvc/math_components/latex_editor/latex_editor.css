@@ -9,7 +9,7 @@ mc-latex-editor {
     font-size: 17px;
     white-space: nowrap;
     font-family: "Museo Sans", Helvetica, Arial, sans-serif; }
-  mc-latex-editor .mathquill-container {
+  /* mc-latex-editor .mathquill-container {
     display: inline-block;
     margin: 0;
     vertical-align: middle;
@@ -25,7 +25,7 @@ mc-latex-editor {
   mc-latex-editor .mathquill-container-border {
     border: 2px solid #95a5a6; }
   mc-latex-editor .mathquill-container-inline-editable {
-    border: 0 !important; }
+    border: 0 !important; } */
   mc-latex-editor .prefix, mc-latex-editor .suffix {
     padding: 0 4px 0;
     display: inline-block;
