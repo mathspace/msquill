@@ -18,6 +18,14 @@
 .mq-math-mode .mq-editable-field {
   border: 2px solid #95a5a6;
 }
+.mq-editable-field.mq-focused,
+.mq-math-mode .mq-editable-field.mq-focused {
+  -webkit-box-shadow: #8bd 0 0 1px 2px, inset #6ae 0 0 2px 0;
+  -moz-box-shadow: #8bd 0 0 1px 2px, inset #6ae 0 0 2px 0;
+  box-shadow: #8bd 0 0 1px 2px, inset #6ae 0 0 2px 0;
+  border-color: #709AC0;
+  border-radius: 1px;
+}
 .mq-math-mode .mq-editable-field {
   margin: 1px;
 }
@@ -499,4 +507,19 @@
 .mq-math-mode .mq-matrixed-container {
   filter: progid:DXImageTransform.Microsoft.Chroma(color='white');
   margin-top: -0.1em;
+}
+/**
+ * Custom Mathspace theme styles
+ */
+.mq-editable-field,
+.mq-math-mode .mq-editable-field {
+  border: 1px solid #d4d7d9;
+  border-radius: 4px !important;
+  padding: 10px 12px 8px;
+  transition: border-color 0.15s ease;
+}
+.mq-editable-field.mq-focused,
+.mq-math-mode .mq-editable-field.mq-focused {
+  box-shadow: none;
+  border-color: #2077b2;
 }
