@@ -170,7 +170,6 @@ var saneKeyboardEvents = (function() {
       });
 
       handleKey();
-      e.stopPropagation();    // Stop events from bubbling up to cause double cursor in nested editable boxes
     }
 
     function onKeypress(e) {
