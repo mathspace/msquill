@@ -147,6 +147,7 @@ var saneKeyboardEvents = (function() {
 
     // -*- event handlers -*- //
     function onKeydown(e) {
+      if (e.target !== textarea[0]) return;
 
       // MatHSPaCE HacK
       // Disable the $
@@ -170,10 +171,11 @@ var saneKeyboardEvents = (function() {
       });
 
       handleKey();
-      e.stopPropagation();    // Chrome:Stop events from bubbling up to cause double cursor in nested editable boxes
     }
 
     function onKeypress(e) {
+      if (e.target !== textarea[0]) return;
+
       // call the key handler for repeated keypresses.
       // This excludes keypresses that happen directly
       // after keydown.  In that case, there will be
@@ -183,7 +185,6 @@ var saneKeyboardEvents = (function() {
       keypress = e;
 
       checkTextareaFor(typedText);
-      e.stopPropagation();    // MSEdge: Stop events from bubbling up to cause double cursor in nested editable boxes
     }
     function typedText() {
       // If there is a selection, the contents of the textarea couldn't
@@ -217,6 +218,8 @@ var saneKeyboardEvents = (function() {
     function onBlur() { keydown = keypress = null; }
 
     function onPaste(e) {
+      if (e.target !== textarea[0]) return;
+
       // browsers are dumb.
       //
       // In Linux, middle-click pasting causes onPaste to be called,
