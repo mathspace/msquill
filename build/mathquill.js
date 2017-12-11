@@ -1496,6 +1496,10 @@ var saneKeyboardEvents = (function() {
 
       checkTextareaFor(typedText);
     }
+    function onKeyup(e) {
+      // Handle case of no keypress event being sent
+      if (!!keydown && !keypress) checkTextareaFor(typedText);
+    }
     function typedText() {
       // If there is a selection, the contents of the textarea couldn't
       // possibly have just been typed in.
@@ -1556,6 +1560,7 @@ var saneKeyboardEvents = (function() {
     target.bind({
       keydown: onKeydown,
       keypress: onKeypress,
+      keyup: onKeyup,
       focusout: onBlur,
       paste: onPaste
     });
