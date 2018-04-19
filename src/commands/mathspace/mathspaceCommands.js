@@ -94,6 +94,8 @@ var OverLineStyleGenerator = function (className) {
 };
 // Add command
 LatexCmds.overrightarrow = bind(OverLineStyleGenerator('mq-overarrow'), '\\overrightarrow', 'span', 'class="mq-non-leaf mq-overarrow mq-arrow-right"');
+LatexCmds.overleftarrow = bind(OverLineStyleGenerator('mq-overarrow'), '\\overleftarrow', 'span', 'class="mq-non-leaf mq-overarrow mq-arrow-left"');
+LatexCmds.overleftrightarrow = bind(OverLineStyleGenerator('mq-overarrow'), '\\overleftrightarrow', 'span', 'class="mq-non-leaf mq-overarrow mq-arrow-both"');
 
 
 // Define \hat{}
