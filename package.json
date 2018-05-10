@@ -9,6 +9,6 @@
   "devDependencies": {
     "mocha": "*",
     "uglify-js": "2.x",
-    "less": ">=1.5.1"
+    "less": "^1.5.1"
   }
 }
