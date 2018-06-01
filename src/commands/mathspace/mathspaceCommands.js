@@ -4,6 +4,8 @@ LatexCmds.triangle = bind(VanillaSymbol, '\\triangle ', '&#9651;');
 
 LatexCmds.simeq = bind(VanillaSymbol, '\\simeq ', '&#11003;');
 
+LatexCmds.interleave = bind(VanillaSymbol, '\\interleave', '&#10996;');
+
 // Map * to times instead of dot
 CharCmds['*'] = LatexCmds.times;
 
