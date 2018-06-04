@@ -77,6 +77,18 @@ Ideally, any customisations to MathQuill should be encapsulated in one of the fo
 
 This is intended to make upstream change merging easier.
 
+## Regenerating the fonts
+
+The source version of Symbola (contains all ~7800 characters) can be found on Fonts2U:
+
+https://fonts2u.com/symbola.font
+
+To reduce payload size and optimise browser rendering, we have run Symbola
+through FontSquirrel's webfont generator with the following character set
+selected:
+
+![image](./src/font/latest-fontsquirrel-configuration.png)
+
 ## Updating to latest upstream master
 
 Unfortunately, we haven't done a very good job, historically, of segregating our Mathspace customisations from core code.  This means that there isn't a very good story for merging upstream changes into our codebase.
