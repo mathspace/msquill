@@ -186,7 +186,7 @@ var SupSub = P(MathCommand, function(_, super_) {
     this.ends[L].write = function(cursor, ch) {
       if (cursor.options.autoSubscriptNumerals && this === this.parent.sub) {
         if (ch === '_') return;
-        var cmd = this.chToCmd(ch);
+        var cmd = this.chToCmd(cursor, ch);
         if (cmd instanceof Symbol) cursor.deleteSelection();
         else cursor.clearSelection().insRightOf(this.parent);
         return cmd.createLeftOf(cursor.show());
@@ -339,11 +339,11 @@ var SummationNotation = P(MathCommand, function(_, super_) {
     return this.ctrlSeq + '_' + simplify(this.ends[L].latex()) +
       '^' + simplify(this.ends[R].latex());
   };
-  _.parser = function() {
+  _.parser = function(cursor) {
     var string = Parser.string;
     var optWhitespace = Parser.optWhitespace;
     var succeed = Parser.succeed;
-    var block = latexMathParser.block;
+    var block = latexMathParser(cursor).block;
 
     var self = this;
     var blocks = self.blocks = [ MathBlock(), MathBlock() ];
@@ -440,9 +440,9 @@ LatexCmds['√'] = P(MathCommand, function(_, super_) {
     + '</span>'
   ;
   _.textTemplate = ['sqrt(', ')'];
-  _.parser = function() {
-    return latexMathParser.optBlock.then(function(optBlock) {
-      return latexMathParser.block.map(function(block) {
+  _.parser = function(cursor) {
+    return latexMathParser(cursor).optBlock.then(function(optBlock) {
+      return latexMathParser(cursor).block.map(function(block) {
         var nthroot = NthRoot();
         nthroot.blocks = [ optBlock, block ];
         optBlock.adopt(nthroot, 0, 0);
@@ -673,7 +673,7 @@ LatexCmds.rangle = bind(Bracket, R, '&lang;', '&rang;', '\\langle ', '\\rangle '
 CharCmds['|'] = bind(Bracket, L, '|', '|', '|', '|');
 
 LatexCmds.left = P(MathCommand, function(_) {
-  _.parser = function() {
+  _.parser = function(cursor) {
     var regex = Parser.regex;
     var string = Parser.string;
     var succeed = Parser.succeed;
@@ -682,7 +682,7 @@ LatexCmds.left = P(MathCommand, function(_) {
     return optWhitespace.then(regex(/^(?:[([|]|\\\{)/))
       .then(function(ctrlSeq) { // TODO: \langle, \rangle
         var open = (ctrlSeq.charAt(0) === '\\' ? ctrlSeq.slice(1) : ctrlSeq);
-        return latexMathParser.then(function (block) {
+        return latexMathParser(cursor).then(function (block) {
           return string('\\right').skip(optWhitespace)
             .then(regex(/^(?:[\])|]|\\\})/)).map(function(end) {
               var close = (end.charAt(0) === '\\' ? end.slice(1) : end);
