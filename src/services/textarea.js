@@ -70,7 +70,7 @@ Controller.open(function(_) {
   _.editablesTextareaEvents = function() {
     var ctrlr = this, root = ctrlr.root, cursor = ctrlr.cursor,
       textarea = ctrlr.textarea, textareaSpan = ctrlr.textareaSpan;
-
+    
     var keyboardEventsShim = saneKeyboardEvents(textarea, this);
     this.selectFn = function(text) { keyboardEventsShim.select(text); };
 
@@ -107,6 +107,12 @@ Controller.open(function(_) {
       }
     }
     // FIXME: this always inserts math or a TextBlock, even in a RootTextBlock
-    this.writeLatex(text).cursor.show();
+    if(this.API.__options.pasteLatex) {
+      return this.writeLatex(text).cursor.show
+    } else {
+      this.typedText(text)
+      this.cursor.show();
+    }
+    
   };
 });

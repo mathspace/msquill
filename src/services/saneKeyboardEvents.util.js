@@ -148,19 +148,6 @@ var saneKeyboardEvents = (function() {
     // -*- event handlers -*- //
     function onKeydown(e) {
       if (e.target !== textarea[0]) return;
-
-      // MatHSPaCE HacK
-      // Disable the $
-      switch ((e.originalEvent && e.originalEvent.keyIdentifier) || e.which) {
-        case 52:          // Windows IE, digit 4
-        case 'U+0034':    // Windows, other browsers
-        case 'U+0024':    // Mac - Chrome, this is symbol '$'
-          if (e.shiftKey) {
-            e.stopImmediatePropagation();
-            e.stopPropagation();
-            return false;
-          }
-      }
       keydown = e;
       keypress = null;
 

@@ -18,7 +18,8 @@ BASE_SOURCES = \
   $(SRC_DIR)/controller.js \
   $(SRC_DIR)/publicapi.js \
   $(SRC_DIR)/services/*.util.js \
-  $(SRC_DIR)/services/*.js
+  $(SRC_DIR)/services/*.js \
+	$(SRC_DIR)/configuration/symbols/*.js 
 
 SOURCES_FULL = \
   $(BASE_SOURCES) \

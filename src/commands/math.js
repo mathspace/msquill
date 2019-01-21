@@ -474,17 +474,28 @@ var MathBlock = P(MathElement, function(_, super_) {
     while (pageX < node.jQ.offset().left) node = node[L];
     return node.seek(pageX, cursor);
   };
-  _.chToCmd = function(ch) {
+  _.chToCmd = function(ch='') {
+    // We want to use the available commands from the controller
+    var controller, node = this
+    do {
+      controller = node.controller 
+      node = node.parent
+    } while(!controller)
+    
+    var latexCmds = controller.latexCmds
+    var charCmds = controller.charCmds
     var cons;
+    
     // exclude f because it gets a dedicated command with more spacing
-    if (ch.match(/^[a-eg-zA-Z]$/))
-      return Letter(ch);
+    if (ch.match(/^[a-eg-zA-Z\+\-\!\=]$/))
+      cons = Letter(ch);
     else if (/^\d$/.test(ch))
-      return Digit(ch);
-    else if (cons = CharCmds[ch] || LatexCmds[ch])
-      return cons(ch);
+      cons = Digit(ch);
+    else if (cons = controller.searchForCommand(ch) )
+      cons = cons(ch);
     else
-      return VanillaSymbol(ch);
+      cons = VanillaSymbol(ch);
+    return cons
   };
   _.write = function(cursor, ch) {
     var cmd = this.chToCmd(ch);
