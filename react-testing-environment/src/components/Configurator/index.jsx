@@ -7,7 +7,7 @@ const initialState = {
   latex: '',
   htmlEntity: '',
   skip: false
-}
+};
 
 export default class Configurator extends Component {
   state = initialState

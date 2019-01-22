@@ -27,6 +27,7 @@ MathQuill.getBlock = function(el) {
   return blockId ? Node.byId[blockId]: null;
 };
 
+
 /**
  * Returns function (to be publicly exported) that MathQuill-ifies an HTML
  * element and returns an API object. If the element had already been MathQuill-
@@ -77,7 +78,7 @@ var AbstractMathQuill = P(function(_) {
     
     if (opts.commands) {
       setTimeout(function () {
-        this.__controller.extendLatexGrammar(opts.commands)
+        this.__controller.extendLatexGrammar(opts.commands);
       }.bind(this));
     }
 
@@ -132,12 +133,11 @@ var EditableField = MathQuill.EditableField = P(AbstractMathQuill, function(_) {
   _.focus = function() { this.getActiveNode().__controller.textarea.focus(); return this; };
   _.blur = function() { this.getActiveNode().__controller.textarea.blur(); return this; };
   _.getActiveNode = function () {
- 
+    /** MatHSPaCE HacK */
+    // If nested editable box exists, all commands should
+    // be executed against last focused editable box
     var rootBlocks = this.__controller.container.find('.mq-inner-editable .mq-root-block');
     if (rootBlocks.length) {
-      /** MatHSPaCE HacK */
-      // If nested editable box exists, all commands should
-      // be executed against last focused editable box
       var lastFocused = rootBlocks.filter('.mq-last-focused');
       // If there is no last focused box, focus on the first nested editable box
       var activeRoot = lastFocused.length ? lastFocused.eq(0) : rootBlocks.eq(0),
@@ -192,7 +192,6 @@ var EditableField = MathQuill.EditableField = P(AbstractMathQuill, function(_) {
   _.moveToRightEnd = function() { return this.moveToDirEnd(R); };
 
   _.keystroke = function(keys) {
-    
     var activeNode = this.getActiveNode();
     var keys = keys.replace(/^\s+|\s+$/g, '').split(/\s+/);
     for (var i = 0; i < keys.length; i += 1) {
@@ -201,7 +200,6 @@ var EditableField = MathQuill.EditableField = P(AbstractMathQuill, function(_) {
     return this;
   };
   _.typedText = function(text) {
-   
     for (var i = 0; i < text.length; i += 1) this.getActiveNode().__controller.typedText(text.charAt(i));
     return this;
   };

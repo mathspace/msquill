@@ -27,20 +27,20 @@
  * is intentional. 
  */
 function symbolFactory(binder, existingSymbols) {
-  var symbols = {}
-  existingSymbols = existingSymbols || {}
+  var symbols = {};
+  existingSymbols = existingSymbols || {};
   return function loadDynamicSymbol(symbolDefinition) {
 
     // In cases when the skip flag is set to true
     // we will define a command that has no output { latex: '', htmlEntity: '' }
     // effectively ignoring the input 
-    if(symbolDefinition.skip)
+    if (symbolDefinition.skip)
       symbolDefinition = {
         name: symbolDefinition.name,
         latex: '',
         htmlEntity: '',
         match: symbolDefinition.match
-      }
+      };
 
     var boundSymbol = binder(symbolDefinition);
 
@@ -48,19 +48,19 @@ function symbolFactory(binder, existingSymbols) {
       symbolDefinition.match.forEach(function (match) {
         if (existingSymbols[match])
           console.warn("Symbol definition duplication in " + match);
-        symbols[match] = boundSymbol
-      })
+        symbols[match] = boundSymbol;
+      });
     
     // In some cases we can opt not to have a name clause. This is used for match only 
     // definitions. See: GREEK_SYMBOLS
     if (symbolDefinition.name) {
       if (existingSymbols[symbolDefinition.name]) 
-        console.warn("Symbol definition duplication in " + symbolDefinition.name)
+        console.warn("Symbol definition duplication in " + symbolDefinition.name);
       symbols[symbolDefinition.name] = boundSymbol;
     }
-    console.log(symbols)
-    return symbols    
-  }
+    console.log(symbols);
+    return symbols;
+  };
 }
 
 /** this is built with the assumption that latex grammar processing is global. All instances of 

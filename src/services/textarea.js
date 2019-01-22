@@ -70,9 +70,10 @@ Controller.open(function(_) {
   _.editablesTextareaEvents = function() {
     var ctrlr = this, root = ctrlr.root, cursor = ctrlr.cursor,
       textarea = ctrlr.textarea, textareaSpan = ctrlr.textareaSpan;
-    
+
     var keyboardEventsShim = saneKeyboardEvents(textarea, this);
     this.selectFn = function(text) { keyboardEventsShim.select(text); };
+
     this.container.prepend(textareaSpan)
     .on('cut', function(e) {
       if (cursor.selection) {
@@ -110,7 +111,7 @@ Controller.open(function(_) {
       this.typedText(text);
       this.cursor.show();
     } else {
-      this.writeLatex(text).cursor.show;
+      this.writeLatex(text).cursor.show();
     }
   };
 });
