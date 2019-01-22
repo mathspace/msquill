@@ -89,10 +89,9 @@ Controller.open(function(_) {
 
 Controller.open(function(_) {
   _.seek = function(target, pageX, pageY) {
-    // Notify all listeners bound to the Controller that 
-    // a selection has started. This method is ambiguous that a method call is bundled with an assignemnt 
-    // this.notify returns an instance of this  
-    var cursor = this.notify("select").cursor;
+    var cursor = this.cursor;
+    // Notify all listeners bound to the Controller that a selection has started. 
+    this.notify("select");
 
     if (target) {
       // Grab a reference to the nodeId. This will be used to get a 
