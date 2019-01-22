@@ -113,5 +113,3 @@ function bind(cons /*, args... */) {
 function pray(message, cond) {
   if (!cond) throw new Error('prayer failed: '+message);
 }
-
-

@@ -113,8 +113,6 @@ function bind(cons /*, args... */) {
 function pray(message, cond) {
   if (!cond) throw new Error('prayer failed: '+message);
 }
-
-
 var P = (function(prototype, ownProperty, undefined) {
   // helper functions that also help minification
   function isObject(o) { return typeof o === 'object'; }
@@ -2288,11 +2286,8 @@ Controller.open(function(_) {
       // If none exists, fallback to ultimate root controller
       var rootjQ = $(e.target).closest('.mq-root-block'); 
       var root = Node.byId[rootjQ.attr(mqBlockId) || ultimateRootjQ.attr(mqBlockId)];
-      var ctrlr = root.controller, 
-          cursor = ctrlr.cursor, 
-          blink = cursor.blink;
-      var textareaSpan = ctrlr.textareaSpan, 
-          textarea = ctrlr.textarea;
+      var ctrlr = root.controller, cursor = ctrlr.cursor, blink = cursor.blink;
+      var textareaSpan = ctrlr.textareaSpan, textarea = ctrlr.textarea;
 
       var target;
 
@@ -2300,7 +2295,8 @@ Controller.open(function(_) {
         // Get a reference to the MathQuill API via the ultimate root.
         var ultimateRoot = Node.byId[ultimateRootjQ.attr(mqBlockId)];
         var ultimateRootAPI = ultimateRoot.controller.API;
-        if ((ultimateRootAPI instanceof MathQuill.StaticMath && $(e.target).parents(".mq-inner-editable").length) || // If the ultimate root is readonly (StaticMath)
+        if ((ultimateRootAPI instanceof MathQuill.StaticMath && $(e.target).parents(".mq-inner-editable").length) || 
+          // If the ultimate root is readonly (StaticMath)
           // and you clicked inside the editable box
           ctrlr.API.latex().indexOf("\\editable{") > -1) {
           // or if the selected element contains latex matching '\editable{'
@@ -2365,10 +2361,11 @@ Controller.open(function(_) {
 
 Controller.open(function(_) {
   _.seek = function(target, pageX, pageY) {
-    var cursor = this.cursor;
     // Notify all listeners bound to the Controller that 
-    // a selection has started
-    this.notify('select')
+    // a selection has started. This method is ambiguous that a method call is bundled with an assignemnt 
+    // this.notify returns an instance of this  
+    var cursor = this.notify("select").cursor;
+
     if (target) {
       // Grab a reference to the nodeId. This will be used to get a 
       // reference to the Node in the virtual "dom" tree
@@ -3232,7 +3229,7 @@ var MathBlock = P(MathElement, function(_, super_) {
     var cons;
     
     // exclude f because it gets a dedicated command with more spacing
-    if (ch.match(/^[a-eg-zA-Z\+\-\!\=]$/))
+    if (ch.match(/^[a-eg-zA-Z]$/))
       return Letter(ch);
     else if (/^\d$/.test(ch))
       return Digit(ch);

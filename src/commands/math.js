@@ -488,7 +488,7 @@ var MathBlock = P(MathElement, function(_, super_) {
     var cons;
     
     // exclude f because it gets a dedicated command with more spacing
-    if (ch.match(/^[a-eg-zA-Z\+\-\!\=]$/))
+    if (ch.match(/^[a-eg-zA-Z]$/))
       return Letter(ch);
     else if (/^\d$/.test(ch))
       return Digit(ch);
