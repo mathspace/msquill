@@ -1,25 +1,7 @@
-/* .container {
+.container {
   width: 600px;
   padding: 40px;
   margin: auto;
-  background-color: #eee;
-  text-align: center;
 }
 
 
-.mq-editable-field {
-  min-width: 150px;
-  background-color: white;
-  transform: scale(2);
-  margin-top: 30px;
-  margin-bottom: 30px;
-}
-
-#root {
-  padding-top: 150px;
-}
-
-pre {
-  font-size: 20px;
-  text-align: center;
-} */

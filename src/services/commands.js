@@ -16,10 +16,12 @@ Controller.open(function(_) {
     
     // Initialize the grammar processors for various symbols
     // by loading up the default configuration 
-    this.extendLatexGrammar(VANILLA_SYMBOLS, "symbol");
-    this.extendLatexGrammar(NON_SYMBOLA_SYMBOLS, "nonSymbola");
-    this.extendLatexGrammar(GREEK_SYMBOLS, "variable");
-    this.extendLatexGrammar(BINARY_SYMBOLS, "variable");
+    // This is WIP. Eventually all files symbol definitions
+    // should be transferred over to the defaultSymbolDefinitions file
+    // this.extendLatexGrammar(VANILLA_SYMBOLS, "symbol");
+    // this.extendLatexGrammar(NON_SYMBOLA_SYMBOLS, "nonSymbola");
+    // this.extendLatexGrammar(GREEK_SYMBOLS, "variable");
+    // this.extendLatexGrammar(BINARY_SYMBOLS, "variable");
 
     // Process injected commands into autocommands 
     var options = this.cursor.options;

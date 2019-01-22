@@ -107,12 +107,11 @@ Controller.open(function(_) {
       }
     }
     // FIXME: this always inserts math or a TextBlock, even in a RootTextBlock
-    if(this.API.__options.pasteLatex) {
-      return this.writeLatex(text).cursor.show
-    } else {
-      this.typedText(text)
+    if (this.API.__options.overrideLatexPaste) {
+      this.typedText(text);
       this.cursor.show();
+    } else {
+      this.writeLatex(text).cursor.show;
     }
-    
   };
 });

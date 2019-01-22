@@ -21,14 +21,17 @@ export default class MsQuill extends Component {
     if (
       this.container &&
       this.container.current) {
-      this.mathquillAPI = MathQuill.MathField(this.container.current, {
+
+      // setup MQ command 
+      let MQ = MathQuill[this.props.editable === false ? 'StaticMath' : 'MathField']
+      this.mathquillAPI = MQ(this.container.current, {
         commands: this.props.commands,
         autoCommands: this.props.autoCommands,
         autoCommandsMapping: this.props.autoCommandsMapping,
-        autoOperatorNames: this.props.autoOperatorNames,
+        // autoOperatorNames: this.props.autoOperatorNames,
         handlers: {
           edit: () => {
-            if(this.props.onChange && this.mathquillAPI) {
+            if (this.props.onChange && this.mathquillAPI) {
               this.props.onChange({
                 latex: this.mathquillAPI.latex()
               });
@@ -37,27 +40,14 @@ export default class MsQuill extends Component {
         },
         ...(this.props.extraConfig || {})
       });
-      window.quill = this.mathquillAPI;
-    }
-  }
-
-  componentDidUpdate(){
-    if(this.props.commands && this.mathquillAPI) {
-      this.mathquillAPI.config({commands: this.props.commands})
-    }
-  }
-
-  onChange = () => {
-    if (this.mathquillAPI) {
-      console.log(this.mathquillAPI.latex())
+      if(this.props.initialValue) this.mathquillAPI.__controller.writeLatex(this.props.initialValue)
+      if(this.props.editable !== false) this.mathquillAPI.blur()
     }
   }
 
   
   render() {
-    return <div ref={this.container}>
-   
-      </div>;
+    return <span ref={this.container}/>
   }
 }
 
