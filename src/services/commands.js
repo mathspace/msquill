@@ -18,6 +18,7 @@ Controller.open(function(_) {
     // by loading up the default configuration 
     // This is WIP. Eventually all files symbol definitions
     // should be transferred over to the defaultSymbolDefinitions file
+    this.extendLatexGrammar(GLOBALLY_DISABLED_INPUT, 'symbol');
     // this.extendLatexGrammar(VANILLA_SYMBOLS, "symbol");
     // this.extendLatexGrammar(NON_SYMBOLA_SYMBOLS, "nonSymbola");
     // this.extendLatexGrammar(GREEK_SYMBOLS, "variable");

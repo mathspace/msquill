@@ -23,10 +23,13 @@ var VANILLA_SYMBOLS = [
     htmlEntity: "\\",
     alias: ["backslash"]
   },
+];
+
+var GLOBALLY_DISABLED_INPUT = [
   {
     name: "$",
     skip: true // Ignore this character completely
-  },
+  }
 ];
 
 
