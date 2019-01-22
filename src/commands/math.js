@@ -474,7 +474,8 @@ var MathBlock = P(MathElement, function(_, super_) {
     while (pageX < node.jQ.offset().left) node = node[L];
     return node.seek(pageX, cursor);
   };
-  _.chToCmd = function(ch='') {
+  _.chToCmd = function(ch) {
+    ch = ch || ''
     // We want to use the available commands from the controller
     var controller, node = this
     do {

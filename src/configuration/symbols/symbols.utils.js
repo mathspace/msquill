@@ -27,9 +27,9 @@
  * This object can then be merged with the global configuration. The decision not to mutate the arguments 
  * is intentional. 
  */
-function symbolFactory(binder, existingSymbols = {}) {
+function symbolFactory(binder, existingSymbols) {
   var symbols = {}
-
+  existingSymbols = existingSymbols || {}
   return function loadDynamicSymbol(symbolDefinition) {
 
     // In cases when the skip flag is set to true

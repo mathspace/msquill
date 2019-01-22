@@ -956,6 +956,7 @@ var AbstractMathQuill = P(function(_) {
     this.config(opts);
 
     var ctrlr = Controller(this, root, el);
+    ctrlr.initializeLatexGrammar(); // copy the global latex grammar into the controller instance
     ctrlr.createTextarea();
 
     var contents = el.contents().detach();
@@ -971,12 +972,21 @@ var AbstractMathQuill = P(function(_) {
   };
   _.config =
   MathQuill.config = function(opts) {
-    for (var opt in opts) if (opts.hasOwnProperty(opt)) {
+    for (var opt in opts) if (opts.hasOwnProperty(opt) && opts[opt] != null) {
       var optVal = opts[opt], processor = optionProcessors[opt];
       this.__options[opt] = (processor ? processor(optVal) : optVal);
+      // this can be used for dynamic updates but we need to call the correct subsystems 
     }
+    
+    if (opts.commands) setTimeout(function() {
+      this.__controller.extendLatexGrammar(opts.commands)
+    }.bind(this));
+
     return this;
   };
+  _.injectGrammar = function(list) {
+
+  }
   _.el = function() { return this.__controller.container[0]; };
   _.text = function() { return this.__controller.exportText(); };
   _.latex = function(latex) {
@@ -1467,19 +1477,6 @@ var saneKeyboardEvents = (function() {
     // -*- event handlers -*- //
     function onKeydown(e) {
       if (e.target !== textarea[0]) return;
-
-      // MatHSPaCE HacK
-      // Disable the $
-      switch ((e.originalEvent && e.originalEvent.keyIdentifier) || e.which) {
-        case 52:          // Windows IE, digit 4
-        case 'U+0034':    // Windows, other browsers
-        case 'U+0024':    // Mac - Chrome, this is symbol '$'
-          if (e.shiftKey) {
-            e.stopImmediatePropagation();
-            e.stopPropagation();
-            return false;
-          }
-      }
       keydown = e;
       keypress = null;
 
@@ -1580,6 +1577,158 @@ var saneKeyboardEvents = (function() {
     };
   };
 }());
+Controller.open(function(_) {
+
+  var COMMAND_CONFIGURATION_TYPE_MAP = {
+    symbol: 'vanillaSymbol',
+    variable: 'variable',
+    nonSymbola: 'nonSymbolaSymbol',
+    variable: 'binary'
+  }
+
+  _.initializeLatexGrammar = function() {
+    this.latexCmds = Object.assign({}, LatexCmds);
+    this.charCmds = Object.assign({}, CharCmds);
+    this.textCommands = {}
+
+    this.cursor.options.autoCommands = {}
+    
+    // Initialize the grammar processors for various symbols
+    // by loading up the default configuration 
+    // This is WIP. Eventually all files symbol definitions
+    // should be transferred over to the defaultSymbolDefinitions file
+    // this.extendLatexGrammar(VANILLA_SYMBOLS, "symbol");
+    // this.extendLatexGrammar(NON_SYMBOLA_SYMBOLS, "nonSymbola");
+    // this.extendLatexGrammar(GREEK_SYMBOLS, "variable");
+    // this.extendLatexGrammar(BINARY_SYMBOLS, "variable");
+
+    // Process injected commands into autocommands 
+    var options = this.cursor.options;
+    var commands = options.commands || []
+    this.extendLatexGrammar(commands)  
+  }
+
+  _.attachKeyboardListener = function (grammarDefinition) {
+    if (grammarDefinition.keystroke) {
+      // this is still a bit hacky and we may get performance issues in the future
+      // but for now it works. 
+    
+      this.registerKeystrokeHandler(function(pattern,event) {
+       
+        if (pattern === grammarDefinition.keystroke) {
+          event.preventDefault();
+          this.API.cmd(grammarDefinition.name);
+        }
+      });
+      // we want to make sure that keystroke inputs do not generate any markup 
+      // this means overriding the 
+    }
+    
+
+ 
+  }
+
+
+  _.extendLatexGrammar = function(grammarList, type) {
+    var maxLength = 0
+    var autoCommands = {}
+    var latexCmds = {}
+    
+    grammarList.forEach(function (symbolDefinition) {
+      this.attachKeyboardListener(symbolDefinition);
+      function appendtoAutoCommands(item) {
+        if (item.length > maxLength) maxLength = item.length
+        autoCommands[item] = 1
+      }
+       
+      if (symbolDefinition.isTextCommand) appendtoAutoCommands(symbolDefinition.name)
+      if (symbolDefinition.commands) {
+        symbolDefinition.commands.forEach(function(command) {
+          appendtoAutoCommands(command);
+          if(symbolDefinition.name) this.textCommands[command] = symbolDefinition.name
+        }.bind(this));
+      }
+      
+      
+      var grammarType = type || symbolDefinition.type || "symbol"
+      var processor = grammarProcessors[COMMAND_CONFIGURATION_TYPE_MAP[grammarType]];
+      Object.assign(
+        latexCmds, 
+        processor(symbolDefinition)
+      )
+    }.bind(this))
+
+    Object.assign(this.latexCmds, latexCmds);
+
+    Object.assign(
+      this.cursor.options.autoCommands,
+      autoCommands
+    )     
+    // final max computation 
+    if (this.cursor.options.autoCommands._maxLength || 0 < maxLength) 
+      this.cursor.options.autoCommands._maxLength = maxLength;
+  };
+
+  _.searchForCommand = function(cmd) {
+    // check latexcmds first 
+    if (this.latexCmds[cmd]) return this.latexCmds[cmd];
+    if (this.charCmds[cmd]) return this.charCmds[cmd];
+    if (this.textCommands[cmd]) return this.searchForCommand(this.textCommands[cmd])
+  }
+})
+
+// The following are symbol definition processors that transform symbol definitions into full
+// fledged classes for constructing the math AST.
+
+var grammarProcessors = {
+  vanillaSymbol: symbolFactory(function(symbolDefinition) {
+    return bind(
+      VanillaSymbol,
+      symbolDefinition.latex,
+      symbolDefinition.htmlEntity
+    );
+  }),
+  nonSymbolaSymbol: symbolFactory(function(symbolDefinition) {
+    // In the case where the symbol definition is identical for all types,
+    // return the default constructor
+    if (
+      symbolDefinition.latex === symbolDefinition.name &&
+      symbolDefinition.htmlEntity === symbolDefinition.htmlEntity
+    )
+      return NonSymbolaSymbol;
+    return bind(
+      NonSymbolaSymbol,
+      symbolDefinition.latex,
+      symbolDefinition.htmlEntity
+    );
+  }),
+  variable: symbolFactory(function(symbolDefinition) {
+    if (!symbolDefinition.latex && !symbolDefinition.htmlEntity)
+      // considered automatic
+      // catch-all variable node. This takes whatever the user inputs
+      // and drops it into the node as `\\{input}` and `${input};`.
+      // this works for all greek letter entries
+      return P(Variable, function(_, super_) {
+        _.init = function(latex) {
+          super_.init.call(this, "\\" + latex + " ", "&" + latex + ";");
+        };
+      });
+    return bind(Variable, symbolDefinition.latex, symbolDefinition.htmlEntity);
+  }),
+  binary: symbolFactory(function(symboldefinition) {
+    return bind(
+      BinaryOperator,
+      symboldefinition.latex,
+      symboldefinition.htmlEntity
+    );
+  })
+};
+
+
+
+
+
+
 /***********************************************
  * Export math in a human-readable text format
  * As you can see, only half-baked so far.
@@ -1654,8 +1803,18 @@ Controller.open(function(_) {
 
 Controller.open(function(_) {
   _.keystroke = function(key, evt) {
+    if(this.keystrokeHandlers) {
+      for(var i = 0; i < this.keystrokeHandlers.length; i++)
+        this.keystrokeHandlers[i].call(this, key, evt);
+    }
     this.cursor.parent.keystroke(key, evt, this);
   };
+  _.registerKeystrokeHandler = function(fn) {
+    if(!this.keystrokeHandlers) {
+      this.keystrokeHandlers = []
+    }
+    this.keystrokeHandlers.push(fn)
+  }
 });
 
 Node.open(function(_) {
@@ -1973,7 +2132,6 @@ var latexMathParser = (function() {
       .or(any)
     )).then(function(ctrlSeq) {
       var cmdKlass = LatexCmds[ctrlSeq];
-
       if (cmdKlass) {
         return cmdKlass(ctrlSeq).parser();
       }
@@ -2352,7 +2510,7 @@ Controller.open(function(_) {
   _.editablesTextareaEvents = function() {
     var ctrlr = this, root = ctrlr.root, cursor = ctrlr.cursor,
       textarea = ctrlr.textarea, textareaSpan = ctrlr.textareaSpan;
-
+    
     var keyboardEventsShim = saneKeyboardEvents(textarea, this);
     this.selectFn = function(text) { keyboardEventsShim.select(text); };
 
@@ -2389,9 +2547,185 @@ Controller.open(function(_) {
       }
     }
     // FIXME: this always inserts math or a TextBlock, even in a RootTextBlock
-    this.writeLatex(text).cursor.show();
+    if (this.API.__options.overrideLatexPaste) {
+      this.typedText(text);
+      this.cursor.show();
+    } else {
+      this.writeLatex(text).cursor.show;
+    }
   };
 });
+
+/**
+ * Basic symbols extend the VanillaSymbol class. each row will be translated 
+ * into the following command and assignment 
+ * LatexCmds[name] = bind(VanillaSymbol, latex, htmlEntity) 
+ * A symbol may also provide 'ailiases' that will be passed recursed upon
+ */
+
+var VANILLA_SYMBOLS = [
+  {
+    name: " ",
+    latex: "\\ ",
+    htmlEntity: "&nbsp;"
+  },
+  {
+    name: "'",
+    latex: "'",
+    htmlEntity: "&prime;"
+  },
+  {
+    name: "\\",
+    latex: "\\backslash ",
+    htmlEntity: "\\",
+    alias: ["backslash"]
+  },
+  {
+    name: "$",
+    skip: true // Ignore this character completely
+  },
+];
+
+
+var GREEK_SYMBOLS = [
+  {
+    name: "epsilon",
+    latex: "\\epsilon",
+    htmlEntity: "&epsilon;",
+    alias: ["\u03b5"]
+  },
+  {
+    name: "phi",
+    latex: "\\phi",
+    htmlEntity: "&#981;"
+  },
+  {
+    name: "phiv",
+    latex: "\\phiv",
+    htmlEntity: "&phi;",
+    alias: ["varphi"]
+  },
+  // This set of symbols is automatic. Each symbol will automatically
+  // be converted to \alias in latex
+  {
+    alias: [
+      "alpha",
+      "beta",
+      "gamma",
+      "delta",
+      "zeta",
+      "eta",
+      "theta",
+      "iota",
+      "kappa",
+      "mu",
+      "nu",
+      "xi",
+      "rho",
+      "sigma",
+      "tau",
+      "chi",
+      "psi",
+      "omega"
+    ]
+  }
+];
+
+var NON_SYMBOLA_SYMBOLS = [
+  {
+    name: "@",
+    latex: "@",
+    htmlEntity: "@"
+  },
+  {
+    name: "&",
+    latex: "\\$",
+    htmlEntity: "$&amp;"
+  },
+  
+];
+
+var BINARY_SYMBOLS = [
+  {
+    name: "\u2260",
+    alias: ["ne", "neq"],
+    commands: ['!='],
+    latex: "\\ne",
+    htmlEntity: "&ne;",
+  }
+];/**
+ * 
+ * @param {*} binder 
+ * @param {*} existingSymbols Used to check for conflicts. No mutation
+ * 
+ * this will output an object from a list of object definitions where each
+ * definition is called with the binder with the following pattern 
+ * 
+ * e.g.
+ *
+ * var binder = function (definition) { return definition.latex + definition.htmlEntity }
+ * 
+ * example 1:
+ * [ { name: '!', latex: '\\!', htmlEntity '&bang;' } ] 
+ * becomes
+ * { '!':  '\\!&bang' }
+ * 
+ * example 2: Aliases copy the same definition onto multiple keys 
+ * [ { name: 'bang', latex: '\\!', htmlEntity '&bang;', name: ['exampleAlias', 'exampleAlias2'] } ]
+ * becomes 
+ * {
+ *   '!': '\\!&bang',
+ *   'exampleAlias': '\\!&bang',
+ *   'exampleAlias2': '\\!&bang'
+ * }
+ * 
+ * This object can then be merged with the global configuration. The decision not to mutate the arguments 
+ * is intentional. 
+ */
+function symbolFactory(binder, existingSymbols) {
+  var symbols = {}
+  existingSymbols = existingSymbols || {}
+  return function loadDynamicSymbol(symbolDefinition) {
+
+    // In cases when the skip flag is set to true
+    // we will define a command that has no output { latex: '', htmlEntity: '' }
+    // effectively ignoring the input 
+    if(symbolDefinition.skip)
+      symbolDefinition = {
+        name: symbolDefinition.name,
+        latex: '',
+        htmlEntity: '',
+        match: symbolDefinition.match
+      }
+
+    var boundSymbol = binder(symbolDefinition);
+
+    if (symbolDefinition.match)
+      symbolDefinition.match.forEach(function (match) {
+        if (existingSymbols[match])
+          console.warn("Symbol definition duplication in " + match);
+        symbols[match] = boundSymbol
+      })
+    
+    // In some cases we can opt not to have a name clause. This is used for match only 
+    // definitions. See: GREEK_SYMBOLS
+    if (symbolDefinition.name) {
+      if (existingSymbols[symbolDefinition.name]) 
+        console.warn("Symbol definition duplication in " + symbolDefinition.name)
+      symbols[symbolDefinition.name] = boundSymbol;
+    }
+    console.log(symbols)
+    return symbols    
+  }
+}
+
+/** this is built with the assumption that latex grammar processing is global. All instances of 
+ * a latex input field will have the same commands, same grammar, and same shortcuts.
+ * 
+ * In this event this is no longer the case, the core architecture of  
+ */
+
+
 /*************************************************
  * Abstract classes of math blocks and commands.
  ************************************************/
@@ -2869,16 +3203,28 @@ var MathBlock = P(MathElement, function(_, super_) {
     return node.seek(pageX, cursor);
   };
   _.chToCmd = function(ch) {
+    ch = ch || ''
+    // We want to use the available commands from the controller
+    var controller, node = this
+    do {
+      controller = node.controller 
+      node = node.parent
+    } while(!controller)
+    
+    var latexCmds = controller.latexCmds
+    var charCmds = controller.charCmds
     var cons;
+    
     // exclude f because it gets a dedicated command with more spacing
-    if (ch.match(/^[a-eg-zA-Z]$/))
-      return Letter(ch);
+    if (ch.match(/^[a-eg-zA-Z\+\-\!\=]$/))
+      cons = Letter(ch);
     else if (/^\d$/.test(ch))
-      return Digit(ch);
-    else if (cons = CharCmds[ch] || LatexCmds[ch])
-      return cons(ch);
+      cons = Digit(ch);
+    else if (cons = controller.searchForCommand(ch) )
+      cons = cons(ch);
     else
-      return VanillaSymbol(ch);
+      cons = VanillaSymbol(ch);
+    return cons
   };
   _.write = function(cursor, ch) {
     var cmd = this.chToCmd(ch);

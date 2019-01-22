@@ -69,7 +69,7 @@ var AbstractMathQuill = P(function(_) {
   };
   _.config =
   MathQuill.config = function(opts) {
-    for (var opt in opts) if (opts.hasOwnProperty(opt)) {
+    for (var opt in opts) if (opts.hasOwnProperty(opt) && opts[opt] != null) {
       var optVal = opts[opt], processor = optionProcessors[opt];
       this.__options[opt] = (processor ? processor(optVal) : optVal);
       // this can be used for dynamic updates but we need to call the correct subsystems 
