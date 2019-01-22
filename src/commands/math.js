@@ -489,14 +489,13 @@ var MathBlock = P(MathElement, function(_, super_) {
     
     // exclude f because it gets a dedicated command with more spacing
     if (ch.match(/^[a-eg-zA-Z\+\-\!\=]$/))
-      cons = Letter(ch);
+      return Letter(ch);
     else if (/^\d$/.test(ch))
-      cons = Digit(ch);
+      return Digit(ch);
     else if (cons = controller.searchForCommand(ch) )
-      cons = cons(ch);
+      return cons(ch);
     else
-      cons = VanillaSymbol(ch);
-    return cons
+      return VanillaSymbol(ch);
   };
   _.write = function(cursor, ch) {
     var cmd = this.chToCmd(ch);

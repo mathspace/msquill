@@ -41,7 +41,6 @@ var latexMathParser = (function() {
       .or(any)
     )).then(function(ctrlSeq) {
       var cmdKlass = LatexCmds[ctrlSeq];
-
       if (cmdKlass) {
         return cmdKlass(ctrlSeq).parser();
       }

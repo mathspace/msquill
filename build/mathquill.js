@@ -978,15 +978,14 @@ var AbstractMathQuill = P(function(_) {
       // this can be used for dynamic updates but we need to call the correct subsystems 
     }
     
-    if (opts.commands) setTimeout(function() {
-      this.__controller.extendLatexGrammar(opts.commands)
-    }.bind(this));
+    if (opts.commands) {
+      setTimeout(function () {
+        this.__controller.extendLatexGrammar(opts.commands)
+      }.bind(this));
+    }
 
     return this;
   };
-  _.injectGrammar = function(list) {
-
-  }
   _.el = function() { return this.__controller.container[0]; };
   _.text = function() { return this.__controller.exportText(); };
   _.latex = function(latex) {
@@ -1597,6 +1596,7 @@ Controller.open(function(_) {
     // by loading up the default configuration 
     // This is WIP. Eventually all files symbol definitions
     // should be transferred over to the defaultSymbolDefinitions file
+    this.extendLatexGrammar(GLOBALLY_DISABLED_INPUT, 'symbol');
     // this.extendLatexGrammar(VANILLA_SYMBOLS, "symbol");
     // this.extendLatexGrammar(NON_SYMBOLA_SYMBOLS, "nonSymbola");
     // this.extendLatexGrammar(GREEK_SYMBOLS, "variable");
@@ -2364,16 +2364,11 @@ Controller.open(function(_) {
 });
 
 Controller.open(function(_) {
-  /**
-   * 
-   */
   _.seek = function(target, pageX, pageY) {
     var cursor = this.cursor;
-
     // Notify all listeners bound to the Controller that 
     // a selection has started
     this.notify('select')
-
     if (target) {
       // Grab a reference to the nodeId. This will be used to get a 
       // reference to the Node in the virtual "dom" tree
@@ -2513,7 +2508,6 @@ Controller.open(function(_) {
     
     var keyboardEventsShim = saneKeyboardEvents(textarea, this);
     this.selectFn = function(text) { keyboardEventsShim.select(text); };
-
     this.container.prepend(textareaSpan)
     .on('cut', function(e) {
       if (cursor.selection) {
@@ -2561,100 +2555,122 @@ Controller.open(function(_) {
  * into the following command and assignment 
  * LatexCmds[name] = bind(VanillaSymbol, latex, htmlEntity) 
  * A symbol may also provide 'ailiases' that will be passed recursed upon
+ * 
+ * The configuration schema is as follows 
+ * SymbolDefinition {
+ *   name: String         // A globally unique string defining this rule 
+ *   match?: String[]     // A list of single character strings that this should trigger on
+ *   command?: String[]   // A list of multi-character commands that should match this rule 
+ *   latex: String        // The latex symbol this should output 
+ *   htmlEntity: String   // The html entity this should display in the dom (mostly unicode e.g. &#340;) 
+ *   skip: Boolean        // If this flag is set, the parser will ignore the symbol completely
+ * }
+ * 
+ * If a match configuration is missing, the parser will use the name field as a match string.
  */
 
-var VANILLA_SYMBOLS = [
-  {
-    name: " ",
-    latex: "\\ ",
-    htmlEntity: "&nbsp;"
-  },
-  {
-    name: "'",
-    latex: "'",
-    htmlEntity: "&prime;"
-  },
-  {
-    name: "\\",
-    latex: "\\backslash ",
-    htmlEntity: "\\",
-    alias: ["backslash"]
-  },
-  {
-    name: "$",
-    skip: true // Ignore this character completely
-  },
-];
 
-
-var GREEK_SYMBOLS = [
+var GLOBALLY_DISABLED_INPUT = [
   {
-    name: "epsilon",
-    latex: "\\epsilon",
-    htmlEntity: "&epsilon;",
-    alias: ["\u03b5"]
-  },
-  {
-    name: "phi",
-    latex: "\\phi",
-    htmlEntity: "&#981;"
-  },
-  {
-    name: "phiv",
-    latex: "\\phiv",
-    htmlEntity: "&phi;",
-    alias: ["varphi"]
-  },
-  // This set of symbols is automatic. Each symbol will automatically
-  // be converted to \alias in latex
-  {
-    alias: [
-      "alpha",
-      "beta",
-      "gamma",
-      "delta",
-      "zeta",
-      "eta",
-      "theta",
-      "iota",
-      "kappa",
-      "mu",
-      "nu",
-      "xi",
-      "rho",
-      "sigma",
-      "tau",
-      "chi",
-      "psi",
-      "omega"
-    ]
+    name: "disableDollar",
+    match: ['$'],
+    skip: true
   }
 ];
 
-var NON_SYMBOLA_SYMBOLS = [
-  {
-    name: "@",
-    latex: "@",
-    htmlEntity: "@"
-  },
-  {
-    name: "&",
-    latex: "\\$",
-    htmlEntity: "$&amp;"
-  },
+/**
+ * Everything below is not used (yet). We're slowly migrating the core definitions 
+ * into this unified definition object
+ */
+
+// var VANILLA_SYMBOLS = [
+//   {
+//     name: "space",
+//     match: [' '],
+//     latex: "\\ ",
+//     htmlEntity: "&nbsp;"
+//   },
+//   {
+//     name: "'",
+//     latex: "'",
+//     htmlEntity: "&prime;"
+//   },
+//   {
+//     name: "\\",
+//     latex: "\\backslash ",
+//     htmlEntity: "\\",
+//     match: ["backslash"]
+//   },
+// ];
+
+// var GREEK_SYMBOLS = [
+//   {
+//     name: "epsilon",
+//     latex: "\\epsilon",
+//     htmlEntity: "&epsilon;",
+//     match: ["\u03b5"]
+//   },
+//   {
+//     name: "phi",
+//     latex: "\\phi",
+//     htmlEntity: "&#981;"
+//   },
+//   {
+//     name: "phiv",
+//     latex: "\\phiv",
+//     htmlEntity: "&phi;",
+//     match: ["varphi"]
+//   },
+//   // This set of symbols is automatic. Each symbol will automatically
+//   // be converted to \match in latex
+//   {
+//     match: [
+//       "alpha",
+//       "beta",
+//       "gamma",
+//       "delta",
+//       "zeta",
+//       "eta",
+//       "theta",
+//       "iota",
+//       "kappa",
+//       "mu",
+//       "nu",
+//       "xi",
+//       "rho",
+//       "sigma",
+//       "tau",
+//       "chi",
+//       "psi",
+//       "omega"
+//     ]
+//   }
+// ];
+
+// var NON_SYMBOLA_SYMBOLS = [
+//   {
+//     name: "@",
+//     latex: "@",
+//     htmlEntity: "@"
+//   },
+//   {
+//     name: "&",
+//     latex: "\\$",
+//     htmlEntity: "$&amp;"
+//   },
   
-];
+// ];
 
-var BINARY_SYMBOLS = [
-  {
-    name: "\u2260",
-    alias: ["ne", "neq"],
-    commands: ['!='],
-    latex: "\\ne",
-    htmlEntity: "&ne;",
-  }
-];/**
- * 
+// var BINARY_SYMBOLS = [
+//   {
+//     name: "\u2260",
+//     match: ["ne", "neq"],
+//     commands: ['!='],
+//     latex: "\\ne",
+//     htmlEntity: "&ne;",
+//   }
+// ];
+/**
  * @param {*} binder 
  * @param {*} existingSymbols Used to check for conflicts. No mutation
  * 
@@ -3217,14 +3233,13 @@ var MathBlock = P(MathElement, function(_, super_) {
     
     // exclude f because it gets a dedicated command with more spacing
     if (ch.match(/^[a-eg-zA-Z\+\-\!\=]$/))
-      cons = Letter(ch);
+      return Letter(ch);
     else if (/^\d$/.test(ch))
-      cons = Digit(ch);
+      return Digit(ch);
     else if (cons = controller.searchForCommand(ch) )
-      cons = cons(ch);
+      return cons(ch);
     else
-      cons = VanillaSymbol(ch);
-    return cons
+      return VanillaSymbol(ch);
   };
   _.write = function(cursor, ch) {
     var cmd = this.chToCmd(ch);

@@ -73,7 +73,6 @@ Controller.open(function(_) {
     
     var keyboardEventsShim = saneKeyboardEvents(textarea, this);
     this.selectFn = function(text) { keyboardEventsShim.select(text); };
-
     this.container.prepend(textareaSpan)
     .on('cut', function(e) {
       if (cursor.selection) {

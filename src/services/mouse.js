@@ -90,16 +90,11 @@ Controller.open(function(_) {
 });
 
 Controller.open(function(_) {
-  /**
-   * 
-   */
   _.seek = function(target, pageX, pageY) {
     var cursor = this.cursor;
-
     // Notify all listeners bound to the Controller that 
     // a selection has started
     this.notify('select')
-
     if (target) {
       // Grab a reference to the nodeId. This will be used to get a 
       // reference to the Node in the virtual "dom" tree

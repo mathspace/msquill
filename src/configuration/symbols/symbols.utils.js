@@ -1,5 +1,4 @@
 /**
- * 
  * @param {*} binder 
  * @param {*} existingSymbols Used to check for conflicts. No mutation
  * 

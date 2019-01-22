@@ -75,15 +75,14 @@ var AbstractMathQuill = P(function(_) {
       // this can be used for dynamic updates but we need to call the correct subsystems 
     }
     
-    if (opts.commands) setTimeout(function() {
-      this.__controller.extendLatexGrammar(opts.commands)
-    }.bind(this));
+    if (opts.commands) {
+      setTimeout(function () {
+        this.__controller.extendLatexGrammar(opts.commands)
+      }.bind(this));
+    }
 
     return this;
   };
-  _.injectGrammar = function(list) {
-
-  }
   _.el = function() { return this.__controller.container[0]; };
   _.text = function() { return this.__controller.exportText(); };
   _.latex = function(latex) {
