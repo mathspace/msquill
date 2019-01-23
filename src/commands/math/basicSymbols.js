@@ -75,13 +75,13 @@ var Letter = P(Variable, function(_, super_) {
           for (var i = 2, l = cursor[L]; i < str.length; i += 1, l = l[L]);
           Fragment(l, cursor[L]).remove();
           cursor[L] = l[L];
-          // MaThSpaCE haCK
+          // MaThSpaCE haCK to be deprecated
           // Because sometimes we want map typed letters to a different latex control sequence
           // type 'and' => \andword (instead of \and)
           if (cursor.options.autoCommandsMapping.hasOwnProperty(str)) {
             return LatexCmds[cursor.options.autoCommandsMapping[str]](str).createLeftOf(cursor)
           }
-          return LatexCmds[str](str).createLeftOf(cursor);
+          return cursor.searchForCommand(str)(str).createLeftOf(cursor);
         }
         str = str.slice(1);
       }
@@ -217,8 +217,8 @@ for (var fn in BuiltInOpNames) if (BuiltInOpNames.hasOwnProperty(fn)) {
 LatexCmds.operatorname = P(MathCommand, function(_) {
   _.createLeftOf = noop;
   _.numBlocks = function() { return 1; };
-  _.parser = function() {
-    return latexMathParser.block.map(function(b) { return b.children(); });
+  _.parser = function(cursor) {
+    return latexMathParser(cursor).block.map(function(b) { return b.children(); });
   };
 });
 
@@ -360,7 +360,7 @@ LatexCmds.forall = P(VanillaSymbol, function(_, super_) {
 var LatexFragment = P(MathCommand, function(_) {
   _.init = function(latex) { this.latex = latex; };
   _.createLeftOf = function(cursor) {
-    var block = latexMathParser.parse(this.latex);
+    var block = latexMathParser(cursor).parse(this.latex);
     block.children().adopt(cursor.parent, cursor[L], cursor[R]);
     cursor[L] = block.ends[R];
     block.jQize().insertBefore(cursor.jQ);
@@ -369,8 +369,8 @@ var LatexFragment = P(MathCommand, function(_) {
     if (block.ends[L][L].siblingCreated) block.ends[L][L].siblingCreated(cursor.options, R);
     cursor.parent.bubble('reflow');
   };
-  _.parser = function() {
-    var frag = latexMathParser.parse(this.latex).children();
+  _.parser = function(cursor) {
+    var frag = latexMathParser(cursor).parse(this.latex).children();
     return Parser.succeed(frag);
   };
 });
