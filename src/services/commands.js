@@ -49,7 +49,7 @@ Controller.open(function(_) {
     
     grammarList.forEach(function (symbolDefinition) {
       this.attachKeyboardListener(symbolDefinition);
-      function appendtoAutoCommands(item); {
+      function appendtoAutoCommands(item) {
         if (item.length > maxLength) maxLength = item.length;
         autoCommands[item] = 1;
       }
