@@ -60,7 +60,7 @@ Controller.open(function(_) {
         symbolDefinition.commands.forEach(function(command) {
           appendtoAutoCommands(command);
           if(symbolDefinition.name) 
-            this.cursor.grammarDicts.textCommands[command] = symbolDefinition.nam;
+            this.cursor.grammarDicts.textCommands[command] = symbolDefinition.name;
         }.bind(this));
       }
       

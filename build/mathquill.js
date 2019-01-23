@@ -1611,7 +1611,7 @@ Controller.open(function(_) {
     
     grammarList.forEach(function (symbolDefinition) {
       this.attachKeyboardListener(symbolDefinition);
-      function appendtoAutoCommands(item); {
+      function appendtoAutoCommands(item) {
         if (item.length > maxLength) maxLength = item.length;
         autoCommands[item] = 1;
       }
@@ -1622,7 +1622,7 @@ Controller.open(function(_) {
         symbolDefinition.commands.forEach(function(command) {
           appendtoAutoCommands(command);
           if(symbolDefinition.name) 
-            this.cursor.grammarDicts.textCommands[command] = symbolDefinition.nam;
+            this.cursor.grammarDicts.textCommands[command] = symbolDefinition.name;
         }.bind(this));
       }
       
