@@ -515,7 +515,7 @@ var Fragment = P(function(_) {
 
     self.disowned = true;
 
-    var rightEnd = self.ends[R];
+    var rightEnd = self.ends[R]
     var parent = leftEnd.parent;
 
     prayWellFormed(parent, leftEnd[L], leftEnd);
@@ -1080,8 +1080,7 @@ var EditableField = MathQuill.EditableField = P(AbstractMathQuill, function(_) {
   _.moveToLeftEnd = function() { return this.moveToDirEnd(L); };
   _.moveToRightEnd = function() { return this.moveToDirEnd(R); };
 
-  _.keystroke = function(keys) {
-    
+  _.keystroke = function(keys) {    
     var activeNode = this.getActiveNode();
     var keys = keys.replace(/^\s+|\s+$/g, '').split(/\s+/);
     for (var i = 0; i < keys.length; i += 1) {
@@ -1089,8 +1088,7 @@ var EditableField = MathQuill.EditableField = P(AbstractMathQuill, function(_) {
     }
     return this;
   };
-  _.typedText = function(text) {
-   
+  _.typedText = function(text) {   
     for (var i = 0; i < text.length; i += 1) this.getActiveNode().__controller.typedText(text.charAt(i));
     return this;
   };
@@ -1568,15 +1566,15 @@ Controller.open(function(_) {
     variable: 'variable',
     nonSymbola: 'nonSymbolaSymbol',
     variable: 'binary'
-  }
+  };
 
   _.initializeLatexGrammar = function () {
-    this.cursor.options.autoCommands = {}
+    this.cursor.options.autoCommands = {};
     this.cursor.grammarDicts = {
       latexCmds: Object.assign({}, LatexCmds),
       charCmds: Object.assign({}, CharCmds),
       textCommands: {},
-    }
+    };
     // Initialize the grammar processors for various symbols
     // by loading up the default configuration 
     // This is WIP. Eventually all files symbol definitions
@@ -1589,8 +1587,8 @@ Controller.open(function(_) {
 
     // Process injected commands into autocommands 
     var options = this.cursor.options;
-    var commands = options.commands || []
-    this.extendLatexGrammar(commands)  
+    var commands = options.commands || [];
+    this.extendLatexGrammar(commands);
   }
 
   _.attachKeyboardListener = function (grammarDefinition) {
@@ -1607,15 +1605,15 @@ Controller.open(function(_) {
   }
 
   _.extendLatexGrammar = function(grammarList, type) {
-    var maxLength = 0
-    var autoCommands = {}
-    var latexCmds = {}
+    var maxLength = 0;
+    var autoCommands = {};
+    var latexCmds = {};
     
     grammarList.forEach(function (symbolDefinition) {
       this.attachKeyboardListener(symbolDefinition);
-      function appendtoAutoCommands(item) {
-        if (item.length > maxLength) maxLength = item.length
-        autoCommands[item] = 1
+      function appendtoAutoCommands(item); {
+        if (item.length > maxLength) maxLength = item.length;
+        autoCommands[item] = 1;
       }
       if (symbolDefinition.isTextCommand) {
         appendtoAutoCommands(symbolDefinition.name);
@@ -1624,16 +1622,16 @@ Controller.open(function(_) {
         symbolDefinition.commands.forEach(function(command) {
           appendtoAutoCommands(command);
           if(symbolDefinition.name) 
-            this.cursor.grammarDicts.textCommands[command] = symbolDefinition.name
+            this.cursor.grammarDicts.textCommands[command] = symbolDefinition.nam;
         }.bind(this));
       }
       
-      var grammarType = type || symbolDefinition.type || "symbol"
+      var grammarType = type || symbolDefinition.type || "symbol";
       var processor = grammarProcessors[COMMAND_CONFIGURATION_TYPE_MAP[grammarType]];
       Object.assign(
         latexCmds, 
         processor(symbolDefinition)
-      )
+      );
     }.bind(this))
 
     Object.assign(
@@ -1784,17 +1782,17 @@ Controller.open(function(_) {
  ****************************************/
 
 Controller.open(function(_) {
+  _.initKeyboardEventListeners = function() {
+    this.keystrokeHandlers = [];
+  }
   _.keystroke = function(key, evt) {
-    if(this.keystrokeHandlers) {
-      for(var i = 0; i < this.keystrokeHandlers.length; i++)
+    if (this.keystrokeHandlers) {
+      for (var i = 0; i < this.keystrokeHandlers.length; i++)
         this.keystrokeHandlers[i].call(this, key, evt);
     }
     this.cursor.parent.keystroke(key, evt, this);
   };
   _.registerKeystrokeHandler = function(fn) {
-    if(!this.keystrokeHandlers) {
-      this.keystrokeHandlers = []
-    }
     this.keystrokeHandlers.push(fn)
   }
 });
@@ -2114,6 +2112,7 @@ var latexMathParser = function(cursor) {
       .or(any)
     )).then(function(ctrlSeq) {
       var cmdKlass = cursor ? cursor.grammarDicts.latexCmds[ctrlSeq] : LatexCmds[ctrlSeq];
+      
       if (cmdKlass) {
         return cmdKlass(ctrlSeq).parser(cursor);
       }
@@ -2484,6 +2483,8 @@ Controller.open(function(_) {
       textarea = ctrlr.textarea, textareaSpan = ctrlr.textareaSpan;
     
     var keyboardEventsShim = saneKeyboardEvents(textarea, this);
+    this.initKeyboardEventListeners();
+    
     this.selectFn = function(text) { keyboardEventsShim.select(text); };
     
     this.container.prepend(textareaSpan)
@@ -2656,7 +2657,6 @@ var GLOBALLY_DISABLED_INPUT = [
 // ];
 /**
  * @param {*} binder 
- * @param {*} existingSymbols Used to check for conflicts. No mutation
  * 
  * this will output an object from a list of object definitions where each
  * definition is called with the binder with the following pattern 
@@ -2682,11 +2682,9 @@ var GLOBALLY_DISABLED_INPUT = [
  * This object can then be merged with the global configuration. The decision not to mutate the arguments 
  * is intentional. 
  */
-function symbolFactory(binder, existingSymbols) {
-  var symbols = {}
-  existingSymbols = existingSymbols || {}
+function symbolFactory(binder) {
   return function loadDynamicSymbol(symbolDefinition) {
-
+    var symbols = {};
     // In cases when the skip flag is set to true
     // we will define a command that has no output { latex: '', htmlEntity: '' }
     // effectively ignoring the input 
@@ -2696,30 +2694,24 @@ function symbolFactory(binder, existingSymbols) {
         latex: '',
         htmlEntity: '',
         match: symbolDefinition.match
-      }
+      };
 
     var boundSymbol = binder(symbolDefinition);
 
     if (symbolDefinition.match)
       symbolDefinition.match.forEach(function (match) {
-        if (existingSymbols[match])
-          console.warn("Symbol definition duplication in " + match);
         symbols[match] = boundSymbol
-      })
+      });
     
     // In some cases we can opt not to have a name clause. This is used for match only 
     // definitions. See: GREEK_SYMBOLS
     if (symbolDefinition.name) {
-      if (existingSymbols[symbolDefinition.name]) 
-        console.warn("Symbol definition duplication in " + symbolDefinition.name)
       symbols[symbolDefinition.name] = boundSymbol;
     }
-
+    // in cases where the name may be the same as the latex, we want to skip this
     if (symbolDefinition.latex) {
-
-      if (existingSymbols[symbolDefinition.latex.replace('\\', '')])
-        throw new Error("Duplicate latex configuration " + symbolDefinition.latex.replace("\\", ""));
-      symbols[symbolDefinition.latex.replace("\\", "")] = boundSymbol;
+      var latexWithoutBs = symbolDefinition.latex.replace('\\', '');
+      symbols[latexWithoutBs] = boundSymbol;
     }
     return symbols    
   }
@@ -3209,9 +3201,8 @@ var MathBlock = P(MathElement, function(_, super_) {
     return node.seek(pageX, cursor);
   };
   _.chToCmd = function(cursor, ch) {
-    ch = ch || ''
+    ch = ch || '';
     
-    // We want to use the available commands from the controller
     var cons;   
     // exclude f because it gets a dedicated command with more spacing
     if (ch.match(/^[a-eg-zA-Z]$/))
@@ -4262,9 +4253,7 @@ LatexCmds.operatorname = P(MathCommand, function(_) {
   _.createLeftOf = noop;
   _.numBlocks = function() { return 1; };
   _.parser = function(cursor) {
-    return latexMathParser(cursor).block.map(function(b) {
-      return b.children();
-    });
+    return latexMathParser(cursor).block.map(function(b) { return b.children(); });
   };
 });
 
@@ -4406,7 +4395,7 @@ LatexCmds.forall = P(VanillaSymbol, function(_, super_) {
 var LatexFragment = P(MathCommand, function(_) {
   _.init = function(latex) { this.latex = latex; };
   _.createLeftOf = function(cursor) {
-    var block = latexMathParser(cursor).parse(this.latex); // can cursor
+    var block = latexMathParser(cursor).parse(this.latex);
     block.children().adopt(cursor.parent, cursor[L], cursor[R]);
     cursor[L] = block.ends[R];
     block.jQize().insertBefore(cursor.jQ);
@@ -4416,9 +4405,7 @@ var LatexFragment = P(MathCommand, function(_) {
     cursor.parent.bubble('reflow');
   };
   _.parser = function(cursor) {
-    var frag = latexMathParser(cursor)
-      .parse(this.latex)
-      .children();
+    var frag = latexMathParser(cursor).parse(this.latex).children();
     return Parser.succeed(frag);
   };
 });
@@ -5011,7 +4998,7 @@ LatexCmds['\u221a'] = P(MathCommand, function(_, super_) {
     return latexMathParser(cursor).optBlock.then(function(optBlock) {
       return latexMathParser(cursor).block.map(function(block) {
         var nthroot = NthRoot();
-        nthroot.blocks = [optBlock, block];
+        nthroot.blocks = [ optBlock, block ];
         optBlock.adopt(nthroot, 0, 0);
         block.adopt(nthroot, optBlock, 0);
         return nthroot;
@@ -5570,7 +5557,7 @@ LatexCmds.limit = P(MathCommand, function(_, super_) {
     }
     return this.ctrlSeq + '_' + simplify(this.ends[L].latex());
   };
- _ .parser = function(cursor) {
+  _.parser = function(cursor) {
     var string = Parser.string;
     var optWhitespace = Parser.optWhitespace;
     var succeed = Parser.succeed;
