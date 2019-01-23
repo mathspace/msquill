@@ -20,10 +20,10 @@ Controller.open(function(_) {
         // Get a reference to the MathQuill API via the ultimate root.
         var ultimateRoot = Node.byId[ultimateRootjQ.attr(mqBlockId)];
         var ultimateRootAPI = ultimateRoot.controller.API;
-        if ((ultimateRootAPI instanceof MathQuill.StaticMath && $(e.target).parents(".mq-inner-editable").length) || 
+        if ((ultimateRootAPI instanceof MathQuill.StaticMath && $(e.target).parents('.mq-inner-editable').length) || 
           // If the ultimate root is readonly (StaticMath)
           // and you clicked inside the editable box
-          ctrlr.API.latex().indexOf("\\editable{") > -1) {
+          ctrlr.API.latex().indexOf('\\editable{') > -1) {
           // or if the selected element contains latex matching '\editable{'
           // ignore the event (no blinking cursor)
           return;
@@ -47,7 +47,6 @@ Controller.open(function(_) {
       }
       // outside rootjQ, the MathQuill node corresponding to the target (if any)
       // won't be inside this root, so don't mislead Controller::seek with it
-
       function mouseup(e) {
         cursor.blink = blink;
         if (!cursor.selection) {
@@ -75,6 +74,7 @@ Controller.open(function(_) {
       ctrlr.seek($(e.target), e.pageX, e.pageY).cursor.startSelection();
 
       rootjQ.mousemove(mousemove);
+
       // We want to make sure that we capture mouseup events even if the user's mouse 
       // is outside the mathquill container. This is common when clicking and dragging (as selection)
       $(e.target.ownerDocument).mousemove(docmousemove).mouseup(mouseup);
@@ -88,7 +88,7 @@ Controller.open(function(_) {
   _.seek = function(target, pageX, pageY) {
     var cursor = this.cursor;
     // Notify all listeners bound to the Controller that a selection has started. 
-    this.notify("select");
+    this.notify('select');
 
     if (target) {
       // Grab a reference to the nodeId. This will be used to get a 

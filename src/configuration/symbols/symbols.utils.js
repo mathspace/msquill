@@ -43,7 +43,7 @@ function symbolFactory(binder) {
 
     if (symbolDefinition.match)
       symbolDefinition.match.forEach(function (match) {
-        symbols[match] = boundSymbol
+        symbols[match] = boundSymbol;
       });
     
     // In some cases we can opt not to have a name clause. This is used for match only 
@@ -56,7 +56,7 @@ function symbolFactory(binder) {
       var latexWithoutBs = symbolDefinition.latex.replace('\\', '');
       symbols[latexWithoutBs] = boundSymbol;
     }
-    return symbols    
+    return symbols;
   }
 }
 

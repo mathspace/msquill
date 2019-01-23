@@ -3,7 +3,7 @@ Controller.open(function(_) {
     symbol: 'vanillaSymbol',
     variable: 'variable',
     nonSymbola: 'nonSymbolaSymbol',
-    variable: 'binary'
+    variable: 'binary',
   };
 
   _.initializeLatexGrammar = function () {
@@ -18,29 +18,31 @@ Controller.open(function(_) {
     // This is WIP. Eventually all files symbol definitions
     // should be transferred over to the defaultSymbolDefinitions file
     this.extendLatexGrammar(GLOBALLY_DISABLED_INPUT, 'symbol');
-    // this.extendLatexGrammar(VANILLA_SYMBOLS, "symbol");
-    // this.extendLatexGrammar(NON_SYMBOLA_SYMBOLS, "nonSymbola");
-    // this.extendLatexGrammar(GREEK_SYMBOLS, "variable");
-    // this.extendLatexGrammar(BINARY_SYMBOLS, "variable");
+    // this.extendLatexGrammar(VANILLA_SYMBOLS, 'symbol');
+    // this.extendLatexGrammar(NON_SYMBOLA_SYMBOLS, 'nonSymbola');
+    // this.extendLatexGrammar(GREEK_SYMBOLS, 'variable');
+    // this.extendLatexGrammar(BINARY_SYMBOLS, 'variable');
 
     // Process injected commands into autocommands 
     var options = this.cursor.options;
     var commands = options.commands || [];
     this.extendLatexGrammar(commands);
-  }
+  };
 
   _.attachKeyboardListener = function (grammarDefinition) {
     if (grammarDefinition.keystroke) {
       // this is still a bit hacky and we may get performance issues in the future
       // but for now it works. 
+    
       this.registerKeystrokeHandler(function(pattern,event) {
+
         if (pattern === grammarDefinition.keystroke) {
           event.preventDefault();
           this.API.cmd(grammarDefinition.name);
         }
       });
     }
-  }
+  };
 
   _.extendLatexGrammar = function(grammarList, type) {
     var maxLength = 0;
@@ -53,39 +55,35 @@ Controller.open(function(_) {
         if (item.length > maxLength) maxLength = item.length;
         autoCommands[item] = 1;
       }
-      if (symbolDefinition.isTextCommand) {
-        appendtoAutoCommands(symbolDefinition.name);
-      }
+       
+      if (symbolDefinition.isTextCommand) appendtoAutoCommands(symbolDefinition.name);
       if (symbolDefinition.commands) {
         symbolDefinition.commands.forEach(function(command) {
           appendtoAutoCommands(command);
-          if(symbolDefinition.name) 
-            this.cursor.grammarDicts.textCommands[command] = symbolDefinition.name;
+          if (symbolDefinition.name) this.cursor.grammarDicts.textCommands[command] = symbolDefinition.name;
         }.bind(this));
       }
       
-      var grammarType = type || symbolDefinition.type || "symbol";
+      
+      var grammarType = type || symbolDefinition.type || 'symbol';
       var processor = grammarProcessors[COMMAND_CONFIGURATION_TYPE_MAP[grammarType]];
       Object.assign(
         latexCmds, 
         processor(symbolDefinition)
       );
-    }.bind(this))
+    }.bind(this));
 
-    Object.assign(
-      this.cursor.grammarDicts.latexCmds, 
-      latexCmds
-    );
+    Object.assign(this.cursor.grammarDicts.latexCmds, latexCmds);
 
     Object.assign(
       this.cursor.options.autoCommands,
       autoCommands
-    )     
+    );
     // final max computation 
     if (this.cursor.options.autoCommands._maxLength || 0 < maxLength) 
       this.cursor.options.autoCommands._maxLength = maxLength;
   };
-})
+});
 
 Cursor.open(function(_) {
   _.searchForCommand = function(cmd) {
@@ -94,10 +92,11 @@ Cursor.open(function(_) {
     if (grammarDicts.charCmds[cmd]) return  grammarDicts.charCmds[cmd];
     if (grammarDicts.textCommands[cmd]) return this.searchForCommand(grammarDicts.textCommands[cmd]);
   }
-})
+});
 
 // The following are symbol definition processors that transform symbol definitions into full
 // fledged classes for constructing the math AST.
+
 var grammarProcessors = {
   vanillaSymbol: symbolFactory(function(symbolDefinition) {
     return bind(
@@ -128,7 +127,7 @@ var grammarProcessors = {
       // this works for all greek letter entries
       return P(Variable, function(_, super_) {
         _.init = function(latex) {
-          super_.init.call(this, "\\" + latex + " ", "&" + latex + ";");
+          super_.init.call(this, '\\' + latex + ' ', '&' + latex + ';');
         };
       });
     return bind(Variable, symbolDefinition.latex, symbolDefinition.htmlEntity);
@@ -141,9 +140,3 @@ var grammarProcessors = {
     );
   })
 };
-
-
-
-
-
-

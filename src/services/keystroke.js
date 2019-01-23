@@ -15,8 +15,8 @@ Controller.open(function(_) {
     this.cursor.parent.keystroke(key, evt, this);
   };
   _.registerKeystrokeHandler = function(fn) {
-    this.keystrokeHandlers.push(fn)
-  }
+    this.keystrokeHandlers.push(fn);
+  };
 });
 
 Node.open(function(_) {

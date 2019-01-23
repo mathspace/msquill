@@ -184,7 +184,7 @@ var EditableField = MathQuill.EditableField = P(AbstractMathQuill, function(_) {
   _.moveToLeftEnd = function() { return this.moveToDirEnd(L); };
   _.moveToRightEnd = function() { return this.moveToDirEnd(R); };
 
-  _.keystroke = function(keys) {    
+  _.keystroke = function(keys) {
     var activeNode = this.getActiveNode();
     var keys = keys.replace(/^\s+|\s+$/g, '').split(/\s+/);
     for (var i = 0; i < keys.length; i += 1) {
@@ -192,7 +192,7 @@ var EditableField = MathQuill.EditableField = P(AbstractMathQuill, function(_) {
     }
     return this;
   };
-  _.typedText = function(text) {   
+  _.typedText = function(text) {
     for (var i = 0; i < text.length; i += 1) this.getActiveNode().__controller.typedText(text.charAt(i));
     return this;
   };
