@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import MsQuill from "./components/MsQuill";
-import Configurator from "./components/Configurator";
 import "./App.css";
 
 class App extends Component {

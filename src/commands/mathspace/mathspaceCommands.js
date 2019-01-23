@@ -181,11 +181,11 @@ LatexCmds.limit = P(MathCommand, function(_, super_) {
     }
     return this.ctrlSeq + '_' + simplify(this.ends[L].latex());
   };
-  _.parser = function() {
+  _.parser = function(cursor) {
     var string = Parser.string;
     var optWhitespace = Parser.optWhitespace;
     var succeed = Parser.succeed;
-    var block = latexMathParser.block;
+    var block = latexMathParser(cursor).block;
 
     var self = this, child = MathBlock();
     self.blocks = [ child ];

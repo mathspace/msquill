@@ -515,7 +515,7 @@ var Fragment = P(function(_) {
 
     self.disowned = true;
 
-    var rightEnd = self.ends[R]
+    var rightEnd = self.ends[R];
     var parent = leftEnd.parent;
 
     prayWellFormed(parent, leftEnd[L], leftEnd);
@@ -866,11 +866,6 @@ var Selection = P(Fragment, function(_, super_) {
  ********************************************/
 
 var Controller = P(function(_) {
-  /**
-   * @param {any} API The Mathquill API object 
-   * @param {Element} root The root container? 
-   * @param {Options} container some container?
-   */
   _.init = function(API, root, container) {
     this.API = API;
     this.root = root;
@@ -974,15 +969,7 @@ var AbstractMathQuill = P(function(_) {
     for (var opt in opts) if (opts.hasOwnProperty(opt) && opts[opt] != null) {
       var optVal = opts[opt], processor = optionProcessors[opt];
       this.__options[opt] = (processor ? processor(optVal) : optVal);
-      // this can be used for dynamic updates but we need to call the correct subsystems 
     }
-    
-    if (opts.commands) {
-      setTimeout(function () {
-        this.__controller.extendLatexGrammar(opts.commands);
-      }.bind(this));
-    }
-
     return this;
   };
   _.el = function() { return this.__controller.container[0]; };
@@ -1034,11 +1021,12 @@ var EditableField = MathQuill.EditableField = P(AbstractMathQuill, function(_) {
   _.focus = function() { this.getActiveNode().__controller.textarea.focus(); return this; };
   _.blur = function() { this.getActiveNode().__controller.textarea.blur(); return this; };
   _.getActiveNode = function () {
-    /** MatHSPaCE HacK */
-    // If nested editable box exists, all commands should
-    // be executed against last focused editable box
+    
     var rootBlocks = this.__controller.container.find('.mq-inner-editable .mq-root-block');
     if (rootBlocks.length) {
+      /** MatHSPaCE HacK */
+      // If nested editable box exists, all commands should
+      // be executed against last focused editable box
       var lastFocused = rootBlocks.filter('.mq-last-focused');
       // If there is no last focused box, focus on the first nested editable box
       var activeRoot = lastFocused.length ? lastFocused.eq(0) : rootBlocks.eq(0),
@@ -1093,6 +1081,7 @@ var EditableField = MathQuill.EditableField = P(AbstractMathQuill, function(_) {
   _.moveToRightEnd = function() { return this.moveToDirEnd(R); };
 
   _.keystroke = function(keys) {
+    
     var activeNode = this.getActiveNode();
     var keys = keys.replace(/^\s+|\s+$/g, '').split(/\s+/);
     for (var i = 0; i < keys.length; i += 1) {
@@ -1101,6 +1090,7 @@ var EditableField = MathQuill.EditableField = P(AbstractMathQuill, function(_) {
     return this;
   };
   _.typedText = function(text) {
+   
     for (var i = 0; i < text.length; i += 1) this.getActiveNode().__controller.typedText(text.charAt(i));
     return this;
   };
@@ -1573,105 +1563,105 @@ var saneKeyboardEvents = (function() {
   };
 }());
 Controller.open(function(_) {
-
   var COMMAND_CONFIGURATION_TYPE_MAP = {
     symbol: 'vanillaSymbol',
     variable: 'variable',
     nonSymbola: 'nonSymbolaSymbol',
     variable: 'binary'
-  };
+  }
 
-  _.initializeLatexGrammar = function() {
-    this.latexCmds = Object.assign({}, LatexCmds);
-    this.charCmds = Object.assign({}, CharCmds);
-    this.textCommands = {};
-
-    this.cursor.options.autoCommands = {};
-    
+  _.initializeLatexGrammar = function () {
+    this.cursor.options.autoCommands = {}
+    this.cursor.grammarDicts = {
+      latexCmds: Object.assign({}, LatexCmds),
+      charCmds: Object.assign({}, CharCmds),
+      textCommands: {},
+    }
     // Initialize the grammar processors for various symbols
     // by loading up the default configuration 
     // This is WIP. Eventually all files symbol definitions
     // should be transferred over to the defaultSymbolDefinitions file
     this.extendLatexGrammar(GLOBALLY_DISABLED_INPUT, 'symbol');
-    // this.extendLatexGrammar(VANILLA_SYMBOLS, 'symbol');
-    // this.extendLatexGrammar(NON_SYMBOLA_SYMBOLS, 'nonSymbola');
-    // this.extendLatexGrammar(GREEK_SYMBOLS, 'variable');
-    // this.extendLatexGrammar(BINARY_SYMBOLS, 'variable');
+    // this.extendLatexGrammar(VANILLA_SYMBOLS, "symbol");
+    // this.extendLatexGrammar(NON_SYMBOLA_SYMBOLS, "nonSymbola");
+    // this.extendLatexGrammar(GREEK_SYMBOLS, "variable");
+    // this.extendLatexGrammar(BINARY_SYMBOLS, "variable");
 
     // Process injected commands into autocommands 
     var options = this.cursor.options;
-    var commands = options.commands || [];
-    this.extendLatexGrammar(commands);
-  };
+    var commands = options.commands || []
+    this.extendLatexGrammar(commands)  
+  }
 
   _.attachKeyboardListener = function (grammarDefinition) {
     if (grammarDefinition.keystroke) {
       // this is still a bit hacky and we may get performance issues in the future
       // but for now it works. 
-    
       this.registerKeystrokeHandler(function(pattern,event) {
-       
         if (pattern === grammarDefinition.keystroke) {
           event.preventDefault();
           this.API.cmd(grammarDefinition.name);
         }
       });
-      // we want to make sure that keystroke inputs do not generate any markup 
-      // this means overriding the 
     }
-  };
+  }
 
   _.extendLatexGrammar = function(grammarList, type) {
-    var maxLength = 0;
-    var autoCommands = {};
-    var latexCmds = {};
+    var maxLength = 0
+    var autoCommands = {}
+    var latexCmds = {}
     
     grammarList.forEach(function (symbolDefinition) {
       this.attachKeyboardListener(symbolDefinition);
       function appendtoAutoCommands(item) {
-        if (item.length > maxLength) maxLength = item.length;
-        autoCommands[item] = 1;
+        if (item.length > maxLength) maxLength = item.length
+        autoCommands[item] = 1
       }
-       
-      if (symbolDefinition.isTextCommand) appendtoAutoCommands(symbolDefinition.name);
+      if (symbolDefinition.isTextCommand) {
+        appendtoAutoCommands(symbolDefinition.name);
+      }
       if (symbolDefinition.commands) {
         symbolDefinition.commands.forEach(function(command) {
           appendtoAutoCommands(command);
-          if(symbolDefinition.name) this.textCommands[command] = symbolDefinition.name;
+          if(symbolDefinition.name) 
+            this.cursor.grammarDicts.textCommands[command] = symbolDefinition.name
         }.bind(this));
       }
       
-      
-      var grammarType = type || symbolDefinition.type || 'symbol';
+      var grammarType = type || symbolDefinition.type || "symbol"
       var processor = grammarProcessors[COMMAND_CONFIGURATION_TYPE_MAP[grammarType]];
       Object.assign(
         latexCmds, 
         processor(symbolDefinition)
-      );
-    }.bind(this));
+      )
+    }.bind(this))
 
-    Object.assign(this.latexCmds, latexCmds);
+    Object.assign(
+      this.cursor.grammarDicts.latexCmds, 
+      latexCmds
+    );
 
     Object.assign(
       this.cursor.options.autoCommands,
       autoCommands
-    );
+    )     
     // final max computation 
     if (this.cursor.options.autoCommands._maxLength || 0 < maxLength) 
       this.cursor.options.autoCommands._maxLength = maxLength;
   };
+})
 
+Cursor.open(function(_) {
   _.searchForCommand = function(cmd) {
-    // check latexcmds first 
-    if (this.latexCmds[cmd]) return this.latexCmds[cmd];
-    if (this.charCmds[cmd]) return this.charCmds[cmd];
-    if (this.textCommands[cmd]) return this.searchForCommand(this.textCommands[cmd]);
-  };
-});
+    var grammarDicts = this.grammarDicts;
+    if (grammarDicts.latexCmds[cmd]) return grammarDicts.latexCmds[cmd];
+    if (grammarDicts.charCmds[cmd]) return  grammarDicts.charCmds[cmd];
+    if (grammarDicts.textCommands[cmd]) return this.searchForCommand(grammarDicts.textCommands[cmd]);
+  }
+})
 
 // The following are symbol definition processors that transform symbol definitions into full
 // fledged classes for constructing the math AST.
-
 var grammarProcessors = {
   vanillaSymbol: symbolFactory(function(symbolDefinition) {
     return bind(
@@ -1702,7 +1692,7 @@ var grammarProcessors = {
       // this works for all greek letter entries
       return P(Variable, function(_, super_) {
         _.init = function(latex) {
-          super_.init.call(this, '\\' + latex + ' ', '&' + latex + ';');
+          super_.init.call(this, "\\" + latex + " ", "&" + latex + ";");
         };
       });
     return bind(Variable, symbolDefinition.latex, symbolDefinition.htmlEntity);
@@ -1715,6 +1705,12 @@ var grammarProcessors = {
     );
   })
 };
+
+
+
+
+
+
 /***********************************************
  * Export math in a human-readable text format
  * As you can see, only half-baked so far.
@@ -1789,18 +1785,18 @@ Controller.open(function(_) {
 
 Controller.open(function(_) {
   _.keystroke = function(key, evt) {
-    if (this.keystrokeHandlers) {
+    if(this.keystrokeHandlers) {
       for(var i = 0; i < this.keystrokeHandlers.length; i++)
         this.keystrokeHandlers[i].call(this, key, evt);
     }
     this.cursor.parent.keystroke(key, evt, this);
   };
   _.registerKeystrokeHandler = function(fn) {
-    if (!this.keystrokeHandlers) {
-      this.keystrokeHandlers = [];
+    if(!this.keystrokeHandlers) {
+      this.keystrokeHandlers = []
     }
-    this.keystrokeHandlers.push(fn);
-  };
+    this.keystrokeHandlers.push(fn)
+  }
 });
 
 Node.open(function(_) {
@@ -2076,7 +2072,7 @@ Controller.open(function(_) {
   _.selectRight = function() { return this.selectDir(R); };
 });
 // Parser MathCommand
-var latexMathParser = (function() {
+var latexMathParser = function(cursor) {
   function commandToBlock(cmd) {
     var block = MathBlock();
     cmd.adopt(block, 0, 0);
@@ -2106,7 +2102,7 @@ var latexMathParser = (function() {
 
   // Compound commands e.g. >=, ==, <=
   var compound = regex(/^[>=<]=/).then(function(cmp) {
-    return CompoundCmds[cmp] && CompoundCmds[cmp]().parser() ||
+    return CompoundCmds[cmp] && CompoundCmds[cmp]().parser(cursor) ||
       fail('unknown compound command: '+cmp);
   });
 
@@ -2117,10 +2113,9 @@ var latexMathParser = (function() {
       .or(regex(/^\s+/).result(' '))
       .or(any)
     )).then(function(ctrlSeq) {
-      var cmdKlass = LatexCmds[ctrlSeq];
-
+      var cmdKlass = cursor ? cursor.grammarDicts.latexCmds[ctrlSeq] : LatexCmds[ctrlSeq];
       if (cmdKlass) {
-        return cmdKlass(ctrlSeq).parser();
+        return cmdKlass(ctrlSeq).parser(cursor);
       }
       else {
         return fail('unknown command: \\'+ctrlSeq);
@@ -2154,7 +2149,7 @@ var latexMathParser = (function() {
   latexMath.block = mathBlock;
   latexMath.optBlock = optMathBlock;
   return latexMath;
-})();
+};
 
 Controller.open(function(_, super_) {
   _.exportLatex = function() {
@@ -2166,7 +2161,7 @@ Controller.open(function(_, super_) {
     var all = Parser.all;
     var eof = Parser.eof;
 
-    var block = latexMathParser.skip(eof).or(all.result(false)).parse(latex);
+    var block = latexMathParser(cursor).skip(eof).or(all.result(false)).parse(latex);
 
     if (block && !block.isEmpty()) {
       block.children().adopt(cursor.parent, cursor[L], cursor[R]);
@@ -2187,7 +2182,7 @@ Controller.open(function(_, super_) {
     var all = Parser.all;
     var eof = Parser.eof;
 
-    var block = latexMathParser.skip(eof).or(all.result(false)).parse(latex);
+    var block = latexMathParser(cursor).skip(eof).or(all.result(false)).parse(latex);
 
     root.eachChild('postOrder', 'dispose');
     root.ends[L] = root.ends[R] = 0;
@@ -2226,7 +2221,7 @@ Controller.open(function(_, super_) {
     var all = Parser.all;
 
     // Parser RootMathCommand
-    var mathMode = string('$').then(latexMathParser)
+    var mathMode = string('$').then(latexMathParser(cursor))
       // because TeX is insane, math mode doesn't necessarily
       // have to end.  So we allow for the case that math mode
       // continues to the end of the stream.
@@ -2281,10 +2276,10 @@ Controller.open(function(_) {
         // Get a reference to the MathQuill API via the ultimate root.
         var ultimateRoot = Node.byId[ultimateRootjQ.attr(mqBlockId)];
         var ultimateRootAPI = ultimateRoot.controller.API;
-        if ((ultimateRootAPI instanceof MathQuill.StaticMath && $(e.target).parents('.mq-inner-editable').length) || 
+        if ((ultimateRootAPI instanceof MathQuill.StaticMath && $(e.target).parents(".mq-inner-editable").length) || 
           // If the ultimate root is readonly (StaticMath)
           // and you clicked inside the editable box
-          ctrlr.API.latex().indexOf('\\editable{') > -1) {
+          ctrlr.API.latex().indexOf("\\editable{") > -1) {
           // or if the selected element contains latex matching '\editable{'
           // ignore the event (no blinking cursor)
           return;
@@ -2308,6 +2303,7 @@ Controller.open(function(_) {
       }
       // outside rootjQ, the MathQuill node corresponding to the target (if any)
       // won't be inside this root, so don't mislead Controller::seek with it
+
       function mouseup(e) {
         cursor.blink = blink;
         if (!cursor.selection) {
@@ -2335,7 +2331,6 @@ Controller.open(function(_) {
       ctrlr.seek($(e.target), e.pageX, e.pageY).cursor.startSelection();
 
       rootjQ.mousemove(mousemove);
-
       // We want to make sure that we capture mouseup events even if the user's mouse 
       // is outside the mathquill container. This is common when clicking and dragging (as selection)
       $(e.target.ownerDocument).mousemove(docmousemove).mouseup(mouseup);
@@ -2349,7 +2344,7 @@ Controller.open(function(_) {
   _.seek = function(target, pageX, pageY) {
     var cursor = this.cursor;
     // Notify all listeners bound to the Controller that a selection has started. 
-    this.notify('select');
+    this.notify("select");
 
     if (target) {
       // Grab a reference to the nodeId. This will be used to get a 
@@ -2487,10 +2482,10 @@ Controller.open(function(_) {
   _.editablesTextareaEvents = function() {
     var ctrlr = this, root = ctrlr.root, cursor = ctrlr.cursor,
       textarea = ctrlr.textarea, textareaSpan = ctrlr.textareaSpan;
-
+    
     var keyboardEventsShim = saneKeyboardEvents(textarea, this);
     this.selectFn = function(text) { keyboardEventsShim.select(text); };
-
+    
     this.container.prepend(textareaSpan)
     .on('cut', function(e) {
       if (cursor.selection) {
@@ -2558,6 +2553,12 @@ var GLOBALLY_DISABLED_INPUT = [
     name: "disableDollar",
     match: ['$'],
     skip: true
+  },
+  {
+    name: 'something',
+    commands: ['hello'],
+    latex: '\\hio',
+    htmlEntity:'RG'
   }
 ];
 
@@ -2669,33 +2670,33 @@ var GLOBALLY_DISABLED_INPUT = [
  * becomes
  * { '!':  '\\!&bang' }
  * 
- * example 2: Aliases copy the same definition onto multiple keys 
- * [ { name: 'bang', latex: '\\!', htmlEntity '&bang;', name: ['exampleAlias', 'exampleAlias2'] } ]
+ * example 2: Matches copy the same definition onto multiple keys 
+ * [ { name: 'bang', latex: '\\!', htmlEntity '&bang;', name: ['exampleMatch', 'exampleMatch2'] } ]
  * becomes 
  * {
  *   '!': '\\!&bang',
- *   'exampleAlias': '\\!&bang',
- *   'exampleAlias2': '\\!&bang'
+ *   'exampleMatch': '\\!&bang',
+ *   'exampleMatch2': '\\!&bang'
  * }
  * 
  * This object can then be merged with the global configuration. The decision not to mutate the arguments 
  * is intentional. 
  */
 function symbolFactory(binder, existingSymbols) {
-  var symbols = {};
-  existingSymbols = existingSymbols || {};
+  var symbols = {}
+  existingSymbols = existingSymbols || {}
   return function loadDynamicSymbol(symbolDefinition) {
 
     // In cases when the skip flag is set to true
     // we will define a command that has no output { latex: '', htmlEntity: '' }
     // effectively ignoring the input 
-    if (symbolDefinition.skip)
+    if(symbolDefinition.skip)
       symbolDefinition = {
         name: symbolDefinition.name,
         latex: '',
         htmlEntity: '',
         match: symbolDefinition.match
-      };
+      }
 
     var boundSymbol = binder(symbolDefinition);
 
@@ -2703,19 +2704,25 @@ function symbolFactory(binder, existingSymbols) {
       symbolDefinition.match.forEach(function (match) {
         if (existingSymbols[match])
           console.warn("Symbol definition duplication in " + match);
-        symbols[match] = boundSymbol;
-      });
+        symbols[match] = boundSymbol
+      })
     
     // In some cases we can opt not to have a name clause. This is used for match only 
     // definitions. See: GREEK_SYMBOLS
     if (symbolDefinition.name) {
       if (existingSymbols[symbolDefinition.name]) 
-        console.warn("Symbol definition duplication in " + symbolDefinition.name);
+        console.warn("Symbol definition duplication in " + symbolDefinition.name)
       symbols[symbolDefinition.name] = boundSymbol;
     }
-    console.log(symbols);
-    return symbols;
-  };
+
+    if (symbolDefinition.latex) {
+
+      if (existingSymbols[symbolDefinition.latex.replace('\\', '')])
+        throw new Error("Duplicate latex configuration " + symbolDefinition.latex.replace("\\", ""));
+      symbols[symbolDefinition.latex.replace("\\", "")] = boundSymbol;
+    }
+    return symbols    
+  }
 }
 
 /** this is built with the assumption that latex grammar processing is global. All instances of 
@@ -2780,8 +2787,8 @@ var MathCommand = P(MathElement, function(_, super_) {
     });
   };
 
-  _.parser = function() {
-    var block = latexMathParser.block;
+  _.parser = function(cursor) {
+    var block = latexMathParser(cursor).block;
     var self = this;
 
     return block.times(self.numBlocks()).map(function(blocks) {
@@ -2799,7 +2806,7 @@ var MathCommand = P(MathElement, function(_, super_) {
   _.createLeftOf = function(cursor) {
     var cmd = this;
     var replacedFragment = cmd.replacedFragment;
-
+    
     cmd.createBlocks();
     super_.createLeftOf.call(cmd, cursor);
     if (replacedFragment) {
@@ -3201,31 +3208,23 @@ var MathBlock = P(MathElement, function(_, super_) {
     while (pageX < node.jQ.offset().left) node = node[L];
     return node.seek(pageX, cursor);
   };
-  _.chToCmd = function(ch) {
-    ch = ch || '';
+  _.chToCmd = function(cursor, ch) {
+    ch = ch || ''
+    
     // We want to use the available commands from the controller
-    var controller, node = this;
-    do {
-      controller = node.controller;
-      node = node.parent;
-    } while(!controller);
-    
-    var latexCmds = controller.latexCmds;
-    var charCmds = controller.charCmds;
-    var cons;
-    
+    var cons;   
     // exclude f because it gets a dedicated command with more spacing
     if (ch.match(/^[a-eg-zA-Z]$/))
       return Letter(ch);
     else if (/^\d$/.test(ch))
       return Digit(ch);
-    else if (cons = controller.searchForCommand(ch))
+    else if (cons = cursor.searchForCommand(ch) )
       return cons(ch);
     else
       return VanillaSymbol(ch);
   };
   _.write = function(cursor, ch) {
-    var cmd = this.chToCmd(ch);
+    var cmd = this.chToCmd(cursor, ch);
     if (cursor.selection) cmd.replaces(cursor.replaceSelection());
     cmd.createLeftOf(cursor.show());
   };
@@ -4120,13 +4119,13 @@ var Letter = P(Variable, function(_, super_) {
           for (var i = 2, l = cursor[L]; i < str.length; i += 1, l = l[L]);
           Fragment(l, cursor[L]).remove();
           cursor[L] = l[L];
-          // MaThSpaCE haCK
+          // MaThSpaCE haCK to be deprecated
           // Because sometimes we want map typed letters to a different latex control sequence
           // type 'and' => \andword (instead of \and)
           if (cursor.options.autoCommandsMapping.hasOwnProperty(str)) {
             return LatexCmds[cursor.options.autoCommandsMapping[str]](str).createLeftOf(cursor)
           }
-          return LatexCmds[str](str).createLeftOf(cursor);
+          return cursor.searchForCommand(str)(str).createLeftOf(cursor);
         }
         str = str.slice(1);
       }
@@ -4262,8 +4261,10 @@ for (var fn in BuiltInOpNames) if (BuiltInOpNames.hasOwnProperty(fn)) {
 LatexCmds.operatorname = P(MathCommand, function(_) {
   _.createLeftOf = noop;
   _.numBlocks = function() { return 1; };
-  _.parser = function() {
-    return latexMathParser.block.map(function(b) { return b.children(); });
+  _.parser = function(cursor) {
+    return latexMathParser(cursor).block.map(function(b) {
+      return b.children();
+    });
   };
 });
 
@@ -4405,7 +4406,7 @@ LatexCmds.forall = P(VanillaSymbol, function(_, super_) {
 var LatexFragment = P(MathCommand, function(_) {
   _.init = function(latex) { this.latex = latex; };
   _.createLeftOf = function(cursor) {
-    var block = latexMathParser.parse(this.latex);
+    var block = latexMathParser(cursor).parse(this.latex); // can cursor
     block.children().adopt(cursor.parent, cursor[L], cursor[R]);
     cursor[L] = block.ends[R];
     block.jQize().insertBefore(cursor.jQ);
@@ -4414,8 +4415,10 @@ var LatexFragment = P(MathCommand, function(_) {
     if (block.ends[L][L].siblingCreated) block.ends[L][L].siblingCreated(cursor.options, R);
     cursor.parent.bubble('reflow');
   };
-  _.parser = function() {
-    var frag = latexMathParser.parse(this.latex).children();
+  _.parser = function(cursor) {
+    var frag = latexMathParser(cursor)
+      .parse(this.latex)
+      .children();
     return Parser.succeed(frag);
   };
 });
@@ -4750,7 +4753,7 @@ var SupSub = P(MathCommand, function(_, super_) {
     this.ends[L].write = function(cursor, ch) {
       if (cursor.options.autoSubscriptNumerals && this === this.parent.sub) {
         if (ch === '_') return;
-        var cmd = this.chToCmd(ch);
+        var cmd = this.chToCmd(cursor, ch);
         if (cmd instanceof Symbol) cursor.deleteSelection();
         else cursor.clearSelection().insRightOf(this.parent);
         return cmd.createLeftOf(cursor.show());
@@ -4903,11 +4906,11 @@ var SummationNotation = P(MathCommand, function(_, super_) {
     return this.ctrlSeq + '_' + simplify(this.ends[L].latex()) +
       '^' + simplify(this.ends[R].latex());
   };
-  _.parser = function() {
+  _.parser = function(cursor) {
     var string = Parser.string;
     var optWhitespace = Parser.optWhitespace;
     var succeed = Parser.succeed;
-    var block = latexMathParser.block;
+    var block = latexMathParser(cursor).block;
 
     var self = this;
     var blocks = self.blocks = [ MathBlock(), MathBlock() ];
@@ -5004,11 +5007,11 @@ LatexCmds['\u221a'] = P(MathCommand, function(_, super_) {
     + '</span>'
   ;
   _.textTemplate = ['sqrt(', ')'];
-  _.parser = function() {
-    return latexMathParser.optBlock.then(function(optBlock) {
-      return latexMathParser.block.map(function(block) {
+  _.parser = function(cursor) {
+    return latexMathParser(cursor).optBlock.then(function(optBlock) {
+      return latexMathParser(cursor).block.map(function(block) {
         var nthroot = NthRoot();
-        nthroot.blocks = [ optBlock, block ];
+        nthroot.blocks = [optBlock, block];
         optBlock.adopt(nthroot, 0, 0);
         block.adopt(nthroot, optBlock, 0);
         return nthroot;
@@ -5237,7 +5240,7 @@ LatexCmds.rangle = bind(Bracket, R, '&lang;', '&rang;', '\\langle ', '\\rangle '
 CharCmds['|'] = bind(Bracket, L, '|', '|', '|', '|');
 
 LatexCmds.left = P(MathCommand, function(_) {
-  _.parser = function() {
+  _.parser = function(cursor) {
     var regex = Parser.regex;
     var string = Parser.string;
     var succeed = Parser.succeed;
@@ -5246,7 +5249,7 @@ LatexCmds.left = P(MathCommand, function(_) {
     return optWhitespace.then(regex(/^(?:[([|]|\\\{)/))
       .then(function(ctrlSeq) { // TODO: \langle, \rangle
         var open = (ctrlSeq.charAt(0) === '\\' ? ctrlSeq.slice(1) : ctrlSeq);
-        return latexMathParser.then(function (block) {
+        return latexMathParser(cursor).then(function (block) {
           return string('\\right').skip(optWhitespace)
             .then(regex(/^(?:[\])|]|\\\})/)).map(function(end) {
               var close = (end.charAt(0) === '\\' ? end.slice(1) : end);
@@ -5567,11 +5570,11 @@ LatexCmds.limit = P(MathCommand, function(_, super_) {
     }
     return this.ctrlSeq + '_' + simplify(this.ends[L].latex());
   };
-  _.parser = function() {
+ _ .parser = function(cursor) {
     var string = Parser.string;
     var optWhitespace = Parser.optWhitespace;
     var succeed = Parser.succeed;
-    var block = latexMathParser.block;
+    var block = latexMathParser(cursor).block;
 
     var self = this, child = MathBlock();
     self.blocks = [ child ];

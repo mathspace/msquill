@@ -1,5 +1,5 @@
 // Parser MathCommand
-var latexMathParser = (function() {
+var latexMathParser = function(cursor) {
   function commandToBlock(cmd) {
     var block = MathBlock();
     cmd.adopt(block, 0, 0);
@@ -29,7 +29,7 @@ var latexMathParser = (function() {
 
   // Compound commands e.g. >=, ==, <=
   var compound = regex(/^[>=<]=/).then(function(cmp) {
-    return CompoundCmds[cmp] && CompoundCmds[cmp]().parser() ||
+    return CompoundCmds[cmp] && CompoundCmds[cmp]().parser(cursor) ||
       fail('unknown compound command: '+cmp);
   });
 
@@ -40,10 +40,10 @@ var latexMathParser = (function() {
       .or(regex(/^\s+/).result(' '))
       .or(any)
     )).then(function(ctrlSeq) {
-      var cmdKlass = LatexCmds[ctrlSeq];
-
+      var cmdKlass = cursor ? cursor.grammarDicts.latexCmds[ctrlSeq] : LatexCmds[ctrlSeq];
+      
       if (cmdKlass) {
-        return cmdKlass(ctrlSeq).parser();
+        return cmdKlass(ctrlSeq).parser(cursor);
       }
       else {
         return fail('unknown command: \\'+ctrlSeq);
@@ -77,7 +77,7 @@ var latexMathParser = (function() {
   latexMath.block = mathBlock;
   latexMath.optBlock = optMathBlock;
   return latexMath;
-})();
+};
 
 Controller.open(function(_, super_) {
   _.exportLatex = function() {
@@ -89,7 +89,7 @@ Controller.open(function(_, super_) {
     var all = Parser.all;
     var eof = Parser.eof;
 
-    var block = latexMathParser.skip(eof).or(all.result(false)).parse(latex);
+    var block = latexMathParser(cursor).skip(eof).or(all.result(false)).parse(latex);
 
     if (block && !block.isEmpty()) {
       block.children().adopt(cursor.parent, cursor[L], cursor[R]);
@@ -110,7 +110,7 @@ Controller.open(function(_, super_) {
     var all = Parser.all;
     var eof = Parser.eof;
 
-    var block = latexMathParser.skip(eof).or(all.result(false)).parse(latex);
+    var block = latexMathParser(cursor).skip(eof).or(all.result(false)).parse(latex);
 
     root.eachChild('postOrder', 'dispose');
     root.ends[L] = root.ends[R] = 0;
@@ -149,7 +149,7 @@ Controller.open(function(_, super_) {
     var all = Parser.all;
 
     // Parser RootMathCommand
-    var mathMode = string('$').then(latexMathParser)
+    var mathMode = string('$').then(latexMathParser(cursor))
       // because TeX is insane, math mode doesn't necessarily
       // have to end.  So we allow for the case that math mode
       // continues to the end of the stream.

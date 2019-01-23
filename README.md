@@ -30,8 +30,6 @@ After launching the server, it is possible to try the code you've built by openi
 
 In order to debug the React app, both the build server and react webpack server need to be running concurrently. 
 
-
-
 ### Debugging for Mathspace
 
 You may also wish to test MathQuill with Mathspace specific configuration and styles.  It is possible to do this by launching:

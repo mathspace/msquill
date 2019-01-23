@@ -5,18 +5,18 @@
 
 Controller.open(function(_) {
   _.keystroke = function(key, evt) {
-    if (this.keystrokeHandlers) {
+    if(this.keystrokeHandlers) {
       for(var i = 0; i < this.keystrokeHandlers.length; i++)
         this.keystrokeHandlers[i].call(this, key, evt);
     }
     this.cursor.parent.keystroke(key, evt, this);
   };
   _.registerKeystrokeHandler = function(fn) {
-    if (!this.keystrokeHandlers) {
-      this.keystrokeHandlers = [];
+    if(!this.keystrokeHandlers) {
+      this.keystrokeHandlers = []
     }
-    this.keystrokeHandlers.push(fn);
-  };
+    this.keystrokeHandlers.push(fn)
+  }
 });
 
 Node.open(function(_) {

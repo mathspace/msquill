@@ -24,6 +24,12 @@ var GLOBALLY_DISABLED_INPUT = [
     name: "disableDollar",
     match: ['$'],
     skip: true
+  },
+  {
+    name: 'something',
+    commands: ['hello'],
+    latex: '\\hio',
+    htmlEntity:'RG'
   }
 ];
 

@@ -7,11 +7,6 @@
  ********************************************/
 
 var Controller = P(function(_) {
-  /**
-   * @param {any} API The Mathquill API object 
-   * @param {Element} root The root container? 
-   * @param {Options} container some container?
-   */
   _.init = function(API, root, container) {
     this.API = API;
     this.root = root;

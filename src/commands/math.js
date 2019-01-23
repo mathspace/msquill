@@ -53,8 +53,8 @@ var MathCommand = P(MathElement, function(_, super_) {
     });
   };
 
-  _.parser = function() {
-    var block = latexMathParser.block;
+  _.parser = function(cursor) {
+    var block = latexMathParser(cursor).block;
     var self = this;
 
     return block.times(self.numBlocks()).map(function(blocks) {
@@ -72,7 +72,7 @@ var MathCommand = P(MathElement, function(_, super_) {
   _.createLeftOf = function(cursor) {
     var cmd = this;
     var replacedFragment = cmd.replacedFragment;
-
+    
     cmd.createBlocks();
     super_.createLeftOf.call(cmd, cursor);
     if (replacedFragment) {
@@ -474,31 +474,22 @@ var MathBlock = P(MathElement, function(_, super_) {
     while (pageX < node.jQ.offset().left) node = node[L];
     return node.seek(pageX, cursor);
   };
-  _.chToCmd = function(ch) {
+  _.chToCmd = function(cursor, ch) {
     ch = ch || '';
-    // We want to use the available commands from the controller
-    var controller, node = this;
-    do {
-      controller = node.controller;
-      node = node.parent;
-    } while(!controller);
     
-    var latexCmds = controller.latexCmds;
-    var charCmds = controller.charCmds;
-    var cons;
-    
+    var cons;   
     // exclude f because it gets a dedicated command with more spacing
     if (ch.match(/^[a-eg-zA-Z]$/))
       return Letter(ch);
     else if (/^\d$/.test(ch))
       return Digit(ch);
-    else if (cons = controller.searchForCommand(ch))
+    else if (cons = cursor.searchForCommand(ch) )
       return cons(ch);
     else
       return VanillaSymbol(ch);
   };
   _.write = function(cursor, ch) {
-    var cmd = this.chToCmd(ch);
+    var cmd = this.chToCmd(cursor, ch);
     if (cursor.selection) cmd.replaces(cursor.replaceSelection());
     cmd.createLeftOf(cursor.show());
   };
