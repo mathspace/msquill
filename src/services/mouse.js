@@ -7,28 +7,31 @@ Controller.open(function(_) {
     var ultimateRootjQ = this.root.jQ;
     //drag-to-select event handling
     this.container.bind('mousedown.mathquill', function(e) {
+      var ultimateRoot = Node.byId[ultimateRootjQ.attr(mqBlockId)];
+      var ultimateRootAPI = ultimateRoot.controller.API;
+
       // finds the closest parent root block to get an instance of Controller.
       // If none exists, fallback to ultimate root controller
-      var rootjQ = $(e.target).closest('.mq-root-block'); 
+      var rootjQ = $(e.target).closest('.mq-root-block');
       var root = Node.byId[rootjQ.attr(mqBlockId) || ultimateRootjQ.attr(mqBlockId)];
       var ctrlr = root.controller, cursor = ctrlr.cursor, blink = cursor.blink;
       var textareaSpan = ctrlr.textareaSpan, textarea = ctrlr.textarea;
 
       var target;
 
-      { // -- MATHSPACE Handle our inline-editable fields.
-        // Get a reference to the MathQuill API via the ultimate root.
-        var ultimateRoot = Node.byId[ultimateRootjQ.attr(mqBlockId)];
-        var ultimateRootAPI = ultimateRoot.controller.API;
-        if ((ultimateRootAPI instanceof MathQuill.StaticMath && $(e.target).parents('.mq-inner-editable').length) || 
-          // If the ultimate root is readonly (StaticMath)
-          // and you clicked inside the editable box
-          ctrlr.API.latex().indexOf('\\editable{') > -1) {
-          // or if the selected element contains latex matching '\editable{'
-          // ignore the event (no blinking cursor)
-          return;
-        }
-      } // -- MATHSPACE
+      // MATHSPACE: Handle our inline-editable fields.
+      if (
+        (ultimateRootAPI instanceof MathQuill.StaticMath &&
+        $(e.target).parents('.mq-inner-editable').length)
+        // If the ultimate root is readonly (StaticMath)
+        // and you clicked inside the editable box
+        ||
+        ctrlr.API.latex().indexOf('\\editable{') > -1
+        // or if the selected element contains latex matching '\editable{'
+      ) {
+        // ignore the event (no blinking cursor)
+        return;
+      }
 
       function mousemove(e) { target = $(e.target); }
       
@@ -45,6 +48,7 @@ Controller.open(function(_) {
         // the cursor is outside of the mathquill area
         target = undefined;
       }
+
       // outside rootjQ, the MathQuill node corresponding to the target (if any)
       // won't be inside this root, so don't mislead Controller::seek with it
       function mouseup(e) {
@@ -75,7 +79,7 @@ Controller.open(function(_) {
 
       rootjQ.mousemove(mousemove);
 
-      // We want to make sure that we capture mouseup events even if the user's mouse 
+      // We want to make sure that we capture mouseup events even if the user's mouse
       // is outside the mathquill container. This is common when clicking and dragging (as selection)
       $(e.target.ownerDocument).mousemove(docmousemove).mouseup(mouseup);
       // listen on document not just body to not only hear about mousemove and

@@ -1026,12 +1026,11 @@ var EditableField = MathQuill.EditableField = P(AbstractMathQuill, function(_) {
   _.focus = function() { this.getActiveNode().__controller.textarea.focus(); return this; };
   _.blur = function() { this.getActiveNode().__controller.textarea.blur(); return this; };
   _.getActiveNode = function () {
-    
+    /** MatHSPaCE HacK */
+    // If nested editable box exists, all commands should
+    // be executed against last focused editable box
     var rootBlocks = this.__controller.container.find('.mq-inner-editable .mq-root-block');
     if (rootBlocks.length) {
-      /** MatHSPaCE HacK */
-      // If nested editable box exists, all commands should
-      // be executed against last focused editable box
       var lastFocused = rootBlocks.filter('.mq-last-focused');
       // If there is no last focused box, focus on the first nested editable box
       var activeRoot = lastFocused.length ? lastFocused.eq(0) : rootBlocks.eq(0),
@@ -1570,7 +1569,7 @@ Controller.open(function(_) {
     symbol: 'vanillaSymbol',
     variable: 'variable',
     nonSymbola: 'nonSymbolaSymbol',
-    variable: 'binary',
+    binary: 'binary'
   };
 
   _.initializeLatexGrammar = function () {
@@ -1578,7 +1577,7 @@ Controller.open(function(_) {
     this.cursor.grammarDicts = {
       latexCmds: Object.assign({}, LatexCmds),
       charCmds: Object.assign({}, CharCmds),
-      textCommands: {},
+      textCommands: {}
     };
     // Initialize the grammar processors for various symbols
     // by loading up the default configuration 
@@ -1600,7 +1599,7 @@ Controller.open(function(_) {
     if (grammarDefinition.keystroke) {
       // this is still a bit hacky and we may get performance issues in the future
       // but for now it works. 
-    
+
       this.registerKeystrokeHandler(function(pattern,event) {
 
         if (pattern === grammarDefinition.keystroke) {
@@ -1658,7 +1657,7 @@ Cursor.open(function(_) {
     if (grammarDicts.latexCmds[cmd]) return grammarDicts.latexCmds[cmd];
     if (grammarDicts.charCmds[cmd]) return  grammarDicts.charCmds[cmd];
     if (grammarDicts.textCommands[cmd]) return this.searchForCommand(grammarDicts.textCommands[cmd]);
-  }
+  };
 });
 
 // The following are symbol definition processors that transform symbol definitions into full
@@ -1782,7 +1781,7 @@ Controller.open(function(_) {
 Controller.open(function(_) {
   _.initKeyboardEventListeners = function() {
     this.keystrokeHandlers = [];
-  }
+  };
   _.keystroke = function(key, evt) {
     if (this.keystrokeHandlers) {
       for (var i = 0; i < this.keystrokeHandlers.length; i++)
@@ -2260,28 +2259,31 @@ Controller.open(function(_) {
     var ultimateRootjQ = this.root.jQ;
     //drag-to-select event handling
     this.container.bind('mousedown.mathquill', function(e) {
+      var ultimateRoot = Node.byId[ultimateRootjQ.attr(mqBlockId)];
+      var ultimateRootAPI = ultimateRoot.controller.API;
+
       // finds the closest parent root block to get an instance of Controller.
       // If none exists, fallback to ultimate root controller
-      var rootjQ = $(e.target).closest('.mq-root-block'); 
+      var rootjQ = $(e.target).closest('.mq-root-block');
       var root = Node.byId[rootjQ.attr(mqBlockId) || ultimateRootjQ.attr(mqBlockId)];
       var ctrlr = root.controller, cursor = ctrlr.cursor, blink = cursor.blink;
       var textareaSpan = ctrlr.textareaSpan, textarea = ctrlr.textarea;
 
       var target;
 
-      { // -- MATHSPACE Handle our inline-editable fields.
-        // Get a reference to the MathQuill API via the ultimate root.
-        var ultimateRoot = Node.byId[ultimateRootjQ.attr(mqBlockId)];
-        var ultimateRootAPI = ultimateRoot.controller.API;
-        if ((ultimateRootAPI instanceof MathQuill.StaticMath && $(e.target).parents('.mq-inner-editable').length) || 
-          // If the ultimate root is readonly (StaticMath)
-          // and you clicked inside the editable box
-          ctrlr.API.latex().indexOf('\\editable{') > -1) {
-          // or if the selected element contains latex matching '\editable{'
-          // ignore the event (no blinking cursor)
-          return;
-        }
-      } // -- MATHSPACE
+      // MATHSPACE: Handle our inline-editable fields.
+      if (
+        (ultimateRootAPI instanceof MathQuill.StaticMath &&
+        $(e.target).parents('.mq-inner-editable').length)
+        // If the ultimate root is readonly (StaticMath)
+        // and you clicked inside the editable box
+        ||
+        ctrlr.API.latex().indexOf('\\editable{') > -1
+        // or if the selected element contains latex matching '\editable{'
+      ) {
+        // ignore the event (no blinking cursor)
+        return;
+      }
 
       function mousemove(e) { target = $(e.target); }
       
@@ -2298,6 +2300,7 @@ Controller.open(function(_) {
         // the cursor is outside of the mathquill area
         target = undefined;
       }
+
       // outside rootjQ, the MathQuill node corresponding to the target (if any)
       // won't be inside this root, so don't mislead Controller::seek with it
       function mouseup(e) {
@@ -2328,7 +2331,7 @@ Controller.open(function(_) {
 
       rootjQ.mousemove(mousemove);
 
-      // We want to make sure that we capture mouseup events even if the user's mouse 
+      // We want to make sure that we capture mouseup events even if the user's mouse
       // is outside the mathquill container. This is common when clicking and dragging (as selection)
       $(e.target.ownerDocument).mousemove(docmousemove).mouseup(mouseup);
       // listen on document not just body to not only hear about mousemove and

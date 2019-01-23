@@ -125,12 +125,11 @@ var EditableField = MathQuill.EditableField = P(AbstractMathQuill, function(_) {
   _.focus = function() { this.getActiveNode().__controller.textarea.focus(); return this; };
   _.blur = function() { this.getActiveNode().__controller.textarea.blur(); return this; };
   _.getActiveNode = function () {
-    
+    /** MatHSPaCE HacK */
+    // If nested editable box exists, all commands should
+    // be executed against last focused editable box
     var rootBlocks = this.__controller.container.find('.mq-inner-editable .mq-root-block');
     if (rootBlocks.length) {
-      /** MatHSPaCE HacK */
-      // If nested editable box exists, all commands should
-      // be executed against last focused editable box
       var lastFocused = rootBlocks.filter('.mq-last-focused');
       // If there is no last focused box, focus on the first nested editable box
       var activeRoot = lastFocused.length ? lastFocused.eq(0) : rootBlocks.eq(0),

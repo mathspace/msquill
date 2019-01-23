@@ -3,7 +3,7 @@ Controller.open(function(_) {
     symbol: 'vanillaSymbol',
     variable: 'variable',
     nonSymbola: 'nonSymbolaSymbol',
-    variable: 'binary',
+    binary: 'binary'
   };
 
   _.initializeLatexGrammar = function () {
@@ -11,7 +11,7 @@ Controller.open(function(_) {
     this.cursor.grammarDicts = {
       latexCmds: Object.assign({}, LatexCmds),
       charCmds: Object.assign({}, CharCmds),
-      textCommands: {},
+      textCommands: {}
     };
     // Initialize the grammar processors for various symbols
     // by loading up the default configuration 
@@ -33,7 +33,7 @@ Controller.open(function(_) {
     if (grammarDefinition.keystroke) {
       // this is still a bit hacky and we may get performance issues in the future
       // but for now it works. 
-    
+
       this.registerKeystrokeHandler(function(pattern,event) {
 
         if (pattern === grammarDefinition.keystroke) {
@@ -91,7 +91,7 @@ Cursor.open(function(_) {
     if (grammarDicts.latexCmds[cmd]) return grammarDicts.latexCmds[cmd];
     if (grammarDicts.charCmds[cmd]) return  grammarDicts.charCmds[cmd];
     if (grammarDicts.textCommands[cmd]) return this.searchForCommand(grammarDicts.textCommands[cmd]);
-  }
+  };
 });
 
 // The following are symbol definition processors that transform symbol definitions into full

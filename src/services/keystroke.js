@@ -6,7 +6,7 @@
 Controller.open(function(_) {
   _.initKeyboardEventListeners = function() {
     this.keystrokeHandlers = [];
-  }
+  };
   _.keystroke = function(key, evt) {
     if (this.keystrokeHandlers) {
       for (var i = 0; i < this.keystrokeHandlers.length; i++)
