@@ -23,7 +23,7 @@ Controller.open(function(_) {
     var commands = options.commands || [];
     var ignoredCharacters = options.ignoredCharacters || [];
     // We're going to create an index for ignored character lookup
-    ignoredCharacters.forEach(char => this.cursor.grammarDicts.ignoredCharacters[char] = true);
+    ignoredCharacters.forEach(function(char) { this.cursor.grammarDicts.ignoredCharacters[char] = true });
     this.extendLatexGrammar(commands);
   };
 

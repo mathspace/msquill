@@ -28,9 +28,9 @@
 function symbolFactory(binder) {
   return function loadDynamicSymbol(symbolDefinition) {
     var symbols = {};
-    var boundSymbol;
-    if (symbolDefinition.useInternalSymbolDef) boundSymbol = LatexCmds[symbolDefinition.name];
-    else boundSymbol = binder(symbolDefinition);
+    var boundSymbol = symbolDefinition.useInternalSymbolDef 
+      ? LatexCmds[symbolDefinition.name] 
+      : binder(symbolDefinition);
 
     if (symbolDefinition.match)
       symbolDefinition.match.forEach(function (match) {
@@ -47,7 +47,7 @@ function symbolFactory(binder) {
       var latexWithoutBs = symbolDefinition.latex.replace('\\', '');
       symbols[latexWithoutBs] = boundSymbol;
     }
-    if(symbolDefinition.htmlEntity) 
+    if (symbolDefinition.htmlEntity) 
       // all html entities should match the command by default 
       symbols[symbolDefinition.htmlEntity] = boundSymbol;
     return symbols;

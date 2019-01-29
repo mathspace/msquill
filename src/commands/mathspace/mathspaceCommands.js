@@ -48,6 +48,7 @@ var Defint =
       return '\\int_{' + this.ends[L].latex() + '}^{' + this.ends[R].latex() + '}'
     };
   })
+  
 var nCr = LatexCmds.nCr = P(MathCommand, function(_, super_) {
   _.ctrlSeq = '\\nCr';
   _.htmlTemplate =
