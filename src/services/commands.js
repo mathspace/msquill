@@ -1,7 +1,7 @@
 Controller.open(function(_) {
 
   _.initializeLatexGrammar = function () {
-    this.cursor.options.autoCommands = {};
+    this.cursor.options.autoCommands = this.cursor.options.autoCommands || {};
     this.cursor.grammarDicts = {
       latexCmds: Object.assign({}, LatexCmds),
       charCmds: Object.assign({}, CharCmds),
