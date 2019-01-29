@@ -28,18 +28,9 @@
 function symbolFactory(binder) {
   return function loadDynamicSymbol(symbolDefinition) {
     var symbols = {};
-    // In cases when the skip flag is set to true
-    // we will define a command that has no output { latex: '', htmlEntity: '' }
-    // effectively ignoring the input 
-    if(symbolDefinition.skip)
-      symbolDefinition = {
-        name: symbolDefinition.name,
-        latex: '',
-        htmlEntity: '',
-        match: symbolDefinition.match
-      };
-
-    var boundSymbol = binder(symbolDefinition);
+    var boundSymbol;
+    if (symbolDefinition.useInternalSymbolDef) boundSymbol = LatexCmds[symbolDefinition.name];
+    else boundSymbol = binder(symbolDefinition);
 
     if (symbolDefinition.match)
       symbolDefinition.match.forEach(function (match) {
@@ -56,6 +47,9 @@ function symbolFactory(binder) {
       var latexWithoutBs = symbolDefinition.latex.replace('\\', '');
       symbols[latexWithoutBs] = boundSymbol;
     }
+    if(symbolDefinition.htmlEntity) 
+      // all html entities should match the command by default 
+      symbols[symbolDefinition.htmlEntity] = boundSymbol;
     return symbols;
   }
 }
