@@ -1,17 +1,12 @@
 Controller.open(function(_) {
-  var COMMAND_CONFIGURATION_TYPE_MAP = {
-    symbol: 'vanillaSymbol',
-    variable: 'variable',
-    nonSymbola: 'nonSymbolaSymbol',
-    binary: 'binary'
-  };
 
   _.initializeLatexGrammar = function () {
-    this.cursor.options.autoCommands = {};
+    this.cursor.options.autoCommands = this.cursor.options.autoCommands || {};
     this.cursor.grammarDicts = {
       latexCmds: Object.assign({}, LatexCmds),
       charCmds: Object.assign({}, CharCmds),
-      textCommands: {}
+      textCommands: {},
+      ignoredCharacters: {}
     };
     // Initialize the grammar processors for various symbols
     // by loading up the default configuration 
@@ -26,6 +21,9 @@ Controller.open(function(_) {
     // Process injected commands into autocommands 
     var options = this.cursor.options;
     var commands = options.commands || [];
+    var ignoredCharacters = options.ignoredCharacters || [];
+    // We're going to create an index for ignored character lookup
+    ignoredCharacters.forEach(function(char) { this.cursor.grammarDicts.ignoredCharacters[char] = true }.bind(this));
     this.extendLatexGrammar(commands);
   };
 
@@ -65,8 +63,7 @@ Controller.open(function(_) {
       }
       
       
-      var grammarType = type || symbolDefinition.type || 'symbol';
-      var processor = grammarProcessors[COMMAND_CONFIGURATION_TYPE_MAP[grammarType]];
+      var processor = grammarProcessors.vanillaSymbol;
       Object.assign(
         latexCmds, 
         processor(symbolDefinition)

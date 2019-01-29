@@ -12,6 +12,43 @@ CharCmds['*'] = LatexCmds.times;
 // Patched latex for % symbol, it should not contain \\ in the beginning.
 LatexCmds['%'] = bind(NonSymbolaSymbol, '%', '%');
 
+var MixedFraction = 
+  LatexCmds.mixed = P(MathCommand, function(_, super_) {
+    _.ctrlSeq = '\\frac';
+    _.htmlTemplate = 
+    '<span>'
+    +  '<span>&0</span>'
+    +  '<span class="mq-fraction mq-non-leaf">'
+    +     '<span class="mq-numerator">&1</span>'
+    +     '<span class="mq-denominator">&2</span>'
+    +     '<span style="display:inline-block;width:0">&#8203;</span>'
+    +   '</span>'
+    + '</span>';
+    _.text_template = ['frac[', ']', '(', ')', '(', ')'];
+    _.latex = function() {
+      var blocks = this.blocks;
+      return blocks[0].latex() + '\\frac{' + blocks[1].latex() + '}' + '{' + blocks[2].latex() + '}'
+    };
+  })
+
+var Defint = 
+  LatexCmds.defint = P(MathCommand, function(_, super_) {
+    _.ctrlSeq = '\\int';
+    _.htmlTemplate = 
+    '<span>'
+    +  '<big>&int;</big>'
+    +  '<span class="mq-supsub mq-non-leaf mq-limit">'
+    +     '<span class="mq-sup"><span>&0</span></span>'
+    +     '<span class="mq-sub"><span>&1</span></span>'
+    +     '<span style="display:inline-block;width:0">&#8203;</span>'
+    +   '</span>'
+    + '</span>';
+    _.text_template = ['int[', ']', '(', ')'];
+    _.latex = function() {
+      return '\\int_{' + this.ends[L].latex() + '}^{' + this.ends[R].latex() + '}'
+    };
+  })
+  
 var nCr = LatexCmds.nCr = P(MathCommand, function(_, super_) {
   _.ctrlSeq = '\\nCr';
   _.htmlTemplate =

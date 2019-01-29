@@ -4,9 +4,6 @@
  ****************************************/
 
 Controller.open(function(_) {
-  _.initKeyboardEventListeners = function() {
-    this.keystrokeHandlers = [];
-  };
   _.keystroke = function(key, evt) {
     if (this.keystrokeHandlers) {
       for (var i = 0; i < this.keystrokeHandlers.length; i++)
@@ -15,6 +12,7 @@ Controller.open(function(_) {
     this.cursor.parent.keystroke(key, evt, this);
   };
   _.registerKeystrokeHandler = function(fn) {
+    if (!this.keystrokeHandlers) this.keystrokeHandlers = [];
     this.keystrokeHandlers.push(fn);
   };
 });

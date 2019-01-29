@@ -72,7 +72,6 @@ Controller.open(function(_) {
       textarea = ctrlr.textarea, textareaSpan = ctrlr.textareaSpan;
 
     var keyboardEventsShim = saneKeyboardEvents(textarea, this);
-    this.initKeyboardEventListeners();
     this.selectFn = function(text) { keyboardEventsShim.select(text); };
 
     this.container.prepend(textareaSpan)

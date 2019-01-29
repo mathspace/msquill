@@ -1565,19 +1565,14 @@ var saneKeyboardEvents = (function() {
   };
 }());
 Controller.open(function(_) {
-  var COMMAND_CONFIGURATION_TYPE_MAP = {
-    symbol: 'vanillaSymbol',
-    variable: 'variable',
-    nonSymbola: 'nonSymbolaSymbol',
-    binary: 'binary'
-  };
 
   _.initializeLatexGrammar = function () {
-    this.cursor.options.autoCommands = {};
+    this.cursor.options.autoCommands = this.cursor.options.autoCommands || {};
     this.cursor.grammarDicts = {
       latexCmds: Object.assign({}, LatexCmds),
       charCmds: Object.assign({}, CharCmds),
-      textCommands: {}
+      textCommands: {},
+      ignoredCharacters: {}
     };
     // Initialize the grammar processors for various symbols
     // by loading up the default configuration 
@@ -1592,6 +1587,9 @@ Controller.open(function(_) {
     // Process injected commands into autocommands 
     var options = this.cursor.options;
     var commands = options.commands || [];
+    var ignoredCharacters = options.ignoredCharacters || [];
+    // We're going to create an index for ignored character lookup
+    ignoredCharacters.forEach(function(char) { this.cursor.grammarDicts.ignoredCharacters[char] = true }.bind(this));
     this.extendLatexGrammar(commands);
   };
 
@@ -1631,8 +1629,7 @@ Controller.open(function(_) {
       }
       
       
-      var grammarType = type || symbolDefinition.type || 'symbol';
-      var processor = grammarProcessors[COMMAND_CONFIGURATION_TYPE_MAP[grammarType]];
+      var processor = grammarProcessors.vanillaSymbol;
       Object.assign(
         latexCmds, 
         processor(symbolDefinition)
@@ -1779,9 +1776,6 @@ Controller.open(function(_) {
  ****************************************/
 
 Controller.open(function(_) {
-  _.initKeyboardEventListeners = function() {
-    this.keystrokeHandlers = [];
-  };
   _.keystroke = function(key, evt) {
     if (this.keystrokeHandlers) {
       for (var i = 0; i < this.keystrokeHandlers.length; i++)
@@ -1790,6 +1784,7 @@ Controller.open(function(_) {
     this.cursor.parent.keystroke(key, evt, this);
   };
   _.registerKeystrokeHandler = function(fn) {
+    if (!this.keystrokeHandlers) this.keystrokeHandlers = [];
     this.keystrokeHandlers.push(fn);
   };
 });
@@ -2484,7 +2479,6 @@ Controller.open(function(_) {
       textarea = ctrlr.textarea, textareaSpan = ctrlr.textareaSpan;
 
     var keyboardEventsShim = saneKeyboardEvents(textarea, this);
-    this.initKeyboardEventListeners();
     this.selectFn = function(text) { keyboardEventsShim.select(text); };
 
     this.container.prepend(textareaSpan)
@@ -2679,18 +2673,9 @@ var GLOBALLY_DISABLED_INPUT = [
 function symbolFactory(binder) {
   return function loadDynamicSymbol(symbolDefinition) {
     var symbols = {};
-    // In cases when the skip flag is set to true
-    // we will define a command that has no output { latex: '', htmlEntity: '' }
-    // effectively ignoring the input 
-    if(symbolDefinition.skip)
-      symbolDefinition = {
-        name: symbolDefinition.name,
-        latex: '',
-        htmlEntity: '',
-        match: symbolDefinition.match
-      };
-
-    var boundSymbol = binder(symbolDefinition);
+    var boundSymbol = symbolDefinition.useInternalSymbolDef 
+      ? LatexCmds[symbolDefinition.name] 
+      : binder(symbolDefinition);
 
     if (symbolDefinition.match)
       symbolDefinition.match.forEach(function (match) {
@@ -2707,6 +2692,9 @@ function symbolFactory(binder) {
       var latexWithoutBs = symbolDefinition.latex.replace('\\', '');
       symbols[latexWithoutBs] = boundSymbol;
     }
+    if (symbolDefinition.htmlEntity) 
+      // all html entities should match the command by default 
+      symbols[symbolDefinition.htmlEntity] = boundSymbol;
     return symbols;
   }
 }
@@ -3198,8 +3186,10 @@ var MathBlock = P(MathElement, function(_, super_) {
     ch = ch || '';
     
     var cons;
+    if (cursor.grammarDicts.ignoredCharacters[ch])
+      return null;
     // exclude f because it gets a dedicated command with more spacing
-    if (ch.match(/^[a-eg-zA-Z]$/))
+    else if (ch.match(/^[a-eg-zA-Z]$/))
       return Letter(ch);
     else if (/^\d$/.test(ch))
       return Digit(ch);
@@ -3210,6 +3200,7 @@ var MathBlock = P(MathElement, function(_, super_) {
   };
   _.write = function(cursor, ch) {
     var cmd = this.chToCmd(cursor, ch);
+    if(!cmd) return;
     if (cursor.selection) cmd.replaces(cursor.replaceSelection());
     cmd.createLeftOf(cursor.show());
   };
@@ -5382,6 +5373,43 @@ CharCmds['*'] = LatexCmds.times;
 // Patched latex for % symbol, it should not contain \\ in the beginning.
 LatexCmds['%'] = bind(NonSymbolaSymbol, '%', '%');
 
+var MixedFraction = 
+  LatexCmds.mixed = P(MathCommand, function(_, super_) {
+    _.ctrlSeq = '\\frac';
+    _.htmlTemplate = 
+    '<span>'
+    +  '<span>&0</span>'
+    +  '<span class="mq-fraction mq-non-leaf">'
+    +     '<span class="mq-numerator">&1</span>'
+    +     '<span class="mq-denominator">&2</span>'
+    +     '<span style="display:inline-block;width:0">&#8203;</span>'
+    +   '</span>'
+    + '</span>';
+    _.text_template = ['frac[', ']', '(', ')', '(', ')'];
+    _.latex = function() {
+      var blocks = this.blocks;
+      return blocks[0].latex() + '\\frac{' + blocks[1].latex() + '}' + '{' + blocks[2].latex() + '}'
+    };
+  })
+
+var Defint = 
+  LatexCmds.defint = P(MathCommand, function(_, super_) {
+    _.ctrlSeq = '\\int';
+    _.htmlTemplate = 
+    '<span>'
+    +  '<big>&int;</big>'
+    +  '<span class="mq-supsub mq-non-leaf mq-limit">'
+    +     '<span class="mq-sup"><span>&0</span></span>'
+    +     '<span class="mq-sub"><span>&1</span></span>'
+    +     '<span style="display:inline-block;width:0">&#8203;</span>'
+    +   '</span>'
+    + '</span>';
+    _.text_template = ['int[', ']', '(', ')'];
+    _.latex = function() {
+      return '\\int_{' + this.ends[L].latex() + '}^{' + this.ends[R].latex() + '}'
+    };
+  })
+  
 var nCr = LatexCmds.nCr = P(MathCommand, function(_, super_) {
   _.ctrlSeq = '\\nCr';
   _.htmlTemplate =

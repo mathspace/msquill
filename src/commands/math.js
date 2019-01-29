@@ -478,8 +478,10 @@ var MathBlock = P(MathElement, function(_, super_) {
     ch = ch || '';
     
     var cons;
+    if (cursor.grammarDicts.ignoredCharacters[ch])
+      return null;
     // exclude f because it gets a dedicated command with more spacing
-    if (ch.match(/^[a-eg-zA-Z]$/))
+    else if (ch.match(/^[a-eg-zA-Z]$/))
       return Letter(ch);
     else if (/^\d$/.test(ch))
       return Digit(ch);
@@ -490,6 +492,7 @@ var MathBlock = P(MathElement, function(_, super_) {
   };
   _.write = function(cursor, ch) {
     var cmd = this.chToCmd(cursor, ch);
+    if(!cmd) return;
     if (cursor.selection) cmd.replaces(cursor.replaceSelection());
     cmd.createLeftOf(cursor.show());
   };
