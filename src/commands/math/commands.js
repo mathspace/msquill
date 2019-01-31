@@ -734,7 +734,13 @@ var InnerMathField = P(MathQuill.MathField, function(_) {
     this.__options = Options();
     // copy autoCommands config to inner editable cursor options
     this.__options.autoCommands = ultimateRoot.cursor.options.autoCommands;
+    this.__options.commands = ultimateRoot.cursor.options.commands;
+    this.__options.ignoredCharacters = ultimateRoot.cursor.options.ignoredCharacters;
+    this.__options.preventBackslash = ultimateRoot.cursor.options.preventBackslash;
+    this.__options.spaceBehavesLikeTab = ultimateRoot.cursor.options.spaceBehavesLikeTab;
+    this.__options.supSubsRequireOperand = ultimateRoot.cursor.options.supSubsRequireOperand;
     var ctrlr = Controller(this, root, container);
+    ctrlr.initializeLatexGrammar();
     ctrlr.editable = true;
     root.ultimateRoot = ultimateRoot;
     ctrlr.createTextarea();
