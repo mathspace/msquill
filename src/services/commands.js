@@ -8,15 +8,6 @@ Controller.open(function(_) {
       textCommands: {},
       ignoredCharacters: {}
     };
-    // Initialize the grammar processors for various symbols
-    // by loading up the default configuration 
-    // This is WIP. Eventually all files symbol definitions
-    // should be transferred over to the defaultSymbolDefinitions file
-    this.extendLatexGrammar(GLOBALLY_DISABLED_INPUT, 'symbol');
-    // this.extendLatexGrammar(VANILLA_SYMBOLS, 'symbol');
-    // this.extendLatexGrammar(NON_SYMBOLA_SYMBOLS, 'nonSymbola');
-    // this.extendLatexGrammar(GREEK_SYMBOLS, 'variable');
-    // this.extendLatexGrammar(BINARY_SYMBOLS, 'variable');
 
     // Process injected commands into autocommands 
     var options = this.cursor.options;
