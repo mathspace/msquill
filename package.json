@@ -4,7 +4,7 @@
   "main": "build/mathquill.js",
   "private": true,
   "dependencies": {
-    "pjs": "3.x"
+    "pjs": "5.x"
   },
   "devDependencies": {
     "mocha": "*",
