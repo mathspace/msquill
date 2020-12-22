@@ -8,7 +8,7 @@
   },
   "devDependencies": {
     "mocha": "*",
-    "uglify-js": "2.x",
+    "uglify-js": "3.x",
     "less": "^1.5.1"
   }
 }
