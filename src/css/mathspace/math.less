@@ -4,7 +4,6 @@
 
 
 .mq-root-block, .mq-math-mode .mq-root-block {
-  white-space: normal;     // Text wrapping
   overflow: visible;       // Text wrapping
   // So it will align with the text around it
   // Eg..
@@ -14,12 +13,6 @@
 
 
 .mq-math-mode {
-  .mq-non-leaf {
-    // Prevent a bug that occurs on Windows Chrome at non-100% zoom levels, where the
-    // content inside nodes like fractions, roots, etc. would be wrapped
-    white-space: nowrap;
-  }
-
   .mq-binary-operator {
     white-space: pre-wrap;  // MaThSpaCE haCK: Text wrapping
   }
