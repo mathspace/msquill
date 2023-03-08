@@ -171,3 +171,18 @@
   }
 
 }
+
+.mq-editable-field .mq-cursor {
+  width: 1px;
+}
+
+/* never inject a child into the cursor */
+.mq-editable-field .mq-cursor:only-child:after, .mq-editable-field .mq-textarea + .mq-cursor:last-child:after {
+  display: none;
+}
+
+/* if we have an empty editable which only contains the cursor element, keep the injected node in the field that was there when the cursor element didn't exist, so that the width of the field remains consistent */
+.mq-editable-field .mq-root-block:has(> .mq-cursor:only-child)::after {
+    content: 'c';
+    visibility: hidden;
+}
