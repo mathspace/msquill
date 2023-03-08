@@ -322,9 +322,6 @@
 .mq-math-mode {
   /* Undo styles from Bootstrap 3's _normalize.scss */
 }
-.mq-math-mode .mq-non-leaf {
-  white-space: nowrap;
-}
 .mq-math-mode .mq-binary-operator {
   white-space: pre-wrap;
 }
