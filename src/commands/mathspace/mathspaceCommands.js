@@ -10,7 +10,7 @@ LatexCmds.interleave = bind(VanillaSymbol, '\\interleave', '&#10996;');
 CharCmds['*'] = LatexCmds.times;
 
 // MatHSPaCE HacK - Allow multiplication sign to be configurable
-Options.p.multiplicationDisplaySymbol = {};
+Options.p.multiplicationDisplaySymbol = 'cross';
 optionProcessors.multiplicationDisplaySymbol = function (option) {
   if (option && option !== "cross" && option !== "dot") {
     throw (

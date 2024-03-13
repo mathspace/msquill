@@ -1576,13 +1576,9 @@ Controller.open(function(_) {
     };
 
     // MatHSPaCE HacK - Allow multiplication sign to be configurable
-    var multiplicationDisplaySymbol =
-      (this.cursor.options.multiplicationDisplaySymbol =
-        this.cursor.options.multiplicationDisplaySymbol || 'cross');
-    
-    if (multiplicationDisplaySymbol === "dot") {
-      this.cursor.grammarDicts.latexCmds['*'] = LatexCmds.cdot;
-    }
+    if (this.cursor.options.multiplicationDisplaySymbol === "dot") {
+      this.cursor.grammarDicts.latexCmds["*"] = LatexCmds.cdot;
+    }  
 
     // Process injected commands into autocommands
     var options = this.cursor.options;
@@ -5258,7 +5254,7 @@ LatexCmds.interleave = bind(VanillaSymbol, '\\interleave', '&#10996;');
 CharCmds['*'] = LatexCmds.times;
 
 // MatHSPaCE HacK - Allow multiplication sign to be configurable
-Options.p.multiplicationDisplaySymbol = {};
+Options.p.multiplicationDisplaySymbol = 'cross';
 optionProcessors.multiplicationDisplaySymbol = function (option) {
   if (option && option !== "cross" && option !== "dot") {
     throw (
