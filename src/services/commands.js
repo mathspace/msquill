@@ -9,7 +9,16 @@ Controller.open(function(_) {
       ignoredCharacters: {}
     };
 
-    // Process injected commands into autocommands 
+    // MatHSPaCE HacK - Allow multiplication sign to be configurable
+    var multiplicationDisplaySymbol =
+      (this.cursor.options.multiplicationDisplaySymbol =
+        this.cursor.options.multiplicationDisplaySymbol || 'cross');
+    
+    if (multiplicationDisplaySymbol === "dot") {
+      this.cursor.grammarDicts.latexCmds['*'] = LatexCmds.cdot;
+    }
+
+    // Process injected commands into autocommands
     var options = this.cursor.options;
     var commands = options.commands || [];
     var ignoredCharacters = options.ignoredCharacters || [];

@@ -739,6 +739,8 @@ var InnerMathField = P(MathQuill.MathField, function(_) {
     this.__options.preventBackslash = ultimateRoot.cursor.options.preventBackslash;
     this.__options.spaceBehavesLikeTab = ultimateRoot.cursor.options.spaceBehavesLikeTab;
     this.__options.supSubsRequireOperand = ultimateRoot.cursor.options.supSubsRequireOperand;
+    // MatHSPaCE HacK - Config option for multiplication symbol
+    this.__options.multiplicationDisplaySymbol = ultimateRoot.cursor.options.multiplicationDisplaySymbol;
     var ctrlr = Controller(this, root, container);
     ctrlr.initializeLatexGrammar();
     ctrlr.editable = true;
