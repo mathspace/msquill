@@ -1575,7 +1575,12 @@ Controller.open(function(_) {
       ignoredCharacters: {}
     };
 
-    // Process injected commands into autocommands 
+    // MatHSPaCE HacK - Allow multiplication sign to be configurable
+    if (this.cursor.options.multiplicationDisplaySymbol === "dot") {
+      this.cursor.grammarDicts.latexCmds["*"] = LatexCmds.cdot;
+    }  
+
+    // Process injected commands into autocommands
     var options = this.cursor.options;
     var commands = options.commands || [];
     var ignoredCharacters = options.ignoredCharacters || [];
@@ -5148,6 +5153,8 @@ var InnerMathField = P(MathQuill.MathField, function(_) {
     this.__options.preventBackslash = ultimateRoot.cursor.options.preventBackslash;
     this.__options.spaceBehavesLikeTab = ultimateRoot.cursor.options.spaceBehavesLikeTab;
     this.__options.supSubsRequireOperand = ultimateRoot.cursor.options.supSubsRequireOperand;
+    // MatHSPaCE HacK - Config option for multiplication symbol
+    this.__options.multiplicationDisplaySymbol = ultimateRoot.cursor.options.multiplicationDisplaySymbol;
     var ctrlr = Controller(this, root, container);
     ctrlr.initializeLatexGrammar();
     ctrlr.editable = true;
@@ -5243,8 +5250,22 @@ LatexCmds.simeq = bind(VanillaSymbol, '\\simeq ', '&#11003;');
 
 LatexCmds.interleave = bind(VanillaSymbol, '\\interleave', '&#10996;');
 
-// Map * to times instead of dot
+// MatHSPaCE HacK Map * to times instead of dot
 CharCmds['*'] = LatexCmds.times;
+
+// MatHSPaCE HacK - Allow multiplication sign to be configurable
+Options.p.multiplicationDisplaySymbol = 'cross';
+optionProcessors.multiplicationDisplaySymbol = function (option) {
+  if (option && option !== "cross" && option !== "dot") {
+    throw (
+      '"cross" or "dot" required for multiplicationDisplaySymbol option, ' +
+      'got "' +
+      option +
+      '"'
+    );
+  }
+  return option;
+};
 
 // Patched latex for % symbol, it should not contain \\ in the beginning.
 LatexCmds['%'] = bind(NonSymbolaSymbol, '%', '%');
