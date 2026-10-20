@@ -115,6 +115,7 @@
     ]
   },
   "resolutions": {
+    "**/handlebars": "4.7.10",
     "**/optimist/minimist": "0.2.4",
     "**/loader-fs-cache/mkdirp": "0.5.6"
   }
