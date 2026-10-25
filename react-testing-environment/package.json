@@ -57,7 +57,8 @@
   "scripts": {
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
-    "test": "node scripts/test.js"
+    "test": "node scripts/test.js",
+    "test:security": "node --test test/*.test.cjs"
   },
   "eslintConfig": {
     "extends": "react-app"
