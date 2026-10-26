@@ -61,6 +61,14 @@ require trusted build inputs. Regression checks cover hostile import names,
 inherited imports and ordinary rendering
 (`react-testing-environment/test/lodash-template.test.cjs`).
 
+The React debugging toolchain resolves Express's body-parser dependency to
+1.20.9 to address CVE-2026-111181. Trailing bytes after a compressed request body
+must not cause an uncaught decoder error after parsing completes. Regression
+checks exercise the toolchain's Express parser with valid gzip/deflate bodies,
+delayed trailing bytes and a subsequent health request
+(`react-testing-environment/test/body-parser.test.cjs`). Network binding and host
+validation remain separate controls.
+
 ## 3. Attack Surface, Mitigations, and Attacker Stories
 
 TextBlock, direct VanillaSymbol, configurable htmlEntity and StaticMath selectable-copy HTML insertion paths, plus the prototype-name command exception, are established from source. Other rows are investigation hypotheses. Actual attacker control, cross-user impact and script authority require host exposure and controls. Ordinary authorized editing or application-owned rendering HTML is not an attack.
