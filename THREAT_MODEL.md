@@ -53,6 +53,14 @@ remain build inputs; explicitly supplied maps and external `.map` files still
 require trusted build inputs. Regression checks cover hostile annotations and
 ordinary source-map processing (`react-testing-environment/test/postcss.test.cjs`).
 
+The React debugging toolchain resolves Lodash and lodash.template to 4.18.1,
+including the copies used by HTML and service-worker generation. This addresses
+CVE-2026-4800 by rejecting executable import names and ignoring inherited imports
+at template compilation. Template source and explicitly imported functions still
+require trusted build inputs. Regression checks cover hostile import names,
+inherited imports and ordinary rendering
+(`react-testing-environment/test/lodash-template.test.cjs`).
+
 ## 3. Attack Surface, Mitigations, and Attacker Stories
 
 TextBlock, direct VanillaSymbol, configurable htmlEntity and StaticMath selectable-copy HTML insertion paths, plus the prototype-name command exception, are established from source. Other rows are investigation hypotheses. Actual attacker control, cross-user impact and script authority require host exposure and controls. Ordinary authorized editing or application-owned rendering HTML is not an attack.
