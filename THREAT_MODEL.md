@@ -40,6 +40,11 @@ A realistic attacker may control expression or clipboard content where the host 
 
 Host applications must enforce persistence permissions, cross-user sharing, output context, and input size/depth limits. The inspected parser/renderer runs in-process without an established workload-isolation boundary. Package metadata declares `private: true`; jQuery is required by the artifact but absent from declared dependencies, so actual resolution is an integration concern (`package.json:5`, `src/intro.js:1`). No external deployment configuration or current dependency compatibility was verified.
 
+The React development toolchain overrides selfsigned's legacy node-forge pin with
+1.4.0 to enforce CA constraints during certificate-chain validation
+(CVE-2026-33896). Regression checks also exercise webpack's self-signed certificate
+generation (`react-testing-environment/test/certificate-chain.test.cjs`).
+
 ## 3. Attack Surface, Mitigations, and Attacker Stories
 
 TextBlock, direct VanillaSymbol, configurable htmlEntity and StaticMath selectable-copy HTML insertion paths, plus the prototype-name command exception, are established from source. Other rows are investigation hypotheses. Actual attacker control, cross-user impact and script authority require host exposure and controls. Ordinary authorized editing or application-owned rendering HTML is not an attack.
