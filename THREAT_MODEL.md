@@ -45,6 +45,14 @@ The React development toolchain overrides selfsigned's legacy node-forge pin wit
 (CVE-2026-33896). Regression checks also exercise webpack's self-signed certificate
 generation (`react-testing-environment/test/certificate-chain.test.cjs`).
 
+The React debugging toolchain uses PostCSS 8-compatible CSS loaders, plugins and
+minification, and resolves all PostCSS dependencies to 8.5.12. This addresses
+CVE-2026-45623: CSS sourceMappingURL comments must not read arbitrary non-map files
+or disclose their contents through parse errors. Source maps
+remain build inputs; explicitly supplied maps and external `.map` files still
+require trusted build inputs. Regression checks cover hostile annotations and
+ordinary source-map processing (`react-testing-environment/test/postcss.test.cjs`).
+
 ## 3. Attack Surface, Mitigations, and Attacker Stories
 
 TextBlock, direct VanillaSymbol, configurable htmlEntity and StaticMath selectable-copy HTML insertion paths, plus the prototype-name command exception, are established from source. Other rows are investigation hypotheses. Actual attacker control, cross-user impact and script authority require host exposure and controls. Ordinary authorized editing or application-owned rendering HTML is not an attack.
