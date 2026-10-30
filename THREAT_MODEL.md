@@ -69,6 +69,15 @@ delayed trailing bytes and a subsequent health request
 (`react-testing-environment/test/body-parser.test.cjs`). Network binding and host
 validation remain separate controls.
 
+The React debugging toolchain resolves `decode-uri-component` to upstream 0.5.1
+to prevent quadratic percent-encoded replacement from stalling source-map
+processing (CVE-2026-118664). A versioned install-time patch changes only its
+module type and export for the synchronous CommonJS `source-map-resolve`
+consumer. The upstream single-pass decoder is unchanged. Source maps remain
+trusted build inputs; regression checks cover malformed runs, Unicode, literal
+plus signs and map/source path resolution
+(`react-testing-environment/test/decode-uri-component.test.cjs`).
+
 ## 3. Attack Surface, Mitigations, and Attacker Stories
 
 TextBlock, direct VanillaSymbol, configurable htmlEntity and StaticMath selectable-copy HTML insertion paths, plus the prototype-name command exception, are established from source. Other rows are investigation hypotheses. Actual attacker control, cross-user impact and script authority require host exposure and controls. Ordinary authorized editing or application-owned rendering HTML is not an attack.
