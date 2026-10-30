@@ -61,6 +61,15 @@ require trusted build inputs. Regression checks cover hostile import names,
 inherited imports and ordinary rendering
 (`react-testing-environment/test/lodash-template.test.cjs`).
 
+The React testing toolchain applies a local backport of deepmerge's proposed
+CVE-2026-93753 fix because no patched release is published. The patched merge
+rejects `__proto__` keys in both the target-copy and source-merge paths, preventing the
+returned object's prototype from inheriting attacker-controlled properties.
+The patch covers the source and both distributed JavaScript entry points;
+regression checks exercise Jest's resolved dependency and ordinary configuration
+merging (`react-testing-environment/test/deepmerge.test.cjs`). Dependency install
+scripts must run for the patch to apply.
+
 The React debugging toolchain resolves Express's body-parser dependency to
 1.20.9 to address CVE-2026-111181. Trailing bytes after a compressed request body
 must not cause an uncaught decoder error after parsing completes. Regression
