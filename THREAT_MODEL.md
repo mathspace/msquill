@@ -70,6 +70,12 @@ regression checks exercise Jest's resolved dependency and ordinary configuration
 merging (`react-testing-environment/test/deepmerge.test.cjs`). Dependency install
 scripts must run for the patch to apply.
 
+The React debugging toolchain locks y18n to 4.0.3 to address CVE-2020-7774.
+Its locale cache isolates prototype-named locales so locale updates cannot
+modify Object.prototype. Regression checks exercise the copies resolved by
+webpack-dev-server and Jest, along with ordinary translation and pluralization
+(`react-testing-environment/test/y18n.test.cjs`).
+
 The React debugging toolchain resolves Express's body-parser dependency to
 1.20.9 to address CVE-2026-111181. Trailing bytes after a compressed request body
 must not cause an uncaught decoder error after parsing completes. Regression
