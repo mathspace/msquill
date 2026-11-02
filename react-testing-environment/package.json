@@ -122,7 +122,7 @@
   },
   "resolutions": {
     "**/body-parser": "1.20.9",
-    "**/node-forge": "1.4.0",
+    "**/node-forge": "1.4.2",
     "**/optimist/minimist": "0.2.4",
     "**/loader-fs-cache/mkdirp": "0.5.6",
     "**/postcss": "8.5.12",

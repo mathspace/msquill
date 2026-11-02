@@ -41,9 +41,12 @@ A realistic attacker may control expression or clipboard content where the host 
 Host applications must enforce persistence permissions, cross-user sharing, output context, and input size/depth limits. The inspected parser/renderer runs in-process without an established workload-isolation boundary. Package metadata declares `private: true`; jQuery is required by the artifact but absent from declared dependencies, so actual resolution is an integration concern (`package.json:5`, `src/intro.js:1`). No external deployment configuration or current dependency compatibility was verified.
 
 The React development toolchain overrides selfsigned's legacy node-forge pin with
-1.4.0 to enforce CA constraints during certificate-chain validation
-(CVE-2026-33896). Regression checks also exercise webpack's self-signed certificate
-generation (`react-testing-environment/test/certificate-chain.test.cjs`).
+1.4.2 to enforce CA constraints during certificate-chain validation
+(CVE-2026-33896) and prevent TLS record-processing stack exhaustion
+(CVE-2026-119187). Regression checks exercise webpack's self-signed certificate
+generation and large TLS record batches in client and server mode
+(`react-testing-environment/test/certificate-chain.test.cjs`,
+`react-testing-environment/test/tls-records.test.cjs`).
 
 The React debugging toolchain uses PostCSS 8-compatible CSS loaders, plugins and
 minification, and resolves all PostCSS dependencies to 8.5.12. This addresses
