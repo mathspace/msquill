@@ -1,0 +1,61 @@
+diff --git a/node_modules/minimatch/dist/commonjs/index.js b/node_modules/minimatch/dist/commonjs/index.js
+--- a/node_modules/minimatch/dist/commonjs/index.js
++++ b/node_modules/minimatch/dist/commonjs/index.js
+@@ -81,5 +81,5 @@
+ exports.sep = defaultPlatform === 'win32' ? path.win32.sep : path.posix.sep;
+ exports.minimatch.sep = exports.sep;
+-exports.GLOBSTAR = Symbol('globstar **');
++exports.GLOBSTAR = Object.freeze({});
+ exports.minimatch.GLOBSTAR = exports.GLOBSTAR;
+ // any single thing other than /
+@@ -454,4 +454,5 @@
+     // this WOULD be allowed if ** did follow symlinks, or * didn't
+     firstPhasePreProcess(globParts) {
++        const { braceExpandMax = 100_000 } = this.options;
+         let didSomething = false;
+         do {
+@@ -481,5 +482,6 @@
+                         !p2 ||
+                         p2 === '.' ||
+-                        p2 === '..') {
++                        p2 === '..' ||
++                        globParts.length >= braceExpandMax) {
+                         continue;
+                     }
+@@ -538,4 +540,6 @@
+     // ^-- not valid because ** doens't follow symlinks
+     secondPhasePreProcess(globParts) {
++        if (globParts.length > 1000)
++            return globParts;
+         for (let i = 0; i < globParts.length - 1; i++) {
+             for (let j = i + 1; j < globParts.length; j++) {
+@@ -1121,4 +1125,5 @@
+ Object.defineProperty(exports, "unescape", { enumerable: true, get: function () { return unescape_js_2.unescape; } });
+ /* c8 ignore stop */
++module.exports = Object.assign(exports.minimatch, exports);
+ exports.minimatch.AST = ast_js_1.AST;
+ exports.minimatch.Minimatch = Minimatch;
+diff --git a/node_modules/minimatch/dist/esm/index.js b/node_modules/minimatch/dist/esm/index.js
+--- a/node_modules/minimatch/dist/esm/index.js
++++ b/node_modules/minimatch/dist/esm/index.js
+@@ -445,4 +445,5 @@
+     // this WOULD be allowed if ** did follow symlinks, or * didn't
+     firstPhasePreProcess(globParts) {
++        const { braceExpandMax = 100_000 } = this.options;
+         let didSomething = false;
+         do {
+@@ -472,5 +473,6 @@
+                         !p2 ||
+                         p2 === '.' ||
+-                        p2 === '..') {
++                        p2 === '..' ||
++                        globParts.length >= braceExpandMax) {
+                         continue;
+                     }
+@@ -529,4 +531,6 @@
+     // ^-- not valid because ** doens't follow symlinks
+     secondPhasePreProcess(globParts) {
++        if (globParts.length > 1000)
++            return globParts;
+         for (let i = 0; i < globParts.length - 1; i++) {
+             for (let j = i + 1; j < globParts.length; j++) {

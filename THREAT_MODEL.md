@@ -73,6 +73,13 @@ regression checks exercise Jest's resolved dependency and ordinary configuration
 merging (`react-testing-environment/test/deepmerge.test.cjs`). Dependency install
 scripts must run for the patch to apply.
 
+The React testing toolchain resolves minimatch to 10.2.6 with the upstream
+CVE-2026-118764 preprocessing limits backported to both module formats. This
+bounds globparts amplification and avoids quadratic pairwise optimization of
+large pattern sets. CommonJS compatibility adjustments preserve legacy consumers;
+install scripts must run to apply the patch. Regression checks cover hostile
+patterns and glob/ESLint compatibility (`react-testing-environment/test/minimatch.test.cjs`).
+
 The React debugging toolchain locks y18n to 4.0.3 to address CVE-2020-7774.
 Its locale cache isolates prototype-named locales so locale updates cannot
 modify Object.prototype. Regression checks exercise the copies resolved by

@@ -10,3 +10,7 @@ the latest `source-map-resolve` still calls the decoder synchronously with
 to CommonJS; its upstream decoding algorithm is unchanged. `patch-package
 --error-on-fail` makes installation fail if this compatibility patch cannot apply.
 Recheck the consumer's module support before changing the decoder version.
+
+The minimatch dependency uses upstream 10.2.6 with the CVE-2026-118764 backport
+and CommonJS compatibility adjustments described in `patches/README.md`. Use
+Node 18, 20, or >=22, and keep installation scripts enabled.
