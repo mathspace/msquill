@@ -8,6 +8,8 @@ To submit upstream pull requests, use our [public fork](https://github.com/maths
 
 MathQuill's source code requires compilation before it may be consumed by a browser.  MathQuill uses `make` (🤷) to orchestrate this compilation.
 
+Install development dependencies with `npm install --include=dev` before building. `pjs` is a build input: the Makefile embeds `node_modules/pjs/src/p.js` into the generated bundle. Applications consuming the checked-in `build/mathquill.js` do not need a separate pjs installation or its generated CommonJS module.
+
 To build the default MathQuill bundle, run:
 
 ```bash
