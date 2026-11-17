@@ -40,6 +40,8 @@ A realistic attacker may control expression or clipboard content where the host 
 
 Host applications must enforce persistence permissions, cross-user sharing, output context, and input size/depth limits. The inspected parser/renderer runs in-process without an established workload-isolation boundary. Package metadata declares `private: true`; jQuery is required by the artifact but absent from declared dependencies, so actual resolution is an integration concern (`package.json:5`, `src/intro.js:1`). No external deployment configuration or current dependency compatibility was verified.
 
+The root pjs package is a development dependency used as a source input: the Makefile concatenates `node_modules/pjs/src/p.js` into the distributed bundle. Consumers do not install pjs or execute its install script; its generated CommonJS module is not a build input. Development installations still include pjs and remain a dependency supply-chain boundary (`Makefile:12`, `Makefile:109-110`; `package.json`).
+
 The React development toolchain overrides selfsigned's legacy node-forge pin with
 1.4.2 to enforce CA constraints during certificate-chain validation
 (CVE-2026-33896) and prevent TLS record-processing stack exhaustion

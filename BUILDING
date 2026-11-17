@@ -4,7 +4,10 @@ otherwise, you can get it from http://nodejs.org/ .
 
 You will then need to update the dependencies with `npm`, like so:
 
-    % npm install
+    % npm install --include=dev
+
+Development dependencies include pjs, whose source is embedded in the compiled
+library. Applications consuming the compiled bundle do not install pjs separately.
 
 If this installs properly, you should simply be able to run `make`,
 and mathquill will be built in the `build/` directory.  Alternatively,

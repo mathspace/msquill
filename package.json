@@ -3,10 +3,8 @@
   "version": "0.1.11",
   "main": "build/mathquill.js",
   "private": true,
-  "dependencies": {
-    "pjs": "3.x"
-  },
   "devDependencies": {
+    "pjs": "3.x",
     "mocha": "*",
     "uglify-js": "2.x",
     "less": "^1.5.1"
